@@ -7,6 +7,7 @@
 		chatId,
 		mobile,
 		modelfiles,
+		prompts,
 		settings,
 		showArchivedChats,
 		showSettings,
@@ -17,6 +18,7 @@
 	import { slide } from 'svelte/transition';
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
 	import ModelSelector from '../chat/ModelSelector.svelte';
+	import PromptSelector from '../chat/PromptSelector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import Menu from './Navbar/Menu.svelte';
 	import { page } from '$app/stores';
@@ -32,7 +34,19 @@
 	export let chat;
 	export let selectedModels;
 
+	let systemPrompt: string;
+
+	$: {
+		if (chat && chat.chat.system) {
+			systemPrompt = chat.chat.system;
+		}
+		console.log("systemPrompt", systemPrompt);
+	}
+
+	$: inChatInstance = chat !== null;
+
 	export let showModelSelector = true;
+	export let showPromptSelector = true;
 
 	let showShareChatModal = false;
 	let showDownloadChatModal = false;
@@ -59,10 +73,24 @@
 					</div>
 				</button>
 			</div>
-			<div class="flex-1 overflow-hidden max-w-full">
-				{#if showModelSelector}
-					<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
-				{/if}
+
+			<div class="flex items-center w-full max-w-full">
+				<div class="overflow-hidden max-w-full">
+					{#if showModelSelector}
+						<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
+					{/if}
+				</div>
+
+				<div class="overflow-hidden max-w-full">
+					{#if showPromptSelector}
+					<!-- Should not be a selector after chat created -->
+						<PromptSelector 
+							bind:selectedPrompt={systemPrompt}
+							disabled={inChatInstance}
+							showSetDefault={!shareEnabled} 
+						/>
+					{/if}
+				</div>
 			</div>
 
 			<div class="self-start flex flex-none items-center text-gray-600 dark:text-gray-400">
