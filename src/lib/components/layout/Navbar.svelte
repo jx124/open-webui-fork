@@ -34,7 +34,7 @@
 	export let chat;
 	export let selectedModels;
 
-	let systemPrompt: string;
+	export let systemPrompt: string;
 
 	$: {
 		if (chat && chat.chat.system) {
@@ -74,7 +74,7 @@
 				</button>
 			</div>
 
-			<div class="flex items-center w-full max-w-full">
+			<div class="flex items-top w-full max-w-full">
 				<div class="overflow-hidden max-w-full">
 					{#if showModelSelector}
 						<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />

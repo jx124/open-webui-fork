@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
+	import Tooltip from '../../common/Tooltip.svelte';
 	import { getLanguages } from '$lib/i18n';
 	const dispatch = createEventDispatcher();
 
-	import { models, user, theme } from '$lib/stores';
+	import { models, user, theme, settings } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -208,11 +209,14 @@
 
 		<div>
 			<div class=" my-2.5 text-sm font-medium">{$i18n.t('System Prompt')}</div>
-			<textarea
-				bind:value={system}
-				class="w-full rounded-lg p-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none resize-none"
-				rows="4"
-			/>
+			<Tooltip content={$i18n.t('Disabled') + ', use "Prompt" dropdown menu'}>
+				<textarea
+					readonly={true}
+					value={$settings.system}
+					class="w-full rounded-lg p-4 text-sm dark:text-gray-600 dark:bg-gray-850 outline-none resize-none"
+					rows="4"
+				/>
+			</Tooltip>
 		</div>
 
 		<div class="mt-2 space-y-3 pr-1.5">

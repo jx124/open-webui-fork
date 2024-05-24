@@ -104,6 +104,8 @@
 		messages = [];
 	}
 
+	let systemPrompt = '';
+
 	onMount(async () => {
 		await initNewChat();
 	});
@@ -152,6 +154,7 @@
 		);
 
 		let _settings = JSON.parse(localStorage.getItem('settings') ?? '{}');
+		console.log("initNewChat localStorage", _settings);
 		settings.set({
 			..._settings
 		});
@@ -180,6 +183,8 @@
 
 		if (selectedModels.includes('')) {
 			toast.error($i18n.t('Model not selected'));
+		} else if (systemPrompt === '') {
+			toast.error($i18n.t('Prompt not selected'));
 		} else if (messages.length != 0 && messages.at(-1).done != true) {
 			// Response not done
 			console.log('wait');
@@ -230,7 +235,7 @@
 						id: $chatId,
 						title: $i18n.t('New Chat'),
 						models: selectedModels,
-						system: $settings.system ?? undefined,
+						system: systemPrompt,
 						options: {
 							...($settings.options ?? {})
 						},
@@ -938,6 +943,7 @@
 		{title}
 		bind:selectedModels
 		bind:showModelSelector
+		bind:systemPrompt
 		shareEnabled={messages.length > 0}
 		{chat}
 		{initNewChat}
