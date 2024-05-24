@@ -36,14 +36,11 @@
 
 	export let systemPrompt: string;
 
-	$: {
-		if (chat && chat.chat.system) {
-			systemPrompt = chat.chat.system;
-		}
-		console.log("systemPrompt", systemPrompt);
+	$: if (chat && chat.chat.system) {
+		systemPrompt = chat.chat.system;
 	}
 
-	$: inChatInstance = chat !== null;
+	$: inChatInstance = $chatId !== '';
 
 	export let showModelSelector = true;
 	export let showPromptSelector = true;
