@@ -119,11 +119,19 @@
 							{/if}
 						</button>
 					{:else}
-						<div>
-							<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-								{$i18n.t('No results found')}
+						{#if items.length != 0}
+							<div>
+								<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
+									{$i18n.t('No results found')}
+								</div>
 							</div>
-						</div>
+						{:else}
+							<div>
+								<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
+									{'No prompts available, add prompts under "Workspace" > "Prompts"'}
+								</div>
+							</div>
+						{/if}
 					{/each}
 				</div>
 

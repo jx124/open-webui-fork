@@ -80,11 +80,9 @@
 
 				<div class="overflow-hidden max-w-full">
 					{#if showPromptSelector}
-					<!-- Should not be a selector after chat created -->
 						<PromptSelector 
 							bind:selectedPrompt={systemPrompt}
 							disabled={inChatInstance}
-							showSetDefault={!shareEnabled} 
 						/>
 					{/if}
 				</div>
