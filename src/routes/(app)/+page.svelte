@@ -154,7 +154,6 @@
 		);
 
 		let _settings = JSON.parse(localStorage.getItem('settings') ?? '{}');
-		console.log("initNewChat localStorage", _settings);
 		settings.set({
 			..._settings
 		});
@@ -924,6 +923,11 @@
 
 		_tags.set(await getAllChatTags(localStorage.token));
 	};
+
+	const evaluateChatHandler = async () => {
+		console.log("Chat history to be evaluated", messages);
+	}
+
 </script>
 
 <svelte:head>

@@ -35,6 +35,7 @@
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/layout/Navbar.svelte';
+	import EvaluateChatModal from '$lib/components/chat/EvaluateChatModal.svelte';
 
 	import { queryMemory } from '$lib/apis/memories';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
@@ -91,6 +92,10 @@
 		messages: {},
 		currentId: null
 	};
+
+	let showEvaluationModal = false;
+	let selectedEvalMethod: string;
+	let selectedEvalSkills: string[];
 
 	$: if (history.currentId !== null) {
 		let _messages = [];
@@ -922,6 +927,66 @@
 		_tags.set(await getAllChatTags(localStorage.token));
 	};
 
+	const evaluateChatHandler = async () => {
+		showEvaluationModal = false;
+		
+		history = {
+			messages: {},
+			currentId: null
+		}
+		
+		let combinedMessages = messages
+			.map((message) => (message.role === "user" ? "SOCIAL WORKER" : "CLIENT") + ': "' + message.content + '"')
+			.join("\n");
+
+		let evalSystemPrompt = "You are an expert social worker giving feedback to a social worker in training. " +
+		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework.";
+
+		// Create user message
+		let userMessageId = uuidv4();
+		let userMessage = {
+			id: userMessageId,
+			parentId: null,
+			childrenIds: [],
+			role: 'user',
+			user: $user ?? undefined,
+			content: combinedMessages,
+			files: undefined,
+			timestamp: Math.floor(Date.now() / 1000), // Unix epoch
+			models: selectedModels
+		};
+
+		history.messages[userMessageId] = userMessage;
+		history.currentId = userMessageId;
+		
+		await tick();
+
+		// Create new chat
+		if ($settings.saveChatHistory ?? true) {
+			chat = await createNewChat(localStorage.token, {
+				id: "",
+				title: "Evaluation",
+				models: selectedModels,
+				system: evalSystemPrompt,
+				options: {
+					...($settings.options ?? {})
+				},
+				messages: [],
+				history: history,
+				timestamp: Date.now()
+			});
+			
+			await chats.set(await getChatList(localStorage.token));
+			await chatId.set(chat.id);
+		} else {
+			await chatId.set('local');
+		}
+
+		await tick();
+
+		await sendPrompt(combinedMessages, userMessageId);
+	}
+
 	onMount(async () => {
 		if (!($settings.saveChatHistory ?? true)) {
 			await goto('/');
@@ -936,6 +1001,13 @@
 			: `${$WEBUI_NAME}`}
 	</title>
 </svelte:head>
+
+<EvaluateChatModal 
+	bind:show={showEvaluationModal}
+	bind:selectedEvalMethod
+	bind:selectedEvalSkills
+	{evaluateChatHandler}
+	/>
 
 {#if loaded}
 	<div
@@ -994,6 +1066,7 @@
 		bind:prompt
 		bind:autoScroll
 		bind:selectedModel={atSelectedModel}
+		bind:showEvaluationModal
 		{messages}
 		{submitPrompt}
 		{stopResponse}
