@@ -93,7 +93,7 @@
 		currentId: null
 	};
 
-	let evaluatedChat: null | string;
+	let evaluatedChat: null | string = null;
 	let showEvaluationModal = false;
 	let selectedEvalMethod: string;
 	let selectedEvalSkills: string[];
@@ -589,8 +589,10 @@
 
 		if (messages.length == 2 && messages.at(1).content !== '') {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
-			const _title = await generateChatTitle(userPrompt);
-			await setChatTitle(_chatId, _title);
+			if (evaluatedChat === null) {
+				const _title = await generateChatTitle(userPrompt);
+				await setChatTitle(_chatId, _title);
+			}
 		}
 	};
 
@@ -969,7 +971,7 @@
 		if ($settings.saveChatHistory ?? true) {
 			chat = await createNewChat(localStorage.token, {
 				id: "",
-				title: "Evaluation",
+				title: "Evaluation for " + chat.chat.title,
 				models: selectedModels,
 				system: evalSystemPrompt,
 				options: {
@@ -990,7 +992,6 @@
 		await tick();
 
 		await sendPrompt(combinedMessages, userMessageId);
-		await goto("/c/" + $chatId);
 	}
 
 	onMount(async () => {

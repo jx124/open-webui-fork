@@ -925,10 +925,6 @@
 		_tags.set(await getAllChatTags(localStorage.token));
 	};
 
-	const evaluateChatHandler = async () => {
-		console.log("Chat history to be evaluated", messages);
-	}
-
 </script>
 
 <svelte:head>
