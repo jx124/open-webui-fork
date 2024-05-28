@@ -93,6 +93,7 @@
 		currentId: null
 	};
 
+	let evaluatedChat: null | string;
 	let showEvaluationModal = false;
 	let selectedEvalMethod: string;
 	let selectedEvalSkills: string[];
@@ -153,6 +154,7 @@
 						? chatContent.history
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
+				evaluatedChat = chatContent.evaluatedChat;
 
 				let _settings = JSON.parse(localStorage.getItem('settings') ?? '{}');
 				await settings.set({
@@ -245,7 +247,8 @@
 						},
 						messages: messages,
 						history: history,
-						timestamp: Date.now()
+						timestamp: Date.now(),
+						evaluatedChat: null,
 					});
 					await chats.set(await getChatList(localStorage.token));
 					await chatId.set(chat.id);
@@ -929,6 +932,7 @@
 
 	const evaluateChatHandler = async () => {
 		showEvaluationModal = false;
+		evaluatedChat = $chatId;
 		
 		history = {
 			messages: {},
@@ -973,7 +977,8 @@
 				},
 				messages: [],
 				history: history,
-				timestamp: Date.now()
+				timestamp: Date.now(),
+				evaluatedChat: $chatId,
 			});
 			
 			await chats.set(await getChatList(localStorage.token));
@@ -985,6 +990,7 @@
 		await tick();
 
 		await sendPrompt(combinedMessages, userMessageId);
+		await goto("/c/" + $chatId);
 	}
 
 	onMount(async () => {
@@ -1047,6 +1053,7 @@
 						{selectedModels}
 						{selectedModelfiles}
 						{processing}
+						bind:evaluatedChat
 						bind:history
 						bind:messages
 						bind:autoScroll
@@ -1067,6 +1074,7 @@
 		bind:autoScroll
 		bind:selectedModel={atSelectedModel}
 		bind:showEvaluationModal
+		bind:evaluatedChat
 		{messages}
 		{submitPrompt}
 		{stopResponse}

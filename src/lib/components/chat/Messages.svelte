@@ -36,6 +36,8 @@
 	export let selectedModels;
 	export let selectedModelfiles = [];
 
+	export let evaluatedChat: null | string;
+
 	$: if (autoScroll && bottomPadding) {
 		(async () => {
 			await tick();
@@ -290,90 +292,94 @@
 			{#key chatId}
 				{#each messages as message, messageIdx}
 					<div class=" w-full {messageIdx === messages.length - 1 ? 'pb-28' : ''}">
-						<div
-							class="flex flex-col justify-between px-5 mb-3 {$settings?.fullScreenMode ?? null
-								? 'max-w-full'
-								: 'max-w-5xl'} mx-auto rounded-lg group"
-						>
-							{#if message.role === 'user'}
-								<UserMessage
-									on:delete={() => messageDeleteHandler(message.id)}
-									{user}
-									{readOnly}
-									{message}
-									isFirstMessage={messageIdx === 0}
-									siblings={message.parentId !== null
-										? history.messages[message.parentId]?.childrenIds ?? []
-										: Object.values(history.messages)
-												.filter((message) => message.parentId === null)
-												.map((message) => message.id) ?? []}
-									{confirmEditMessage}
-									{showPreviousMessage}
-									{showNextMessage}
-									copyToClipboard={copyToClipboardWithToast}
-								/>
-							{:else if $mobile || (history.messages[message.parentId]?.models?.length ?? 1) === 1}
-								{#key message.id}
-									<ResponseMessage
-										{message}
-										modelfiles={selectedModelfiles}
-										siblings={history.messages[message.parentId]?.childrenIds ?? []}
-										isLastMessage={messageIdx + 1 === messages.length}
+						{#if evaluatedChat !== null && messageIdx === 0}
+							<!-- Skip the first user message (convo history prompt) if chat is for evaluation -->
+						{:else}
+							<div
+								class="flex flex-col justify-between px-5 mb-3 {$settings?.fullScreenMode ?? null
+									? 'max-w-full'
+									: 'max-w-5xl'} mx-auto rounded-lg group"
+							>
+								{#if message.role === 'user'}
+									<UserMessage
+										on:delete={() => messageDeleteHandler(message.id)}
+										{user}
 										{readOnly}
-										{updateChatMessages}
-										{confirmEditResponseMessage}
+										{message}
+										isFirstMessage={messageIdx === 0}
+										siblings={message.parentId !== null
+											? history.messages[message.parentId]?.childrenIds ?? []
+											: Object.values(history.messages)
+													.filter((message) => message.parentId === null)
+													.map((message) => message.id) ?? []}
+										{confirmEditMessage}
 										{showPreviousMessage}
 										{showNextMessage}
-										{rateMessage}
 										copyToClipboard={copyToClipboardWithToast}
-										{continueGeneration}
-										{regenerateResponse}
-										on:save={async (e) => {
-											console.log('save', e);
-
-											const message = e.detail;
-											history.messages[message.id] = message;
-											await updateChatById(localStorage.token, chatId, {
-												messages: messages,
-												history: history
-											});
-										}}
 									/>
-								{/key}
-							{:else}
-								{#key message.parentId}
-									<CompareMessages
-										bind:history
-										{messages}
-										{chatId}
-										parentMessage={history.messages[message.parentId]}
-										{messageIdx}
-										{selectedModelfiles}
-										{updateChatMessages}
-										{confirmEditResponseMessage}
-										{rateMessage}
-										copyToClipboard={copyToClipboardWithToast}
-										{continueGeneration}
-										{regenerateResponse}
-										on:change={async () => {
-											await updateChatById(localStorage.token, chatId, {
-												messages: messages,
-												history: history
-											});
+								{:else if $mobile || (history.messages[message.parentId]?.models?.length ?? 1) === 1}
+									{#key message.id}
+										<ResponseMessage
+											{message}
+											modelfiles={selectedModelfiles}
+											siblings={history.messages[message.parentId]?.childrenIds ?? []}
+											isLastMessage={messageIdx + 1 === messages.length}
+											{readOnly}
+											{updateChatMessages}
+											{confirmEditResponseMessage}
+											{showPreviousMessage}
+											{showNextMessage}
+											{rateMessage}
+											copyToClipboard={copyToClipboardWithToast}
+											{continueGeneration}
+											{regenerateResponse}
+											on:save={async (e) => {
+												console.log('save', e);
 
-											if (autoScroll) {
-												const element = document.getElementById('messages-container');
-												autoScroll =
-													element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
-												setTimeout(() => {
-													scrollToBottom();
-												}, 100);
-											}
-										}}
-									/>
-								{/key}
-							{/if}
-						</div>
+												const message = e.detail;
+												history.messages[message.id] = message;
+												await updateChatById(localStorage.token, chatId, {
+													messages: messages,
+													history: history
+												});
+											}}
+										/>
+									{/key}
+								{:else}
+									{#key message.parentId}
+										<CompareMessages
+											bind:history
+											{messages}
+											{chatId}
+											parentMessage={history.messages[message.parentId]}
+											{messageIdx}
+											{selectedModelfiles}
+											{updateChatMessages}
+											{confirmEditResponseMessage}
+											{rateMessage}
+											copyToClipboard={copyToClipboardWithToast}
+											{continueGeneration}
+											{regenerateResponse}
+											on:change={async () => {
+												await updateChatById(localStorage.token, chatId, {
+													messages: messages,
+													history: history
+												});
+
+												if (autoScroll) {
+													const element = document.getElementById('messages-container');
+													autoScroll =
+														element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+													setTimeout(() => {
+														scrollToBottom();
+													}, 100);
+												}
+											}}
+										/>
+									{/key}
+								{/if}
+							</div>
+						{/if}
 					</div>
 				{/each}
 

@@ -51,6 +51,7 @@
 	export let messages = [];
 
 	export let showEvaluationModal;
+	export let evaluatedChat: null | string;
 
 	let speechRecognition;
 
@@ -539,17 +540,19 @@
 		<div class="bg-white dark:bg-gray-900">
 			<div class="max-w-6xl px-2.5 md:px-16 mx-auto inset-x-0">
 				<div class=" pb-2">
-					<div class="flex flex-row-reverse my-2">
-						<Tooltip content="Evaluate the current chat">
-							<button class="{messages.length !== 0
-								? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
-								: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-xl px-4 py-2 self-center"
-								type="button"
-								id="evaluate-chat-button"
-								on:click={() => { showEvaluationModal = true; }}
-							>Evaluate</button>
-						</Tooltip>
-					</div>
+					{#if evaluatedChat === null}
+						<div class="flex flex-row-reverse my-2">
+							<Tooltip content="Evaluate the current chat">
+								<button class="{messages.length !== 0
+									? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
+									: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-xl px-4 py-2 self-center"
+									type="button"
+									id="evaluate-chat-button"
+									on:click={() => { showEvaluationModal = true; }}
+								>Evaluate</button>
+							</Tooltip>
+						</div>
+					{/if}
 
 					<input
 						bind:this={filesInputElement}

@@ -241,7 +241,8 @@
 						messages: messages,
 						history: history,
 						tags: [],
-						timestamp: Date.now()
+						timestamp: Date.now(),
+						evaluatedChat: null
 					});
 					await chats.set(await getChatList(localStorage.token));
 					await chatId.set(chat.id);
