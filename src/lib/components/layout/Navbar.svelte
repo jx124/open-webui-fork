@@ -5,6 +5,7 @@
 	import {
 		WEBUI_NAME,
 		chatId,
+		chats,
 		mobile,
 		modelfiles,
 		prompts,
@@ -38,10 +39,10 @@
 
 	let evaluatedChat: null | string = null;
 	let evaluatedChatTitle: string;
-	
+
 	$: {
 		evaluatedChat = chat?.chat?.evaluatedChat ?? null;
-		evaluatedChatTitle = chat?.chat?.evaluatedChatTitle ?? "";
+		evaluatedChatTitle = $chats.find((chat) => chat?.id === evaluatedChat)?.title ?? "";
 	}
 
 	$: inChatInstance = $chatId !== '';
@@ -90,7 +91,10 @@
 						/>
 					{/if}
 					{#if evaluatedChat !== null}
-						<div>{"Evaluation for " + evaluatedChatTitle}</div>
+						<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
+							<div>{"Evaluation for"}</div>
+							<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
+						</div>
 					{/if}
 				</div>
 			</div>

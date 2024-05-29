@@ -988,7 +988,6 @@
 				history: history,
 				timestamp: Date.now(),
 				evaluatedChat: chat.id,
-				evaluatedChatTitle: chat.chat.title // Store title to link evaluation back to chat
 			});
 
 			settings.set({ ...$settings, system: evalSystemPrompt });
@@ -1002,6 +1001,7 @@
 		await tick();
 
 		await sendPrompt(combinedMessages, userMessageId);
+		await goto("/c/" + chat.id);
 	}
 
 	onMount(async () => {
