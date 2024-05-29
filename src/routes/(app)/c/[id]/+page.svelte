@@ -127,6 +127,13 @@
 		})();
 	}
 
+	let systemPrompt = '';
+	// Main page should update system prompt based on selection, 
+	// specific chats should update system prompt using the loaded "chat" variable
+	$: if (chat?.chat?.system) {
+		systemPrompt = chat.chat.system;
+	}
+
 	//////////////////////////
 	// Web functions
 	//////////////////////////
@@ -980,8 +987,11 @@
 				messages: [],
 				history: history,
 				timestamp: Date.now(),
-				evaluatedChat: $chatId,
+				evaluatedChat: chat.id,
+				evaluatedChatTitle: chat.chat.title // Store title to link evaluation back to chat
 			});
+
+			settings.set({ ...$settings, system: evalSystemPrompt });
 			
 			await chats.set(await getChatList(localStorage.token));
 			await chatId.set(chat.id);
@@ -1025,6 +1035,7 @@
 		<Navbar
 			{title}
 			{chat}
+			{systemPrompt}
 			bind:selectedModels
 			bind:showModelSelector
 			shareEnabled={messages.length > 0}

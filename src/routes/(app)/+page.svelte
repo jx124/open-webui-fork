@@ -105,6 +105,9 @@
 	}
 
 	let systemPrompt = '';
+	// Main page should update system prompt based on selection, 
+	// specific chats should update system prompt using the loaded "chat" variable
+	$: settings.set({ ...$settings, system: systemPrompt })
 
 	onMount(async () => {
 		await initNewChat();

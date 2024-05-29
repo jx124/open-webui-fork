@@ -36,8 +36,12 @@
 
 	export let systemPrompt: string;
 
-	$: if (chat && chat.chat.system) {
-		systemPrompt = chat.chat.system;
+	let evaluatedChat: null | string = null;
+	let evaluatedChatTitle: string;
+	
+	$: {
+		evaluatedChat = chat?.chat?.evaluatedChat ?? null;
+		evaluatedChatTitle = chat?.chat?.evaluatedChatTitle ?? "";
 	}
 
 	$: inChatInstance = $chatId !== '';
@@ -79,11 +83,14 @@
 				</div>
 
 				<div class="overflow-hidden max-w-full">
-					{#if showPromptSelector}
+					{#if showPromptSelector && evaluatedChat === null}
 						<PromptSelector 
 							bind:selectedPrompt={systemPrompt}
 							disabled={inChatInstance}
 						/>
+					{/if}
+					{#if evaluatedChat !== null}
+						<div>{"Evaluation for " + evaluatedChatTitle}</div>
 					{/if}
 				</div>
 			</div>

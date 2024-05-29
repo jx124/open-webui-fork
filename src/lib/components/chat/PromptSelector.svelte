@@ -8,7 +8,6 @@
 	export let selectedPrompt: string;
 	export let disabled = false;
 
-	$: settings.set({ ...$settings, system: selectedPrompt })
 
 </script>
 
