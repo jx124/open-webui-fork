@@ -953,7 +953,8 @@
 			.join("\n");
 
 		let evalSystemPrompt = "You are an expert social worker giving feedback to a social worker in training. " +
-		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework.";
+		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework." +
+		"Focus on these skills in your critique: " + selectedEvalSkills.join(" ");
 
 		// Create user message
 		let userMessageId = uuidv4();
@@ -1024,7 +1025,7 @@
 	bind:selectedEvalMethod
 	bind:selectedEvalSkills
 	{evaluateChatHandler}
-	/>
+/>
 
 {#if loaded}
 	<div

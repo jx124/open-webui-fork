@@ -8,13 +8,33 @@
 	export let evaluateChatHandler: Function;
 
 	export let selectedEvalMethod: string;
-	export let selectedEvalSkills: string[];
+	export let selectedEvalSkills: string[] = [];
 	export let show: boolean;
+
+	let evaluationMethods = ["Motivational Interviewing"];
+	let evaluationSkillsMap = new Map<string, string[]>([
+		["Motivational Interviewing", [
+			"Affirmation",
+			"Emphasizing Autonomy",
+			"Open Questions",
+			"Closed Questions",
+			"Persuasion (with Permission)",
+			"Reflection",
+			"Seeking Collaboration"
+		]],
+	])
+	
+	$: skills = evaluationSkillsMap.get(selectedEvalMethod) ?? [];
+	$: selectedEvalSkills = show ? selectedEvalSkills : []; // reset everytime modal is closed
+
+	function toggleAll(event) {
+		selectedEvalSkills = event.target.checked ? [...skills] : [];
+	}
 </script>
 
 <Modal bind:show size="sm">
 	<div class="text-gray-700 dark:text-gray-100">
-		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
+		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4">
 			<div class=" text-lg font-medium self-center">Evaluation</div>
 			<button
 				class="self-center"
@@ -34,23 +54,42 @@
 				</svg>
 			</button>
 		</div>
-		<div class="flex flex-row justify-items px-5">
-			<div class="self-center text-xs font-medium mr-auto px-0.5">Evaluation method</div>
-			<select
-				class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
-				bind:value={selectedEvalMethod}
-				placeholder="Select an evaluation method"
-			>
-				<option>Motivational Interviewing</option>
-		</div>
-		<div class="flex flex-row justify-items px-5 pb-4">
-			<div class="self-center text-xs font-medium mr-auto px-0.5">Skills evaluated</div>
-			<select
-				class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
-				bind:value={selectedEvalSkills}
-				placeholder="Select an evaluation method"
-			>
-				<option>Motivational Interviewing</option>
+		<div class="flex flex-col pb-4">
+			<div class="flex flex-row justify-items px-5">
+				<div class="self-center text-xs font-medium mr-auto">Evaluation method</div>
+				<select
+					class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
+					bind:value={selectedEvalMethod}
+					placeholder="Select an evaluation method"
+				>
+				{#each evaluationMethods as method}
+					<option>{method}</option>
+				{/each}
+			</div>
+			<div class="px-5">
+				<div class="self-center text-xm font-medium mr-auto mb-1">Skills evaluated</div>
+				<div class="flex flex-col pl-0.5">
+					<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+						<input
+							type="checkbox"
+							on:change={toggleAll}
+							checked={selectedEvalSkills.length === skills.length}
+						>
+						All
+					</label>
+					{#each skills as skill}
+						<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+							<input
+								type="checkbox"
+								value={skill}
+								bind:group={selectedEvalSkills}
+							>
+							{skill}
+						</label>
+					{/each}
+				</div>
+			</div>
+			
 		</div>
 
 		<div class="flex flex-row-reverse px-5 pb-4">
