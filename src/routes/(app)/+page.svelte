@@ -18,7 +18,7 @@
 		showSidebar,
 		user
 	} from '$lib/stores';
-	import { copyToClipboard, splitStream } from '$lib/utils';
+	import { copyToClipboard, generateEvalSystemPrompt, splitStream } from '$lib/utils';
 
 	import {
 		addTagById,
@@ -39,6 +39,7 @@
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import ModelSelector from '$lib/components/chat/ModelSelector.svelte';
 	import Navbar from '$lib/components/layout/Navbar.svelte';
+	import EvaluateChatModal from '$lib/components/chat/EvaluateChatModal.svelte';
 	import {
 		LITELLM_API_BASE_URL,
 		OLLAMA_API_BASE_URL,
@@ -89,6 +90,11 @@
 		messages: {},
 		currentId: null
 	};
+
+	let evaluatedChat: null | string = null;
+	let showEvaluationModal = false;
+	let selectedEvalMethod: string;
+	let selectedEvalSkills: string[];
 
 	$: if (history.currentId !== null) {
 		let _messages = [];
@@ -928,6 +934,71 @@
 		_tags.set(await getAllChatTags(localStorage.token));
 	};
 
+	const evaluateChatHandler = async () => {
+		showEvaluationModal = false;
+		evaluatedChat = $chatId;
+		
+		history = {
+			messages: {},
+			currentId: null
+		}
+		
+		let combinedMessages = messages
+			.map((message) => (message.role === "user" ? "SOCIAL WORKER" : "CLIENT") + ': "' + message.content + '"')
+			.join("\n");
+
+		let evalSystemPrompt = generateEvalSystemPrompt(selectedEvalMethod, selectedEvalSkills);
+		systemPrompt = evalSystemPrompt;
+
+		// Create user message
+		let userMessageId = uuidv4();
+		let userMessage = {
+			id: userMessageId,
+			parentId: null,
+			childrenIds: [],
+			role: 'user',
+			user: $user ?? undefined,
+			content: combinedMessages,
+			files: undefined,
+			timestamp: Math.floor(Date.now() / 1000), // Unix epoch
+			models: selectedModels
+		};
+
+		history.messages[userMessageId] = userMessage;
+		history.currentId = userMessageId;
+		
+		await tick();
+
+		// Create new chat
+		if ($settings.saveChatHistory ?? true) {
+			chat = await createNewChat(localStorage.token, {
+				id: "",
+				title: "Evaluation for " + chat.chat.title,
+				models: selectedModels,
+				system: evalSystemPrompt,
+				options: {
+					...($settings.options ?? {})
+				},
+				messages: [],
+				history: history,
+				timestamp: Date.now(),
+				evaluatedChat: chat.id,
+			});
+
+			settings.set({ ...$settings, system: evalSystemPrompt });
+			
+			await chats.set(await getChatList(localStorage.token));
+			await chatId.set(chat.id);
+		} else {
+			await chatId.set('local');
+		}
+
+		await tick();
+		
+		await sendPrompt(combinedMessages, userMessageId);
+		await goto("/c/" + chat.id);
+	}
+
 </script>
 
 <svelte:head>
@@ -937,6 +1008,13 @@
 			: `${$WEBUI_NAME}`}
 	</title>
 </svelte:head>
+
+<EvaluateChatModal 
+	bind:show={showEvaluationModal}
+	bind:selectedEvalMethod
+	bind:selectedEvalSkills
+	{evaluateChatHandler}
+/>
 
 <div
 	class="min-h-screen max-h-screen {$showSidebar
@@ -969,6 +1047,7 @@
 					{selectedModels}
 					{selectedModelfiles}
 					{processing}
+					bind:evaluatedChat
 					bind:history
 					bind:messages
 					bind:autoScroll
@@ -990,6 +1069,8 @@
 	bind:prompt
 	bind:autoScroll
 	bind:selectedModel={atSelectedModel}
+	bind:showEvaluationModal
+	bind:evaluatedChat
 	{messages}
 	{submitPrompt}
 	{stopResponse}

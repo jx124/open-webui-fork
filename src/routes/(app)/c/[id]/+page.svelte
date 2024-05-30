@@ -16,7 +16,7 @@
 		showSidebar,
 		user
 	} from '$lib/stores';
-	import { convertMessagesToHistory, copyToClipboard, splitStream } from '$lib/utils';
+	import { convertMessagesToHistory, copyToClipboard, generateEvalSystemPrompt, splitStream } from '$lib/utils';
 	import { getContext, onMount, tick } from 'svelte';
 
 	import {
@@ -953,12 +953,7 @@
 			.map((message) => (message.role === "user" ? "SOCIAL WORKER" : "CLIENT") + ': "' + message.content + '"')
 			.join("\n");
 
-		let evalSystemPrompt = "You are an expert social worker giving feedback to a social worker in training. " +
-		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework.";
-
-		if (selectedEvalSkills.length > 0) {
-			evalSystemPrompt += "Focus on these skills in your critique: " + selectedEvalSkills.join(", ");
-		}
+		let evalSystemPrompt = generateEvalSystemPrompt(selectedEvalMethod, selectedEvalSkills);
 
 		// Create user message
 		let userMessageId = uuidv4();
