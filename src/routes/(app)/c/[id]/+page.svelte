@@ -772,9 +772,10 @@
 
 		if (messages.length == 2) {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
-
-			const _title = await generateChatTitle(userPrompt);
-			await setChatTitle(_chatId, _title);
+			if (evaluatedChat === null) {
+				const _title = await generateChatTitle(userPrompt);
+				await setChatTitle(_chatId, _title);
+			}
 		}
 	};
 
@@ -953,8 +954,11 @@
 			.join("\n");
 
 		let evalSystemPrompt = "You are an expert social worker giving feedback to a social worker in training. " +
-		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework." +
-		"Focus on these skills in your critique: " + selectedEvalSkills.join(" ");
+		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework.";
+
+		if (selectedEvalSkills.length > 0) {
+			evalSystemPrompt += "Focus on these skills in your critique: " + selectedEvalSkills.join(", ");
+		}
 
 		// Create user message
 		let userMessageId = uuidv4();
