@@ -120,6 +120,27 @@ Don't forget to explore our sibling project, [Open WebUI Community](https://open
 > [!TIP]  
 > If you wish to utilize Open WebUI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
 
+### Installation of Forked Version for Social Work
+- Copy the `.env.example` file in the root directory to create a `.env` file. Fill in the API key. Note: The API key should not be surrounded by quotes, docker does not 
+parse and remove them.
+- Build the docker image:
+  ```bash
+  docker build -t open-webui-fork .
+  ```
+- Create a volume for persistent data storage:
+  ```bash
+  docker volume create open-webui-fork
+  ```
+- Run the container:
+  ```bash
+  docker run --env-file ./.env -d -p 3000:8080 -v open-webui-fork:/app/backend/data --name open-webui-fork open-webui-fork
+  ```
+- Head to localhost:3000 to access the app.
+
+> [!NOTE]  
+> The first account to be created will be the admin account. Subsequent accounts will be user accounts. The admin account should fill in the available prompts.
+
+
 ### Installation with Default Configuration
 
 - **If Ollama is on your computer**, use this command:
