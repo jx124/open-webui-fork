@@ -7,8 +7,6 @@
 		chatId,
 		chats,
 		mobile,
-		modelfiles,
-		prompts,
 		settings,
 		showArchivedChats,
 		showSettings,
@@ -87,7 +85,7 @@
 					{#if showPromptSelector && evaluatedChat === null}
 						<PromptSelector 
 							bind:selectedPrompt={systemPrompt}
-							disabled={inChatInstance}
+							bind:disabled={inChatInstance}
 						/>
 					{/if}
 					{#if evaluatedChat !== null}
