@@ -7,6 +7,7 @@
 		chatId,
 		chats,
 		mobile,
+		prompts,
 		settings,
 		showArchivedChats,
 		showSettings,
@@ -33,7 +34,7 @@
 	export let chat;
 	export let selectedModels;
 
-	export let systemPrompt: string;
+	export let selectedPromptCommand: string;
 
 	let evaluatedChat: null | string = null;
 	let evaluatedChatTitle: string;
@@ -44,6 +45,12 @@
 	}
 
 	$: inChatInstance = $chatId !== '';
+
+	$: if (!inChatInstance) {
+		// Selecting prompt from main interface
+		let prompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
+		$settings = {...$settings, system: prompt};
+	} 
 
 	export let showModelSelector = true;
 	export let showPromptSelector = true;
@@ -84,7 +91,7 @@
 				<div class="overflow-hidden max-w-full">
 					{#if showPromptSelector && evaluatedChat === null}
 						<PromptSelector 
-							bind:selectedPrompt={systemPrompt}
+							bind:selectedPromptCommand
 							bind:disabled={inChatInstance}
 						/>
 					{/if}

@@ -18,7 +18,8 @@
 		tags as _tags,
 		WEBUI_NAME,
 		banners,
-		user
+		user,
+		prompts
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -122,10 +123,11 @@
 		})();
 	}
 
-	let systemPrompt = '';
-	$: if (chat?.chat?.system) {
-		systemPrompt = chat.chat.system;
-	}
+	// When creating a new chat, this is set by the PromptSelector menu. Otherwise, when accessing an existing chat,
+	// this is set by the loadChat command. Note that this field is undefined when in an evaluation chat.
+	let selectedPromptCommand: string;
+	$: console.log("Chat system prompt: ", $settings.system);
+	$: console.log("Chat selectedPromptCommand: ", selectedPromptCommand);
 
 	onMount(async () => {
 		if (!$chatId) {
@@ -214,6 +216,17 @@
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
 				evaluatedChat = chatContent.evaluatedChat;
+				selectedPromptCommand = chatContent.systemCommand;
+
+				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
+				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
+				if (selectedPromptCommand) {
+					let newPrompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
+					if (newPrompt !== chatContent.system) {
+						chatContent.system = newPrompt;
+						console.log("Updated system prompt in Chat:", chatContent.system);
+					}
+				}
 
 				const userSettings = await getUserSettings(localStorage.token);
 
@@ -306,7 +319,7 @@
 
 		if (selectedModels.includes('')) {
 			toast.error($i18n.t('Model not selected'));
-		} else if (systemPrompt === '') {
+		} else if (!selectedPromptCommand) {
 			toast.error($i18n.t('Prompt not selected'));
 		} else if (messages.length != 0 && messages.at(-1).done != true) {
 			// Response not done
@@ -359,6 +372,7 @@
 						title: $i18n.t('New Chat'),
 						models: selectedModels,
 						system: $settings.system ?? undefined,
+						systemCommand: selectedPromptCommand,
 						options: {
 							...($settings.params ?? {})
 						},
@@ -1199,7 +1213,9 @@
 			.join("\n");
 
 		let evalSystemPrompt = generateEvalSystemPrompt(selectedEvalMethod, selectedEvalSkills);
-		systemPrompt = evalSystemPrompt;
+		settings.set({ ...$settings, system: evalSystemPrompt });
+
+		// systemPrompt = evalSystemPrompt;
 
 		// Create user message
 		let userMessageId = uuidv4();
@@ -1227,6 +1243,7 @@
 				title: "Evaluation for " + chat.chat.title,
 				models: selectedModels,
 				system: evalSystemPrompt,
+				systemCommand: undefined,
 				options: {
 					...($settings.options ?? {})
 				},
@@ -1235,8 +1252,6 @@
 				timestamp: Date.now(),
 				evaluatedChat: chat.id,
 			});
-
-			settings.set({ ...$settings, system: evalSystemPrompt });
 			
 			await chats.set(await getChatList(localStorage.token));
 			await chatId.set(chat.id);
@@ -1276,7 +1291,7 @@
 			{title}
 			bind:selectedModels
 			bind:showModelSelector
-			bind:systemPrompt
+			bind:selectedPromptCommand
 			shareEnabled={messages.length > 0}
 			{chat}
 			{initNewChat}

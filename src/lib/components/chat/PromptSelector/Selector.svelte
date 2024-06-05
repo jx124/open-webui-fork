@@ -24,9 +24,6 @@
 
 	let show = false;
 
-	let selectedPrompt = '';
-	$: selectedPrompt = items.find((item) => item.value === value) ?? '';
-
 	let searchValue = '';
 
 	$: filteredItems = searchValue
@@ -39,11 +36,7 @@
 	<div
 	class="flex w-full text-left px-0.5 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none"
 	>
-		{#if selectedPrompt}
-			{selectedPrompt.label}
-		{:else}
-			{placeholder}
-		{/if}
+		{placeholder}
 	</div>
 {:else}
 	<DropdownMenu.Root
@@ -57,11 +50,7 @@
 			<div
 				class="flex w-full text-left px-0.5 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none"
 			>
-				{#if selectedPrompt}
-					{selectedPrompt.label}
-				{:else}
-					{placeholder}
-				{/if}
+				{placeholder}
 				<ChevronDown className=" self-center ml-2 size-3" strokeWidth="2.5" />
 			</div>
 		</DropdownMenu.Trigger>

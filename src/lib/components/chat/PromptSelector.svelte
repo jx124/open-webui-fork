@@ -5,10 +5,12 @@
 
 	const i18n = getContext('i18n');
 
-	export let selectedPrompt: string;
+	export let selectedPromptCommand: string;
 	export let disabled = false;
 
-
+	$: promptTitle = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.title ?? $i18n.t('Prompt');
+	$: console.log("PromptSelector prompt from $prompts: ", $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content);
+	
 </script>
 
 <div class="flex flex-col w-full items-center md:items-start">
@@ -19,11 +21,12 @@
 					searchPlaceholder={$i18n.t('Search Prompts')}
 					items={$prompts
 						.map((prompt) => ({
-							value: prompt.content,
+							value: prompt.command, // command is validated to be unique
 							label: prompt.title,
 						}))}
 					disabled={disabled}
-					bind:value={selectedPrompt}
+					placeholder={promptTitle}
+					bind:value={selectedPromptCommand}
 				/>
 			</div>
 		</div>
