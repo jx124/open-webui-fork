@@ -126,8 +126,6 @@
 	// When creating a new chat, this is set by the PromptSelector menu. Otherwise, when accessing an existing chat,
 	// this is set by the loadChat command. Note that this field is undefined when in an evaluation chat.
 	let selectedPromptCommand: string;
-	$: console.log("Chat system prompt: ", $settings.system);
-	$: console.log("Chat selectedPromptCommand: ", selectedPromptCommand);
 
 	onMount(async () => {
 		if (!$chatId) {

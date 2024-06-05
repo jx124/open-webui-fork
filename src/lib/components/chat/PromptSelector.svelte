@@ -9,8 +9,6 @@
 	export let disabled = false;
 
 	$: promptTitle = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.title ?? $i18n.t('Prompt');
-	$: console.log("PromptSelector prompt from $prompts: ", $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content);
-	
 </script>
 
 <div class="flex flex-col w-full items-center md:items-start">
