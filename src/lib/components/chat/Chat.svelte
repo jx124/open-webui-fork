@@ -317,7 +317,7 @@
 
 		if (selectedModels.includes('')) {
 			toast.error($i18n.t('Model not selected'));
-		} else if (!selectedPromptCommand) {
+		} else if (!evaluatedChat && !selectedPromptCommand) {
 			toast.error($i18n.t('Prompt not selected'));
 		} else if (messages.length != 0 && messages.at(-1).done != true) {
 			// Response not done
@@ -1260,7 +1260,7 @@
 		await tick();
 		
 		await sendPrompt(combinedMessages, userMessageId);
-		await goto("/c/" + chat.id);
+		window.history.pushState(history.state, '', `/c/${chat.id}`);
 	}
 </script>
 
