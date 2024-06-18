@@ -167,21 +167,23 @@
 					</div>
 					<div class=" self-center">{$i18n.t('Interface')}</div>
 				</button>
-
-				<button
-					class="px-2.5 py-2.5 min-w-fit rounded-lg flex-1 md:flex-none flex text-right transition {selectedTab ===
-					'personalization'
-						? 'bg-gray-200 dark:bg-gray-700'
-						: ' hover:bg-gray-300 dark:hover:bg-gray-800'}"
-					on:click={() => {
-						selectedTab = 'personalization';
-					}}
-				>
-					<div class=" self-center mr-2">
-						<User />
-					</div>
-					<div class=" self-center">{$i18n.t('Personalization')}</div>
-				</button>
+				
+				{#if $user?.role === 'admin'}
+					<button
+						class="px-2.5 py-2.5 min-w-fit rounded-lg flex-1 md:flex-none flex text-right transition {selectedTab ===
+						'personalization'
+							? 'bg-gray-200 dark:bg-gray-700'
+							: ' hover:bg-gray-300 dark:hover:bg-gray-800'}"
+						on:click={() => {
+							selectedTab = 'personalization';
+						}}
+					>
+						<div class=" self-center mr-2">
+							<User />
+						</div>
+						<div class=" self-center">{$i18n.t('Personalization')}</div>
+					</button>
+				{/if}
 
 				<button
 					class="px-2.5 py-2.5 min-w-fit rounded-lg flex-1 md:flex-none flex text-right transition {selectedTab ===
