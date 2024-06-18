@@ -278,77 +278,78 @@
 			</div>
 		</div>
 
-		<hr class=" dark:border-gray-700" />
+		{#if $user?.role === 'admin'}
 
-		<div>
-			<div class=" mb-2.5 text-sm font-medium flex">
-				<div class=" mr-1">{$i18n.t('Set Task Model')}</div>
-				<Tooltip
-					content={$i18n.t(
-						'A task model is used when performing tasks such as generating titles for chats and web search queries'
-					)}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-						class="w-5 h-5"
+			<hr class=" dark:border-gray-700" />
+
+			<div>
+				<div class=" mb-2.5 text-sm font-medium flex">
+					<div class=" mr-1">{$i18n.t('Set Task Model')}</div>
+					<Tooltip
+						content={$i18n.t(
+							'A task model is used when performing tasks such as generating titles for chats and web search queries'
+						)}
 					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
-						/>
-					</svg>
-				</Tooltip>
-			</div>
-			<div class="flex w-full gap-2 pr-2">
-				<div class="flex-1">
-					<div class=" text-xs mb-1">Local Models</div>
-					<select
-						class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
-						bind:value={titleAutoGenerateModel}
-						placeholder={$i18n.t('Select a model')}
-					>
-						<option value="" selected>{$i18n.t('Current Model')}</option>
-						{#each $models.filter((m) => m.owned_by === 'ollama') as model}
-							<option value={model.id} class="bg-gray-100 dark:bg-gray-700">
-								{model.name}
-							</option>
-						{/each}
-					</select>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="1.5"
+							stroke="currentColor"
+							class="w-5 h-5"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+							/>
+						</svg>
+					</Tooltip>
+				</div>
+				<div class="flex w-full gap-2 pr-2">
+					<div class="flex-1">
+						<div class=" text-xs mb-1">Local Models</div>
+						<select
+							class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
+							bind:value={titleAutoGenerateModel}
+							placeholder={$i18n.t('Select a model')}
+						>
+							<option value="" selected>{$i18n.t('Current Model')}</option>
+							{#each $models.filter((m) => m.owned_by === 'ollama') as model}
+								<option value={model.id} class="bg-gray-100 dark:bg-gray-700">
+									{model.name}
+								</option>
+							{/each}
+						</select>
+					</div>
+
+					<div class="flex-1">
+						<div class=" text-xs mb-1">External Models</div>
+						<select
+							class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
+							bind:value={titleAutoGenerateModelExternal}
+							placeholder={$i18n.t('Select a model')}
+						>
+							<option value="" selected>{$i18n.t('Current Model')}</option>
+							{#each $models as model}
+								<option value={model.id} class="bg-gray-100 dark:bg-gray-700">
+									{model.name}
+								</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
-				<div class="flex-1">
-					<div class=" text-xs mb-1">External Models</div>
-					<select
-						class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
-						bind:value={titleAutoGenerateModelExternal}
-						placeholder={$i18n.t('Select a model')}
-					>
-						<option value="" selected>{$i18n.t('Current Model')}</option>
-						{#each $models as model}
-							<option value={model.id} class="bg-gray-100 dark:bg-gray-700">
-								{model.name}
-							</option>
-						{/each}
-					</select>
+				<div class="mt-3 mr-2">
+					<div class=" mb-2.5 text-sm font-medium">{$i18n.t('Title Generation Prompt')}</div>
+					<textarea
+						bind:value={titleGenerationPrompt}
+						class="w-full rounded-lg p-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none resize-none"
+						rows="3"
+					/>
 				</div>
 			</div>
 
-			<div class="mt-3 mr-2">
-				<div class=" mb-2.5 text-sm font-medium">{$i18n.t('Title Generation Prompt')}</div>
-				<textarea
-					bind:value={titleGenerationPrompt}
-					class="w-full rounded-lg p-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none resize-none"
-					rows="3"
-				/>
-			</div>
-		</div>
-
-		{#if $user.role === 'admin'}
 			<hr class=" dark:border-gray-700" />
 
 			<div class=" space-y-3 pr-1.5">
