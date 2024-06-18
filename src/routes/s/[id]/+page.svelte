@@ -11,9 +11,8 @@
 	import { getChatByShareId } from '$lib/apis/chats';
 
 	import Messages from '$lib/components/chat/Messages.svelte';
-	import Navbar from '$lib/components/layout/Navbar.svelte';
+	import DownloadChatDropdown from '$lib/components/chat/DownloadChatDropdown.svelte';
 	import { getUserById } from '$lib/apis/users';
-	import { error } from '@sveltejs/kit';
 	import { getModels } from '$lib/apis';
 
 	const i18n = getContext('i18n');
@@ -129,8 +128,12 @@
 		<div class="flex flex-col flex-auto justify-center py-8">
 			<div class="px-3 w-full max-w-5xl mx-auto">
 				<div>
-					<div class=" text-3xl font-semibold line-clamp-1">
-						{title}
+					<div class="flex flex-row justify-between">
+						<div class=" text-3xl font-semibold line-clamp-1">
+							{title}
+						</div>
+
+						<DownloadChatDropdown {chat} />
 					</div>
 
 					<div class=" mt-1 text-gray-400">
