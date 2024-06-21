@@ -86,7 +86,7 @@
 						{/if}
 					{:else}
 						<div class=" font-medium text-gray-400 dark:text-gray-500">
-							{$i18n.t('How can I help you today?')}
+							Select a model and service user profile under "Prompt" to start chatting.
 						</div>
 					{/if}
 				</div>
