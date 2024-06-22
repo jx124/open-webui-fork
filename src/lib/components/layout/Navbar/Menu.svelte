@@ -2,16 +2,12 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { getContext } from 'svelte';
 
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
-
-	import { showSettings } from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import Tags from '$lib/components/chat/Tags.svelte';
 
-	import { downloadChatAsPDF } from '$lib/apis/utils';
+	import { downloadJSONExport, downloadPdf, downloadTxt } from '$lib/utils';
 
 	const i18n = getContext('i18n');
 
@@ -23,53 +19,6 @@
 
 	export let chat;
 	export let onClose: Function = () => {};
-
-	const downloadTxt = async () => {
-		const _chat = chat.chat;
-		console.log('download', chat);
-
-		const chatText = _chat.messages.reduce((a, message, i, arr) => {
-			return `${a}### ${message.role.toUpperCase()}\n${message.content}\n\n`;
-		}, '');
-
-		let blob = new Blob([chatText], {
-			type: 'text/plain'
-		});
-
-		saveAs(blob, `chat-${_chat.title}.txt`);
-	};
-
-	const downloadPdf = async () => {
-		const _chat = chat.chat;
-		console.log('download', chat);
-
-		const blob = await downloadChatAsPDF(_chat);
-
-		// Create a URL for the blob
-		const url = window.URL.createObjectURL(blob);
-
-		// Create a link element to trigger the download
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `chat-${_chat.title}.pdf`;
-
-		// Append the link to the body and click it programmatically
-		document.body.appendChild(a);
-		a.click();
-
-		// Remove the link from the body
-		document.body.removeChild(a);
-
-		// Revoke the URL to release memory
-		window.URL.revokeObjectURL(url);
-	};
-
-	const downloadJSONExport = async () => {
-		let blob = new Blob([JSON.stringify([chat])], {
-			type: 'application/json'
-		});
-		saveAs(blob, `chat-export-${Date.now()}.json`);
-	};
 </script>
 
 <Dropdown
@@ -174,7 +123,7 @@
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 						on:click={() => {
-							downloadJSONExport();
+							downloadJSONExport(chat);
 						}}
 					>
 						<div class="flex items-center line-clamp-1">{$i18n.t('Export chat (.json)')}</div>
@@ -182,7 +131,7 @@
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 						on:click={() => {
-							downloadTxt();
+							downloadTxt(chat);
 						}}
 					>
 						<div class="flex items-center line-clamp-1">{$i18n.t('Plain text (.txt)')}</div>
@@ -191,7 +140,7 @@
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 						on:click={() => {
-							downloadPdf();
+							downloadPdf(chat);
 						}}
 					>
 						<div class="flex items-center line-clamp-1">{$i18n.t('PDF document (.pdf)')}</div>
