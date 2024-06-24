@@ -126,6 +126,7 @@ type Prompt = {
 	title: string;
 	content: string;
 	timestamp: number;
+	is_visible: boolean;
 };
 
 type Config = {

@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import sha256 from 'js-sha256';
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
+import { downloadChatAsPDF } from '$lib/apis/utils';
 
 //////////////////////////
 // Helper functions
@@ -590,3 +593,77 @@ export const generateEvalSystemPrompt = (selectedEvalMethod: string, selectedEva
 
 	return evalSystemPrompt;
 }
+
+
+export const downloadTxt = async (chat) => {
+	const _chat = chat.chat;
+	console.log('download', chat);
+
+	if (_chat.evaluatedChat !== null) {
+		// Remove first message containing convo history since it is an evaluation
+		_chat.messages.shift();
+	}
+
+	const chatText = _chat.messages.reduce((a, message) => {
+		// Rename role to reduce confusion
+		const newRole = message.role === "user" 
+			? "YOU" 
+			: _chat.evaluatedChat === null 
+			? "SERVICE USER"
+			: "EVALUATION";
+
+		return `${a}### ${newRole}\n${message.content}\n\n`;
+	}, '');
+
+	const blob = new Blob([chatText], {
+		type: 'text/plain'
+	});
+
+	saveAs(blob, `chat-${_chat.title}.txt`);
+};
+
+export const downloadPdf = async (chat) => {
+	const _chat = chat.chat;
+	console.log('download', chat);
+
+	if (_chat.evaluatedChat !== null) {
+		// Remove first message containing convo history since it is an evaluation
+		_chat.messages.shift();
+	}
+
+	_chat.messages.forEach((message) => {
+		// Rename role to reduce confusion
+		message.role = message.role === "user" 
+			? "YOU" 
+			: _chat.evaluatedChat === null 
+			? "SERVICE USER"
+			: "EVALUATION";
+	});
+
+	const blob = await downloadChatAsPDF(_chat);
+
+	// Create a URL for the blob
+	const url = window.URL.createObjectURL(blob);
+
+	// Create a link element to trigger the download
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `chat-${_chat.title}.pdf`;
+
+	// Append the link to the body and click it programmatically
+	document.body.appendChild(a);
+	a.click();
+
+	// Remove the link from the body
+	document.body.removeChild(a);
+
+	// Revoke the URL to release memory
+	window.URL.revokeObjectURL(url);
+};
+
+export const downloadJSONExport = async (chat) => {
+	let blob = new Blob([JSON.stringify([chat])], {
+		type: 'application/json'
+	});
+	saveAs(blob, `chat-export-${Date.now()}.json`);
+};

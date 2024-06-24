@@ -19,12 +19,13 @@
 	let title = '';
 	let command = '';
 	let content = '';
+	let isVisible = true;
 
 	const updateHandler = async () => {
 		loading = true;
 
 		if (validateCommandString(command)) {
-			const prompt = await updatePromptByCommand(localStorage.token, command, title, content).catch(
+			const prompt = await updatePromptByCommand(localStorage.token, command, title, content, isVisible).catch(
 				(error) => {
 					toast.error(error);
 					return null;
@@ -66,6 +67,7 @@
 				await tick();
 				command = prompt.command.slice(1);
 				content = prompt.content;
+				isVisible = prompt.is_visible;
 			} else {
 				goto('/workspace/prompts');
 			}
@@ -183,6 +185,19 @@
 					{$i18n.t('variable to have them replaced with clipboard content.')}
 				</div>
 			</div>
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Prompt Visibility</div>
+
+			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+				<input
+					type="checkbox"
+					on:change={() => isVisible = !isVisible}
+					checked={isVisible}
+				>
+				Make prompt visible to other users
+			</label>
 		</div>
 
 		<div class="my-2 flex justify-end">
