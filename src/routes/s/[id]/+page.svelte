@@ -29,6 +29,7 @@
 
 	let chat = null;
 	let user = null;
+	let evaluatedChat: null | string = null;
 
 	let title = '';
 	let files = [];
@@ -96,6 +97,7 @@
 						? chatContent.history
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
+				evaluatedChat = chatContent.evaluatedChat;
 
 				autoScroll = true;
 				await tick();
@@ -156,6 +158,7 @@
 							bind:history
 							bind:messages
 							bind:autoScroll
+							bind:evaluatedChat
 							bottomPadding={files.length > 0}
 							sendPrompt={() => {}}
 							continueGeneration={() => {}}
