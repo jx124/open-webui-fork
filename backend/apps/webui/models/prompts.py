@@ -22,6 +22,7 @@ class Prompt(Model):
     title = TextField()
     content = TextField()
     timestamp = BigIntegerField()
+    is_visible = BooleanField(default=True)
 
     class Meta:
         database = DB
@@ -33,7 +34,7 @@ class PromptModel(BaseModel):
     title: str
     content: str
     timestamp: int  # timestamp in epoch
-
+    is_visible: bool   # whether prompt is visible to others
 
 ####################
 # Forms
@@ -44,6 +45,7 @@ class PromptForm(BaseModel):
     command: str
     title: str
     content: str
+    is_visible: bool
 
 
 class PromptsTable:
@@ -62,6 +64,7 @@ class PromptsTable:
                 "title": form_data.title,
                 "content": form_data.content,
                 "timestamp": int(time.time()),
+                "is_visible": form_data.is_visible
             }
         )
 
@@ -74,40 +77,44 @@ class PromptsTable:
         except:
             return None
 
-    def get_prompt_by_command(self, command: str) -> Optional[PromptModel]:
+    def get_prompt_by_command(self, user_id: str, command: str) -> Optional[PromptModel]:
         try:
             prompt = Prompt.get(Prompt.command == command)
-            return PromptModel(**model_to_dict(prompt))
+            return PromptModel(**model_to_dict(prompt)).where((Prompt.is_visible == True) | (Prompt.user_id == user_id))
         except:
             return None
 
-    def get_prompts(self) -> List[PromptModel]:
+    def get_prompts(self, user_id: str) -> List[PromptModel]:
         return [
             PromptModel(**model_to_dict(prompt))
-            for prompt in Prompt.select()
+            for prompt in Prompt.select().where((Prompt.is_visible == True) | (Prompt.user_id == user_id))
             # .limit(limit).offset(skip)
         ]
 
     def update_prompt_by_command(
-        self, command: str, form_data: PromptForm
+        self, user_id: str, command: str, form_data: PromptForm
     ) -> Optional[PromptModel]:
         try:
             query = Prompt.update(
                 title=form_data.title,
                 content=form_data.content,
                 timestamp=int(time.time()),
-            ).where(Prompt.command == command)
+                is_visible=form_data.is_visible
+            ).where(Prompt.command == command, (Prompt.is_visible == True) | (Prompt.user_id == user_id))
 
             query.execute()
 
-            prompt = Prompt.get(Prompt.command == command)
+            prompt = Prompt.get(Prompt.command == command, Prompt.user_id == user_id)
             return PromptModel(**model_to_dict(prompt))
         except:
             return None
 
-    def delete_prompt_by_command(self, command: str) -> bool:
+    def delete_prompt_by_command(self, user_id: str, command: str) -> bool:
         try:
-            query = Prompt.delete().where((Prompt.command == command))
+            query = Prompt.delete().where(
+                Prompt.command == command,
+                (Prompt.is_visible == True) | (Prompt.user_id == user_id)
+            )
             query.execute()  # Remove the rows, return number of rows removed.
 
             return True
