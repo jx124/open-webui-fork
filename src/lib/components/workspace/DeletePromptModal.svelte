@@ -9,7 +9,7 @@
 <Modal bind:show size="sm">
 	<div class="text-gray-700 dark:text-gray-100">
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4">
-			<div class=" text-lg font-medium self-center">Confirm delete</div>
+			<div class=" text-lg font-medium self-center">Confirm Deletion</div>
 			<button
 				class="self-center"
 				on:click={() => {
@@ -30,7 +30,7 @@
 		</div>
 		
 		<div class="flex flex-col pb-2 px-5">
-			<div class="self-center text-s font-medium mr-auto">Are you sure you want to delete {selectedPromptCommand}?</div>
+			<div class="self-center text-sm font-normal mr-auto">Are you sure you want to delete {selectedPromptCommand}?</div>
 		</div>
 		
 		<div class="flex flex-row-reverse px-5 pb-4">

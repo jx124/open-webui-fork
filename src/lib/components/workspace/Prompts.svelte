@@ -91,6 +91,9 @@
 						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
 							{prompt.title}
 						</div>
+						<div class="text-xs text-gray-400 dark:text-gray-500">
+							Visibility: {prompt.is_visible ? "Everyone" : "Only You"}
+						</div>
 					</div>
 				</a>
 			</div>
