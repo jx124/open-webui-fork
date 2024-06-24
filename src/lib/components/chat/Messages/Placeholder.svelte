@@ -85,8 +85,9 @@
 							</div>
 						{/if}
 					{:else}
-						<div class=" font-medium text-gray-400 dark:text-gray-500">
-							Select a model and service user profile under "Prompt" to start chatting.
+						<div class="text-xl font-medium text-gray-400 dark:text-gray-500">
+							Select a model and service user profile under "Prompt" to begin chatting with the simulated 
+							service user through text.
 						</div>
 					{/if}
 				</div>
