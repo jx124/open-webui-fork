@@ -30,7 +30,7 @@ async def get_prompts(user=Depends(get_current_user)):
 
 @router.post("/create", response_model=Optional[PromptModel])
 async def create_new_prompt(form_data: PromptForm, user=Depends(get_admin_user)):
-    prompt = Prompts.get_prompt_by_command(user.id, form_data.command)
+    prompt = Prompts.get_prompt_by_command("", form_data.command)
     if prompt == None:
         prompt = Prompts.insert_new_prompt(user.id, form_data)
 
@@ -42,7 +42,7 @@ async def create_new_prompt(form_data: PromptForm, user=Depends(get_admin_user))
         )
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail=ERROR_MESSAGES.COMMAND_TAKEN,
+        detail=ERROR_MESSAGES.COMMAND_TAKEN(form_data.command),
     )
 
 

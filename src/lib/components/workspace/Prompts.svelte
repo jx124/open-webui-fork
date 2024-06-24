@@ -3,36 +3,22 @@
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
-	import { onMount, getContext } from 'svelte';
+	import { getContext } from 'svelte';
 	import { WEBUI_NAME, prompts } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
-	import { error } from '@sveltejs/kit';
-	import { goto } from '$app/navigation';
+	import DeletePromptModal from './DeletePromptModal.svelte';
 
 	const i18n = getContext('i18n');
 
 	let importFiles = '';
 	let query = '';
 	let promptsImportInputElement: HTMLInputElement;
-	const sharePrompt = async (prompt) => {
-		toast.success($i18n.t('Redirecting you to OpenWebUI Community'));
 
-		const url = 'https://openwebui.com';
-
-		const tab = await window.open(`${url}/prompts/create`, '_blank');
-		window.addEventListener(
-			'message',
-			(event) => {
-				if (event.origin !== url) return;
-				if (event.data === 'loaded') {
-					tab.postMessage(JSON.stringify(prompt), '*');
-				}
-			},
-			false
-		);
-	};
+	let showDeleteModal = false;
+	let selectedPromptCommand: string;
 
 	const deletePrompt = async (command) => {
+		showDeleteModal = false;
 		await deletePromptByCommand(localStorage.token, command);
 		await prompts.set(await getPrompts(localStorage.token));
 	};
@@ -43,6 +29,8 @@
 		{$i18n.t('Prompts')} | {$WEBUI_NAME}
 	</title>
 </svelte:head>
+
+<DeletePromptModal bind:show={showDeleteModal} bind:selectedPromptCommand deleteHandler={deletePrompt}/>
 
 <div class="mb-3 flex justify-between items-center">
 	<div class=" text-lg font-semibold self-center">{$i18n.t('Prompts')}</div>
@@ -132,55 +120,8 @@
 					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 					type="button"
 					on:click={() => {
-						// console.log(modelfile);
-						sessionStorage.prompt = JSON.stringify(prompt);
-						goto('/workspace/prompts/create');
-					}}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-						class="w-4 h-4"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-						/>
-					</svg>
-				</button>
-
-				<button
-					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-					type="button"
-					on:click={() => {
-						sharePrompt(prompt);
-					}}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-						class="w-4 h-4"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"
-						/>
-					</svg>
-				</button>
-
-				<button
-					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-					type="button"
-					on:click={() => {
-						deletePrompt(prompt.command);
+						showDeleteModal = true;
+						selectedPromptCommand = prompt.command;
 					}}
 				>
 					<svg
@@ -225,7 +166,8 @@
 							localStorage.token,
 							prompt.command.charAt(0) === '/' ? prompt.command.slice(1) : prompt.command,
 							prompt.title,
-							prompt.content
+							prompt.content,
+							prompt.is_visible
 						).catch((error) => {
 							toast.error(error);
 							return null;
@@ -290,14 +232,6 @@
 				</svg>
 			</div>
 		</button>
-
-		<!-- <button
-						on:click={() => {
-							loadDefaultPrompts();
-						}}
-					>
-						dd
-					</button> -->
 	</div>
 </div>
 

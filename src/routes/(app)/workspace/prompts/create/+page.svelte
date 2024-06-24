@@ -18,6 +18,7 @@
 	let title = '';
 	let command = '';
 	let content = '';
+	let isVisible = true;
 
 	$: command = title !== '' ? `${title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
@@ -25,7 +26,7 @@
 		loading = true;
 
 		if (validateCommandString(command)) {
-			const prompt = await createNewPrompt(localStorage.token, command, title, content).catch(
+			const prompt = await createNewPrompt(localStorage.token, command, title, content, isVisible).catch(
 				(error) => {
 					toast.error(error);
 
@@ -69,6 +70,7 @@
 			await tick();
 			content = prompt.content;
 			command = prompt.command;
+			isVisible = prompt.is_visible;
 		});
 
 		if (window.opener ?? false) {
@@ -83,6 +85,7 @@
 			await tick();
 			content = prompt.content;
 			command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
+			isVisible = prompt.is_visible;
 
 			sessionStorage.removeItem('prompt');
 		}
@@ -196,6 +199,19 @@
 					{$i18n.t('variable to have them replaced with clipboard content.')}
 				</div>
 			</div>
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Prompt Visibility</div>
+
+			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+				<input
+					type="checkbox"
+					on:change={() => isVisible = !isVisible}
+					checked={isVisible}
+				>
+				Make prompt visible to other users
+			</label>
 		</div>
 
 		<div class="my-2 flex justify-end">

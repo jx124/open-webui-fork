@@ -79,8 +79,14 @@ class PromptsTable:
 
     def get_prompt_by_command(self, user_id: str, command: str) -> Optional[PromptModel]:
         try:
-            prompt = Prompt.get(Prompt.command == command)
-            return PromptModel(**model_to_dict(prompt)).where((Prompt.is_visible == True) | (Prompt.user_id == user_id))
+            prompt = None
+            if (user_id):
+                prompt = Prompt.get(Prompt.command == command).where((Prompt.is_visible == True) | (Prompt.user_id == user_id))
+            else:
+                # If no user_id is provided, return all prompts
+                # This is needed to prevent collisions when creating prompts
+                prompt = Prompt.get(Prompt.command == command)
+            return PromptModel(**model_to_dict(prompt))
         except:
             return None
 

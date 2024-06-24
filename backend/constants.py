@@ -29,7 +29,7 @@ class ERROR_MESSAGES(str, Enum):
     USERNAME_TAKEN = (
         "Uh-oh! This username is already registered. Please choose another username."
     )
-    COMMAND_TAKEN = "Uh-oh! This command is already registered. Please choose another command string."
+    COMMAND_TAKEN = lambda cmd="": f"Uh-oh! The command {cmd} is already registered. Please choose another command string."
     FILE_EXISTS = "Uh-oh! This file is already registered. Please choose another file."
 
     MODEL_ID_TAKEN = "Uh-oh! This model id is already registered. Please choose another model id string."
