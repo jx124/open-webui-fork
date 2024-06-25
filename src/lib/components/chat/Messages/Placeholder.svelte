@@ -59,33 +59,23 @@
 					{$i18n.t('Hello, {{name}}', { name: $user.name })}
 				</div>
 
-				<div in:fade={{ duration: 200, delay: 200 }}>
-					{#if models[selectedModelIdx]?.info?.meta?.description ?? null}
-						<div class="mt-0.5 text-base font-normal text-gray-500 dark:text-gray-400 line-clamp-3">
-							{models[selectedModelIdx]?.info?.meta?.description}
-						</div>
-						{#if models[selectedModelIdx]?.info?.meta?.user}
-							<div class="mt-0.5 text-sm font-normal text-gray-400 dark:text-gray-500">
-								By
-								{#if models[selectedModelIdx]?.info?.meta?.user.community}
-									<a
-										href="https://openwebui.com/m/{models[selectedModelIdx]?.info?.meta?.user
-											.username}"
-										>{models[selectedModelIdx]?.info?.meta?.user.name
-											? models[selectedModelIdx]?.info?.meta?.user.name
-											: `@${models[selectedModelIdx]?.info?.meta?.user.username}`}</a
-									>
-								{:else}
-									{models[selectedModelIdx]?.info?.meta?.user.name}
-								{/if}
-							</div>
-						{/if}
-					{:else}
-						<div class="text-xl font-medium text-gray-400 dark:text-gray-500">
-							Select a model and service user profile under "Prompt" to begin chatting with the simulated 
-							service user through text.
-						</div>
-					{/if}
+				<div class="flex flex-col" in:fade={{ duration: 200, delay: 200 }}>
+					<div class="text-xl font-normal text-gray-600 dark:text-gray-500 pb-2">
+						Select a model and service user profile under "Prompt" to begin chatting with the simulated 
+						service user through text.
+					</div>
+
+					<div class="text-xl font-normal text-gray-600 dark:text-gray-500 pb-2">
+						Our tool, based on Egan's Skilled Helper Model, is designed to help you practice your skills 
+						through role-playing with a simulated client. Egan's model comprises three stages: understanding 
+						the current situation (Stage 1), envisioning a better future (Stage 2), and developing an action 
+						plan (Stage 3).
+					</div>
+
+					<div class="text-xl font-bold text-gray-600 dark:text-gray-500">
+						This tool focuses on Stage 1, where the goal is to understand the client's current situation 
+						through active listening and exploration. The central question here is, "What's going on?"
+					</div>
 				</div>
 			</div>
 		</div>
