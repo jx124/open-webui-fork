@@ -32,7 +32,8 @@
 
 	let params = {};
 	let capabilities = {
-		vision: true
+		vision: false,
+		usage: true
 	};
 
 	let info = {

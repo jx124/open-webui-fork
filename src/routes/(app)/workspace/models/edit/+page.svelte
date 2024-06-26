@@ -56,7 +56,8 @@
 	let params = {};
 
 	let capabilities = {
-		vision: true
+		vision: false,
+		usage: true
 	};
 
 	const updateHandler = async () => {
@@ -116,7 +117,7 @@
 				params.stop = params?.stop ? (params?.stop ?? []).join(',') : null;
 
 				if (model?.owned_by === 'openai') {
-					capabilities.usage = false;
+					capabilities.usage = true;
 				}
 
 				if (model?.info?.meta?.capabilities) {

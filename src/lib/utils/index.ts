@@ -3,6 +3,7 @@ import sha256 from 'js-sha256';
 import fileSaver from 'file-saver';
 const { saveAs } = fileSaver;
 import { downloadChatAsPDF } from '$lib/apis/utils';
+import type { ResponseUsage } from '$lib/apis/streaming';
 
 //////////////////////////
 // Helper functions
@@ -666,4 +667,24 @@ export const downloadJSONExport = async (chat) => {
 		type: 'application/json'
 	});
 	saveAs(blob, `chat-export-${Date.now()}.json`);
+};
+
+export const sumTokenUsage = (history) => {
+	const messages = history.messages;
+	const result: ResponseUsage = {
+		prompt_tokens: 0,
+		completion_tokens: 0,
+		total_tokens: 0,
+	};
+
+	for (const index in messages) {
+		const message = messages[index];
+
+		if (message.info) {
+			result.prompt_tokens += message.info.prompt_tokens;
+			result.completion_tokens += message.info.completion_tokens;
+			result.total_tokens += message.info.total_tokens;
+		}
+	}
+	return result;
 };

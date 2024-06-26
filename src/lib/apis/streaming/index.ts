@@ -1,5 +1,6 @@
 import { EventSourceParserStream } from 'eventsource-parser/stream';
 import type { ParsedEvent } from 'eventsource-parser';
+export type { ResponseUsage };
 
 type TextStreamUpdate = {
 	done: boolean;

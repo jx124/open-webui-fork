@@ -6,7 +6,7 @@
 	import dayjs from 'dayjs';
 
 	import { settings, chatId, WEBUI_NAME, models } from '$lib/stores';
-	import { convertMessagesToHistory } from '$lib/utils';
+	import { convertMessagesToHistory, sumTokenUsage } from '$lib/utils';
 
 	import { getChatByShareId } from '$lib/apis/chats';
 
@@ -14,6 +14,7 @@
 	import DownloadChatDropdown from '$lib/components/chat/DownloadChatDropdown.svelte';
 	import { getUserById } from '$lib/apis/users';
 	import { getModels } from '$lib/apis';
+	import type { ResponseUsage } from '$lib/apis/streaming';
 
 	const i18n = getContext('i18n');
 
@@ -38,6 +39,12 @@
 	let history = {
 		messages: {},
 		currentId: null
+	};
+
+	let tokenUsage: ResponseUsage = {
+		prompt_tokens: 0,
+		completion_tokens: 0,
+		total_tokens: 0,
 	};
 
 	$: if (history.currentId !== null) {
@@ -98,6 +105,8 @@
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
 				evaluatedChat = chatContent.evaluatedChat;
+
+				tokenUsage = sumTokenUsage(history);
 
 				autoScroll = true;
 				await tick();

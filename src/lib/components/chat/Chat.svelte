@@ -26,7 +26,8 @@
 		copyToClipboard,
 		generateEvalSystemPrompt,
 		promptTemplate,
-		splitStream
+		splitStream,
+		sumTokenUsage
 	} from '$lib/utils';
 
 	import { generateChatCompletion } from '$lib/apis/ollama';
@@ -51,6 +52,7 @@
 	import Navbar from '$lib/components/layout/Navbar.svelte';
 	import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
+	import type { ResponseUsage } from '$lib/apis/streaming';
 	import { queryMemory } from '$lib/apis/memories';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
@@ -93,6 +95,12 @@
 	let showEvaluationModal = false;
 	let selectedEvalMethod: string;
 	let selectedEvalSkills: string[];
+
+	let tokenUsage: ResponseUsage = {
+		prompt_tokens: 0,
+		completion_tokens: 0,
+		total_tokens: 0,
+	};
 
 	$: if (history.currentId !== null) {
 		let _messages = [];
@@ -215,6 +223,8 @@
 				title = chatContent.title;
 				evaluatedChat = chatContent.evaluatedChat;
 				selectedPromptCommand = chatContent.systemCommand;
+
+				tokenUsage = sumTokenUsage(history);
 
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
@@ -977,7 +987,13 @@
 
 				if (lastUsage) {
 					responseMessage.info = { ...lastUsage, openai: true };
+					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
+					tokenUsage.completion_tokens += lastUsage.completion_tokens;
+					tokenUsage.total_tokens += lastUsage.total_tokens;
 				}
+
+				// save response message back into history
+				history.messages[responseMessageId] = responseMessage;
 
 				if ($chatId == _chatId) {
 					if ($settings.saveChatHistory ?? true) {
