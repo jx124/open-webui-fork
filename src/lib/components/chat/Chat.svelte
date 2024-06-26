@@ -161,6 +161,11 @@
 			messages: {},
 			currentId: null
 		};
+		tokenUsage = {
+			prompt_tokens: 0,
+			completion_tokens: 0,
+			total_tokens: 0,
+		};
 
 		if ($page.url.searchParams.get('models')) {
 			selectedModels = $page.url.searchParams.get('models')?.split(',');
@@ -224,7 +229,7 @@
 				evaluatedChat = chatContent.evaluatedChat;
 				selectedPromptCommand = chatContent.systemCommand;
 
-				tokenUsage = sumTokenUsage(history);
+				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
 
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
@@ -388,7 +393,12 @@
 						history: history,
 						tags: [],
 						timestamp: Date.now(),
-						evaluatedChat: null
+						evaluatedChat: null,
+						usage: {
+							prompt_tokens: 0,
+							completion_tokens: 0,
+							total_tokens: 0,
+						},
 					});
 					await chats.set(await getChatList(localStorage.token));
 					await chatId.set(chat.id);
@@ -1000,7 +1010,8 @@
 						chat = await updateChatById(localStorage.token, _chatId, {
 							models: selectedModels,
 							messages: messages,
-							history: history
+							history: history,
+							usage: tokenUsage
 						});
 						await chats.set(await getChatList(localStorage.token));
 					}
@@ -1220,7 +1231,12 @@
 		history = {
 			messages: {},
 			currentId: null
-		}
+		};
+		tokenUsage = {
+			prompt_tokens: 0,
+			completion_tokens: 0,
+			total_tokens: 0,
+		};
 		
 		let combinedMessages = messages
 			.map((message) => (message.role === "user" ? "Social Worker" : "Client") + ': "' + message.content + '"')
@@ -1265,6 +1281,11 @@
 				history: history,
 				timestamp: Date.now(),
 				evaluatedChat: chat.id,
+				usage: {
+					prompt_tokens: 0,
+					completion_tokens: 0,
+					total_tokens: 0,
+				},
 			});
 			
 			await chats.set(await getChatList(localStorage.token));
