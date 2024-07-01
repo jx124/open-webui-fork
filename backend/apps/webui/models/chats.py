@@ -70,6 +70,12 @@ class ChatResponse(BaseModel):
 class ChatTitleIdResponse(BaseModel):
     id: str
     title: str
+    updated_at: int
+    created_at: int
+
+class ChatTitleIdTokenCountResponse(BaseModel):
+    id: str
+    title: str
     token_count: int
     updated_at: int
     created_at: int
