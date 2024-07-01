@@ -217,6 +217,15 @@ class UsersTable:
             return user.api_key
         except:
             return None
+        
+    def update_user_token_count_by_id(self, id: str, count: int) -> bool:
+        try:
+            query = User.update(token_count = User.token_count + count).where(User.id == id)
+            result = query.execute()
+
+            return True if result == 1 else False
+        except:
+            return False
 
 
 Users = UsersTable(DB)
