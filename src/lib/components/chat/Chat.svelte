@@ -237,7 +237,6 @@
 					let newPrompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
 					if (newPrompt !== chatContent.system) {
 						chatContent.system = newPrompt;
-						console.log("Updated system prompt in Chat:", chatContent.system);
 					}
 				}
 
@@ -317,6 +316,19 @@
 				};
 			}
 		}
+	};
+
+	// Checks if previous chats have the same title as prompt title, if so, disambiguate with numbers
+	const generateUniqueTitle = (promptCommand: string) => {
+		const promptTitle = $prompts.find((prompt) => prompt.command === promptCommand)?.title ?? "New Chat";
+
+		let sameTitleCount = 1;
+		for (const chat of $chats) {
+			if (chat.title === promptTitle) {
+				sameTitleCount++;
+			}
+		}
+		return sameTitleCount === 1 ? promptTitle : promptTitle + " " + sameTitleCount;
 	};
 
 	//////////////////////////
@@ -832,7 +844,7 @@
 		if (messages.length == 2 && messages.at(1).content !== '') {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = await generateChatTitle(userPrompt);
+				const _title = await generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}
@@ -1034,7 +1046,7 @@
 		if (messages.length == 2) {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = await generateChatTitle(userPrompt);
+				const _title = await generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}
