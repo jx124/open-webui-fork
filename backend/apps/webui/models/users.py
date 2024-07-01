@@ -27,6 +27,8 @@ class User(Model):
     api_key = CharField(null=True, unique=True)
     settings = JSONField(null=True)
 
+    token_count = BigIntegerField(default=0)
+
     class Meta:
         database = DB
 
@@ -51,6 +53,7 @@ class UserModel(BaseModel):
     api_key: Optional[str] = None
     settings: Optional[UserSettings] = None
 
+    token_count: int
 
 ####################
 # Forms

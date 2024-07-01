@@ -476,7 +476,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
         if "text/event-stream" in r.headers.get("Content-Type", ""):
             streaming = True
             return StreamingResponse(
-                r.content,
+                stream_token_counter(r.content, user.id),
                 status_code=r.status,
                 headers=dict(r.headers),
                 background=BackgroundTask(
@@ -485,6 +485,11 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             )
         else:
             response_data = await r.json()
+
+            if response_data is not None and response_data.get("usage"):
+                count = response_data["usage"].get("total_tokens", 0)
+                Users.update_user_token_count_by_id(user.id, count)
+                
             return response_data
     except Exception as e:
         log.exception(e)
@@ -503,3 +508,20 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             if r:
                 r.close()
             await session.close()
+
+async def stream_token_counter(stream, user_id):
+    # reads stream and increments token count if usage found in stream
+    async for line in stream:
+        try:
+            result = None
+            if line.startswith(b"data: "):
+                result = json.loads(line.split(b" ")[1]) # strip "data: " at the front of response
+
+            if result is not None and result.get("usage"):
+                count = result["usage"].get("total_tokens", 0)
+                Users.update_user_token_count_by_id(user_id, count)
+
+        except json.decoder.JSONDecodeError:
+            pass
+        finally:
+            yield line
