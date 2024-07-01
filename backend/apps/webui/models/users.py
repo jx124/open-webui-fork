@@ -53,7 +53,7 @@ class UserModel(BaseModel):
     api_key: Optional[str] = None
     settings: Optional[UserSettings] = None
 
-    token_count: int
+    token_count: int = 0
 
 ####################
 # Forms
@@ -95,6 +95,7 @@ class UsersTable:
                 "last_active_at": int(time.time()),
                 "created_at": int(time.time()),
                 "updated_at": int(time.time()),
+                "token_count": 0
             }
         )
         result = User.create(**user.model_dump())
