@@ -13,7 +13,8 @@
 
 	export let show = false;
 	export let user;
-
+	
+	let chatTokenUsages = {};
 	let chats = [];
 
 	const deleteChatHandler = async (chatId) => {
@@ -30,6 +31,15 @@
 				chats = await getChatListByUserId(localStorage.token, user.id);
 			}
 		})();
+	}
+
+	$: if (chats) {
+		chatTokenUsages = {};
+		for (const chat of chats) {
+			chatTokenUsages[chat.id] = chat.token_count;
+		}
+
+		console.log("chatTokenUsages", chatTokenUsages);
 	}
 </script>
 
@@ -70,7 +80,8 @@
 								>
 									<tr>
 										<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
-										<th scope="col" class="px-3 py-2 hidden md:flex"> {$i18n.t('Created at')} </th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell"> {$i18n.t('Created at')} </th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Tokens Used </th>
 										<th scope="col" class="px-3 py-2 text-right" />
 									</tr>
 								</thead>
@@ -80,7 +91,7 @@
 											class="bg-transparent {idx !== chats.length - 1 &&
 												'border-b'} dark:bg-gray-900 dark:border-gray-850 text-xs"
 										>
-											<td class="px-3 py-1 w-2/3">
+											<td class="px-3 py-1 w-1/2">
 												<a href="/s/{chat.id}" target="_blank">
 													<div class=" underline line-clamp-1">
 														{chat.title}
@@ -88,9 +99,15 @@
 												</a>
 											</td>
 
-											<td class=" px-3 py-1 hidden md:flex h-[2.5rem]">
+											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
 												<div class="my-auto">
 													{dayjs(chat.created_at * 1000).format($i18n.t('MMMM DD, YYYY HH:mm'))}
+												</div>
+											</td>
+
+											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
+												<div class="my-auto">
+													{chatTokenUsages[chat.id]}
 												</div>
 											</td>
 

@@ -383,7 +383,14 @@ export const generateTitle = async (
 		throw error;
 	}
 
-	return res?.choices[0]?.message?.content.replace(/["']/g, '') ?? 'New Chat';
+	return {
+		title: res?.choices[0]?.message?.content.replace(/["']/g, '') ?? 'New Chat',
+		usage: res?.usage ?? {
+			prompt_tokens: 0,
+			completion_tokens: 0,
+			total_tokens: 0,
+		}
+	};
 };
 
 export const generateSearchQuery = async (

@@ -28,6 +28,7 @@
 	let loaded = false;
 	let tab = '';
 	let users = [];
+	let userTokenUsages = {};
 
 	let search = '';
 	let selectedUser = null;
@@ -77,6 +78,11 @@
 			await goto('/');
 		} else {
 			users = await getUsers(localStorage.token);
+			userTokenUsages = {};
+
+			for (const user of users) {
+				userTokenUsages[user.id] = user.token_count;
+			}
 		}
 		loaded = true;
 	});
@@ -171,8 +177,8 @@
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Email')} </th>
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Last Active')} </th>
-
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Created at')} </th>
+					<th scope="col" class="px-3 py-2"> Tokens Used </th>
 
 					<th scope="col" class="px-3 py-2 text-right" />
 				</tr>
@@ -240,21 +246,25 @@
 							{dayjs(user.created_at * 1000).format($i18n.t('MMMM DD, YYYY'))}
 						</td>
 
+						<td class=" px-3 py-2">
+							{userTokenUsages[user.id]}
+						</td>
+
 						<td class="px-3 py-2 text-right">
 							<div class="flex justify-end w-full">
-								{#if user.role !== 'admin'}
-									<Tooltip content={$i18n.t('Chats')}>
-										<button
-											class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
-											on:click={async () => {
-												showUserChatsModal = !showUserChatsModal;
-												selectedUser = user;
-											}}
+								<Tooltip content={$i18n.t('Chats')}>
+									<button
+									class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+									on:click={async () => {
+										showUserChatsModal = !showUserChatsModal;
+										selectedUser = user;
+									}}
 										>
-											<ChatBubbles />
-										</button>
-									</Tooltip>
-
+										<ChatBubbles />
+									</button>
+								</Tooltip>
+								
+								{#if user.role !== 'admin'}
 									<Tooltip content={$i18n.t('Edit User')}>
 										<button
 											class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
@@ -312,8 +322,9 @@
 		</table>
 	</div>
 
-	<div class=" text-gray-500 text-xs mt-2 text-right">
-		ⓘ {$i18n.t("Click on the user role button to change a user's role.")}
+	<div class=" text-gray-500 text-xs mt-2 text-left">
+		ⓘ {$i18n.t("Click on the user role button to change a user's role.")}<br>
+		ⓘ Token counts are estimates and do not include usage before tracking was enabled.
 	</div>
 
 	<Pagination bind:page count={users.length} />

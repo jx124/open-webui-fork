@@ -1142,7 +1142,7 @@
 			const titleModel = $models.find((model) => model.id === titleModelId);
 
 			console.log(titleModel);
-			const title = await generateTitle(
+			const {title, usage} = await generateTitle(
 				localStorage.token,
 				$settings?.title?.prompt ??
 					$i18n.t(
@@ -1155,6 +1155,10 @@
 					? `${OPENAI_API_BASE_URL}`
 					: `${OLLAMA_API_BASE_URL}/v1`
 			);
+
+			tokenUsage.prompt_tokens += usage.prompt_tokens;
+			tokenUsage.completion_tokens += usage.completion_tokens;
+			tokenUsage.total_tokens += usage.total_tokens;
 
 			return title;
 		} else {
@@ -1185,13 +1189,13 @@
 		);
 	};
 
-	const setChatTitle = async (_chatId, _title) => {
+	const setChatTitle = async (_chatId, _title, ) => {
 		if (_chatId === $chatId) {
 			title = _title;
 		}
 
 		if ($settings.saveChatHistory ?? true) {
-			chat = await updateChatById(localStorage.token, _chatId, { title: _title });
+			chat = await updateChatById(localStorage.token, _chatId, { title: _title, usage: tokenUsage });
 			await chats.set(await getChatList(localStorage.token));
 		}
 	};
