@@ -1,9 +1,10 @@
 <script lang="ts">
-	import Modal from '../common/Modal.svelte';
+	import Modal from './common/Modal.svelte';
 
 	export let show: boolean;
-    export let selectedPromptCommand: string;
+    export let deleteMessage: string;
     export let deleteHandler;
+	export let deleteArgs;
 </script>
 
 <Modal bind:show size="sm">
@@ -30,12 +31,12 @@
 		</div>
 		
 		<div class="flex flex-col pb-2 px-5">
-			<div class="self-center text-sm font-normal mr-auto">Are you sure you want to delete {selectedPromptCommand}?</div>
+			<div class="self-center text-sm font-normal mr-auto">Are you sure you want to delete {deleteMessage}?</div>
 		</div>
 		
 		<div class="flex flex-row-reverse px-5 pb-4">
 			<button class="px-4 py-2 bg-red-700 hover:bg-red-800 text-gray-100 transition rounded-lg"
-				on:click={deleteHandler(selectedPromptCommand)}>
+				on:click={deleteHandler(deleteArgs)}>
 				Delete
 			</button>
 		</div>

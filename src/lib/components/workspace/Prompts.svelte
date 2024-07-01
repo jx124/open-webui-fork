@@ -6,7 +6,7 @@
 	import { getContext } from 'svelte';
 	import { WEBUI_NAME, prompts } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
-	import DeletePromptModal from './DeletePromptModal.svelte';
+	import DeleteModal from '../DeleteModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -30,7 +30,10 @@
 	</title>
 </svelte:head>
 
-<DeletePromptModal bind:show={showDeleteModal} bind:selectedPromptCommand deleteHandler={deletePrompt}/>
+<DeleteModal bind:show={showDeleteModal}
+	deleteMessage={selectedPromptCommand}
+	deleteHandler={deletePrompt}
+	deleteArgs={selectedPromptCommand}/>
 
 <div class="mb-3 flex justify-between items-center">
 	<div class=" text-lg font-semibold self-center">{$i18n.t('Prompts')}</div>

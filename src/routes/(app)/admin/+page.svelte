@@ -22,6 +22,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import UserChatsModal from '$lib/components/admin/UserChatsModal.svelte';
 	import AddUserModal from '$lib/components/admin/AddUserModal.svelte';
+	import DeleteModal from '$lib/components/DeleteModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -40,6 +41,8 @@
 
 	let showUserChatsModal = false;
 	let showEditUserModal = false;
+
+	let showDeleteModal = false;
 
 	const updateRoleHandler = async (id, role) => {
 		const res = await updateUserRole(localStorage.token, id, role).catch((error) => {
@@ -64,6 +67,7 @@
 	};
 
 	const deleteUserHandler = async (id) => {
+		showDeleteModal = false;
 		const res = await deleteUserById(localStorage.token, id).catch((error) => {
 			toast.error(error);
 			return null;
@@ -107,6 +111,10 @@
 />
 <UserChatsModal bind:show={showUserChatsModal} user={selectedUser} />
 <SettingsModal bind:show={showSettingsModal} />
+<DeleteModal bind:show={showDeleteModal}
+	deleteMessage={selectedUser?.name}
+	deleteHandler={deleteUserHandler}
+	deleteArgs={selectedUser?.id}/>
 
 {#if loaded}
 	<div class="mt-0.5 mb-3 gap-1 flex flex-col md:flex-row justify-between">
@@ -247,7 +255,7 @@
 						</td>
 
 						<td class=" px-3 py-2">
-							{userTokenUsages[user.id]}
+							{userTokenUsages[user.id] ?? 0}
 						</td>
 
 						<td class="px-3 py-2 text-right">
@@ -294,7 +302,8 @@
 										<button
 											class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 											on:click={async () => {
-												deleteUserHandler(user.id);
+												showDeleteModal = !showDeleteModal;
+												selectedUser = user;
 											}}
 										>
 											<svg
