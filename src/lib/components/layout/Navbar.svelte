@@ -54,9 +54,6 @@
 	} 
 
 	export let showModelSelector = true;
-
-	let showShareChatModal = false;
-	let showDownloadChatModal = false;
 </script>
 
 <nav id="nav" class=" sticky py-2.5 top-0 flex flex-row justify-center z-30">

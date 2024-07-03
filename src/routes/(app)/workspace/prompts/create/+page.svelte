@@ -6,6 +6,7 @@
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { createNewPrompt, getPrompts } from '$lib/apis/prompts';
+	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -19,6 +20,9 @@
 	let command = '';
 	let content = '';
 	let isVisible = true;
+	let additionalInfo = '';
+
+	let showPreviewModal = false;
 
 	$: command = title !== '' ? `${title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
@@ -91,6 +95,8 @@
 		}
 	});
 </script>
+
+<PreviewModal bind:show={showPreviewModal} bind:previewContent={additionalInfo}/>
 
 <div class="w-full max-h-full">
 	<button
@@ -212,6 +218,30 @@
 				>
 				Make prompt visible to other users
 			</label>
+		</div>
+
+		<div class="my-2">
+			<div class="flex w-full justify-between">
+				<div class=" self-center text-sm font-semibold">Additional Information</div>
+			</div>
+
+			<div class="mt-2">
+				<div>
+					<textarea
+						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+						placeholder="Include additional information for the user to refer to in the right sidebar. This supports HTML."
+						rows="6"
+						bind:value={additionalInfo}
+					/>
+				</div>
+				<button class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+					type="button"
+					on:click={() => {
+						showPreviewModal = !showPreviewModal;
+				}}>
+					<div class="self-center text-sm font-medium">Preview HTML</div>
+				</button>
+			</div>
 		</div>
 
 		<div class="my-2 flex justify-end">
