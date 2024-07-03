@@ -143,8 +143,9 @@
 						<div class=" text-3xl font-semibold line-clamp-1">
 							{title}
 						</div>
-
-						<DownloadChatDropdown {chat} />
+						<div class="justify-end">
+							<DownloadChatDropdown {chat} />
+						</div>
 					</div>
 
 					<div class=" mt-1 text-gray-400">

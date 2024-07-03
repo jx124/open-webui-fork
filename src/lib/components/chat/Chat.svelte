@@ -79,7 +79,7 @@
 
 	let webSearchEnabled = false;
 
-	let chat = null;
+	export let chat = null;
 	let tags = [];
 
 	let title = '';
@@ -1334,7 +1334,7 @@
 
 {#if !chatIdProp || (loaded && chatIdProp)}
 	<div
-		class="min-h-screen max-h-screen {$showSidebar
+		class="min-h-[calc(100dvh)] max-h-[calc(100dvh)] {$showSidebar
 			? 'md:max-w-[calc(100%-260px)]'
 			: ''} w-full max-w-full flex flex-col"
 	>
