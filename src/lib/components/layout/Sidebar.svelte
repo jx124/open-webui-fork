@@ -248,12 +248,9 @@
 				draggable="false"
 				on:click={async () => {
 					selectedChatId = null;
+					chatId.set('');
 
-					await goto('/');
-					const newChatButton = document.getElementById('new-chat-button');
 					setTimeout(() => {
-						newChatButton?.click();
-
 						if ($mobile) {
 							showSidebar.set(false);
 						}

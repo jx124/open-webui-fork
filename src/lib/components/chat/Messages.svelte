@@ -244,7 +244,7 @@
 </script>
 
 <div class="h-full flex">
-	{#if messages.length == 0}
+	{#if chatId === ""}
 		<Placeholder
 			modelIds={selectedModels}
 			submitPrompt={async (p) => {

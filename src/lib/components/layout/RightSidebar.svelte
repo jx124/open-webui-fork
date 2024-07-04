@@ -1,12 +1,17 @@
 <script lang="ts">
 	import DownloadChatDropdown from "../chat/DownloadChatDropdown.svelte";
-	import { chatId, showArchivedChats, showRightSidebar, user } from "$lib/stores";
+	import { chatId, prompts, showArchivedChats, showRightSidebar, user } from "$lib/stores";
 	import UserMenu from "./Sidebar/UserMenu.svelte";
 	import Menu from "./Navbar/Menu.svelte";
 	import ShareChatModal from "../chat/ShareChatModal.svelte";
+	import sanitizeHtml from 'sanitize-html';
 
     export let chat = null;
-    export let clientInfo = null;
+    let additionalInfo = null;
+
+    $: if (chat) {
+        additionalInfo = $prompts.find((prompt) => prompt.command === chat.chat.systemCommand)?.additional_info;
+    }
 
     let showShareChatModal = false;
 	let showDownloadChatModal = false;
@@ -121,8 +126,13 @@
             <div class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium">
                 Additional Client Information
             </div>
-            <div class="px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto">
-                {clientInfo ?? "No additional information provided."}
+            <div class="prose px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
+                dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
+                {#if additionalInfo}
+                    {@html sanitizeHtml(additionalInfo)}
+                {:else}
+                    No additional information provided.
+                {/if}
             </div>
         </div>
     </div>

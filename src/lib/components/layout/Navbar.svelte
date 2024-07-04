@@ -1,32 +1,21 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-
 	import {
 		WEBUI_NAME,
 		chatId,
 		chats,
-		mobile,
 		prompts,
 		settings,
 		showArchivedChats,
 		showRightSidebar,
-		showSettings,
 		showSidebar,
 		user
 	} from '$lib/stores';
 
-	import { slide } from 'svelte/transition';
-	import ShareChatModal from '../chat/ShareChatModal.svelte';
 	import ModelSelector from '../chat/ModelSelector.svelte';
 	import PromptSelector from '../chat/PromptSelector.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import Menu from './Navbar/Menu.svelte';
-	import { page } from '$app/stores';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
-
-	const i18n = getContext('i18n');
+	import { page } from '$app/stores';
 
 	export let initNewChat: Function;
 	export let title: string = $WEBUI_NAME;
@@ -105,31 +94,33 @@
 						? 'md:hidden'
 						: ''} self-start flex flex-none items-center text-gray-500 dark:text-gray-500"
 				>
-					<button
-						class=" cursor-pointer px-2 py-2 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-						on:click={() => {
-							showRightSidebar.set(!$showRightSidebar);
-						}}
-					>
-						<div class=" m-auto self-center">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2"
-								stroke="currentColor"
-								class="size-5"
-							>
-								<path
-									transform="scale(-1, 1)"
-									transform-origin="center"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-								/>
-							</svg>
-						</div>
-					</button>
+					{#if inChatInstance}
+						<button
+							class=" cursor-pointer px-2 py-2 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+							on:click={() => {
+								showRightSidebar.set(!$showRightSidebar);
+							}}
+						>
+							<div class=" m-auto self-center">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke-width="2"
+									stroke="currentColor"
+									class="size-5"
+								>
+									<path
+										transform="scale(-1, 1)"
+										transform-origin="center"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+									/>
+								</svg>
+							</div>
+						</button>
+					{/if}
 					{#if $user !== undefined}
 						<UserMenu
 							className="max-w-[200px]"
