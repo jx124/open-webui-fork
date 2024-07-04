@@ -521,7 +521,7 @@
 					if (webSearchEnabled) {
 						await getWebSearchResults(model.id, parentId, responseMessageId);
 					}
-
+					
 					if (model?.owned_by === 'openai') {
 						await sendPromptOpenAI(model, prompt, responseMessageId, _chatId);
 					} else if (model) {
@@ -851,7 +851,7 @@
 		if (messages.length == 2 && messages.at(1).content !== '') {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = await generateUniqueTitle(selectedPromptCommand);
+				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}
@@ -1053,7 +1053,7 @@
 		if (messages.length == 2) {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = await generateUniqueTitle(selectedPromptCommand);
+				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}

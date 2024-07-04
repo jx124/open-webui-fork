@@ -176,6 +176,7 @@
 
 		if (res) {
 			if ($chatId === id) {
+				$chatId = "";
 				goto('/');
 			}
 
