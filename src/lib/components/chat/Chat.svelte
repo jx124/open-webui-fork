@@ -321,14 +321,21 @@
 	// Checks if previous chats have the same title as prompt title, if so, disambiguate with numbers
 	const generateUniqueTitle = (promptCommand: string) => {
 		const promptTitle = $prompts.find((prompt) => prompt.command === promptCommand)?.title ?? "New Chat";
+		let updatedTitle = promptTitle;
+		let titleSet = new Set();
 
-		let sameTitleCount = 1;
 		for (const chat of $chats) {
-			if (chat.title === promptTitle) {
-				sameTitleCount++;
+			titleSet.add(chat.title);
+		}
+		
+		let sameTitleCount = 1;
+		for (let i = 0; i < 1000; i++) {
+			if (titleSet.has(updatedTitle)) {
+				sameTitleCount++
+				updatedTitle = promptTitle + " " + sameTitleCount;
 			}
 		}
-		return sameTitleCount === 1 ? promptTitle : promptTitle + " " + sameTitleCount;
+		return updatedTitle;
 	};
 
 	//////////////////////////
