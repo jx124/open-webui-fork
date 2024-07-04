@@ -31,6 +31,16 @@
 </script>
 
 <ShareChatModal bind:show={showShareChatModal} chatId={$chatId} />
+
+{#if $showRightSidebar}
+	<div
+		class=" fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
+		on:mousedown={() => {
+			showRightSidebar.set(!$showRightSidebar);
+		}}
+	/>
+{/if}
+
 <div
     id="right_sidebar"
     class="h-screen max-h-[100dvh] min-h-screen {$showRightSidebar
