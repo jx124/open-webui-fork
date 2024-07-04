@@ -29,7 +29,7 @@
 		loading = true;
 
 		if (validateCommandString(command)) {
-			const prompt = await updatePromptByCommand(localStorage.token, command, title, content, isVisible).catch(
+			const prompt = await updatePromptByCommand(localStorage.token, command, title, content, isVisible, additionalInfo).catch(
 				(error) => {
 					toast.error(error);
 					return null;
@@ -72,6 +72,7 @@
 				command = prompt.command.slice(1);
 				content = prompt.content;
 				isVisible = prompt.is_visible;
+				additionalInfo = prompt.additional_info;
 			} else {
 				goto('/workspace/prompts');
 			}

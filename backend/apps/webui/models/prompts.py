@@ -23,6 +23,7 @@ class Prompt(Model):
     content = TextField()
     timestamp = BigIntegerField()
     is_visible = BooleanField(default=True)
+    additional_info = TextField(default="")
 
     class Meta:
         database = DB
@@ -35,6 +36,7 @@ class PromptModel(BaseModel):
     content: str
     timestamp: int  # timestamp in epoch
     is_visible: bool   # whether prompt is visible to others
+    additional_info: str
 
 ####################
 # Forms
@@ -46,6 +48,7 @@ class PromptForm(BaseModel):
     title: str
     content: str
     is_visible: bool
+    additional_info: str
 
 
 class PromptsTable:
@@ -64,7 +67,8 @@ class PromptsTable:
                 "title": form_data.title,
                 "content": form_data.content,
                 "timestamp": int(time.time()),
-                "is_visible": form_data.is_visible
+                "is_visible": form_data.is_visible,
+                "additional_info": form_data.additional_info
             }
         )
 
@@ -105,7 +109,8 @@ class PromptsTable:
                 title=form_data.title,
                 content=form_data.content,
                 timestamp=int(time.time()),
-                is_visible=form_data.is_visible
+                is_visible=form_data.is_visible,
+                additional_info=form_data.additional_info
             ).where(Prompt.command == command, (Prompt.is_visible == True) | (Prompt.user_id == user_id))
 
             query.execute()

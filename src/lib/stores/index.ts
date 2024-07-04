@@ -128,6 +128,7 @@ type Prompt = {
 	content: string;
 	timestamp: number;
 	is_visible: boolean;
+	additional_info: string;
 };
 
 type Config = {

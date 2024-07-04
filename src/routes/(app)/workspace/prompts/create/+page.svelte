@@ -30,7 +30,7 @@
 		loading = true;
 
 		if (validateCommandString(command)) {
-			const prompt = await createNewPrompt(localStorage.token, command, title, content, isVisible).catch(
+			const prompt = await createNewPrompt(localStorage.token, command, title, content, isVisible, additionalInfo).catch(
 				(error) => {
 					toast.error(error);
 

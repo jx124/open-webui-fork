@@ -5,7 +5,8 @@ export const createNewPrompt = async (
 	command: string,
 	title: string,
 	content: string,
-	isVisible: boolean
+	isVisible: boolean,
+	additionalInfo: string
 ) => {
 	let error = null;
 
@@ -20,7 +21,8 @@ export const createNewPrompt = async (
 			command: `/${command}`,
 			title: title,
 			content: content,
-			is_visible: isVisible
+			is_visible: isVisible,
+			additional_info: additionalInfo
 		})
 	})
 		.then(async (res) => {
@@ -108,7 +110,8 @@ export const updatePromptByCommand = async (
 	command: string,
 	title: string,
 	content: string,
-	isVisible: boolean
+	isVisible: boolean,
+	additionalInfo: string
 ) => {
 	let error = null;
 
@@ -123,7 +126,8 @@ export const updatePromptByCommand = async (
 			command: `/${command}`,
 			title: title,
 			content: content,
-			is_visible: isVisible
+			is_visible: isVisible,
+			additional_info: additionalInfo
 		})
 	})
 		.then(async (res) => {

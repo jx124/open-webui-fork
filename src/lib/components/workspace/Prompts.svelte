@@ -173,7 +173,8 @@
 							prompt.command.charAt(0) === '/' ? prompt.command.slice(1) : prompt.command,
 							prompt.title,
 							prompt.content,
-							prompt.is_visible
+							prompt.is_visible,
+							prompt.additional_info
 						).catch((error) => {
 							toast.error(error);
 							return null;
