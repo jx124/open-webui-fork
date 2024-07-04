@@ -12,20 +12,17 @@
     $: if (chat) {
         additionalInfo = $prompts.find((prompt) => prompt.command === chat.chat.systemCommand)?.additional_info;
 
-        console.log("chat updated");
         if (chat.chat.evaluatedChat) {
             $showRightSidebar = false;
         }
     }
 
     $: if (additionalInfo) {
-        console.log("open sidebar");
         // wait for main message component to load first
         setTimeout(() => {
             $showRightSidebar = true;
         }, 50);
     }
-
  
     let showShareChatModal = false;
 	let showDownloadChatModal = false;
