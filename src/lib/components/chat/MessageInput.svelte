@@ -57,6 +57,8 @@
 	export let showEvaluationModal;
 	export let evaluatedChat: null | string;
 
+	export let showFeedbackModal;
+
 	let speechRecognition;
 
 	let visionCapableModels = [];
@@ -562,6 +564,17 @@
 									id="evaluate-chat-button"
 									on:click={() => { showEvaluationModal = true; }}
 								>Evaluate</button>
+							</Tooltip>
+						</div>
+					{:else}
+						<div class="flex flex-row-reverse my-2">
+							<Tooltip content="Provide feedback">
+								<button class="bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black 
+									dark:hover:bg-gray-100 transition rounded-xl px-4 py-2 self-center"
+									type="button"
+									id="provide-feedback-button"
+									on:click={() => { showFeedbackModal = true; }}
+								>Feedback</button>
 							</Tooltip>
 						</div>
 					{/if}

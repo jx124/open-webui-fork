@@ -61,6 +61,7 @@
 	import { getUserSettings } from '$lib/apis/users';
 	import { chatCompleted } from '$lib/apis';
 	import EvaluateChatModal from './EvaluateChatModal.svelte';
+	import FeedbackModal from './FeedbackModal.svelte';
 
 	const i18n: Writable<i18nType> = getContext('i18n');
 
@@ -95,6 +96,8 @@
 	let showEvaluationModal = false;
 	let selectedEvalMethod: string;
 	let selectedEvalSkills: string[];
+
+	let showFeedbackModal = false;
 
 	let tokenUsage: ResponseUsage = {
 		prompt_tokens: 0,
@@ -1321,6 +1324,10 @@
 		
 		await sendPrompt(combinedMessages, userMessageId);
 		window.history.pushState(history.state, '', `/c/${chat.id}`);
+
+		setTimeout(() => {
+			showFeedbackModal = true;
+		}, 3000);
 	}
 </script>
 
@@ -1338,6 +1345,8 @@
 	bind:selectedEvalSkills
 	{evaluateChatHandler}
 />
+
+<FeedbackModal bind:show={showFeedbackModal} />
 
 {#if !chatIdProp || (loaded && chatIdProp)}
 	<div
@@ -1417,6 +1426,7 @@
 				bind:webSearchEnabled
 				bind:atSelectedModel
 				bind:showEvaluationModal
+				bind:showFeedbackModal
 				bind:evaluatedChat
 				{selectedModels}
 				{messages}
