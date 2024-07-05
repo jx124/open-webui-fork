@@ -30,8 +30,10 @@
 		</div>
 		
 		<div class="flex flex-col pb-2 px-5 mt-2 mb-6 min-h-48 max-h-96">
-			<div class="prose flex flex-col text-sm whitespace-pre-line font-normal mr-auto w-full h-full overflow-auto overscroll-contain
-                dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
+			<div class="prose px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
+                dark:prose-invert prose-headings:my-0 prose-headings:-mb-6 prose-p:m-0 prose-p:-mb-6 prose-pre:my-0 
+				prose-table:my-0 prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-4 prose-ol:-my-3 prose-li:-my-3 
+				prose-ul:-mb-10 prose-ul:mt-2 prose-ol:-mb-10 prose-ol:p-0 prose-li:-mb-2">
                 {#if previewContent}
                     {@html sanitizeHtml(previewContent)}
                 {:else}

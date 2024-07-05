@@ -46,7 +46,7 @@
 </script>
 
 <nav id="nav" class=" sticky py-2.5 top-0 flex flex-row justify-center z-30">
-	<div class=" flex max-w-full w-full mx-auto px-5 pt-0.5 md:px-[1rem]">
+	<div class=" flex max-w-full w-full mx-auto px-3 pt-0.5 md:px-[1rem]">
 		<div class="flex items-center justify-between w-full max-w-full">
 			<div
 				class="{$showSidebar
@@ -92,7 +92,7 @@
 				<div
 					class="{$showRightSidebar
 						? 'md:hidden'
-						: ''} self-start flex flex-none items-center text-gray-500 dark:text-gray-500"
+						: ''} self-start flex flex-none items-center space-x-0.5 md:space-x-1 text-gray-500 dark:text-gray-500"
 				>
 					{#if inChatInstance}
 						<button

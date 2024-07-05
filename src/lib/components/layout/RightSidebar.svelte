@@ -35,7 +35,8 @@
 {#if $showRightSidebar}
 	<div
 		class=" fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
-		on:mousedown={() => {
+        role="none"
+        on:mousedown={() => {
 			showRightSidebar.set(!$showRightSidebar);
 		}}
 	/>
@@ -81,7 +82,7 @@
                 </button>
             </div>
 
-            <div class="flex">
+            <div class="flex space-x-0.5">
                 <DownloadChatDropdown {chat} />
                 <Menu
                     {chat}
@@ -148,7 +149,9 @@
                 Additional Client Information
             </div>
             <div class="prose px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
-                dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
+                dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 
+                prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-li:py-0.5 
+                prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
                 {#if additionalInfo}
                     {@html sanitizeHtml(additionalInfo)}
                 {:else}
