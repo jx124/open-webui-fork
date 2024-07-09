@@ -140,7 +140,7 @@
 			<div class="px-3 w-full max-w-5xl mx-auto">
 				<div>
 					<div class="flex flex-row justify-between">
-						<div class=" text-3xl font-semibold line-clamp-1">
+						<div class="text-xl md:text-3xl font-semibold">
 							{title}
 						</div>
 						<div class="justify-end">
@@ -148,7 +148,7 @@
 						</div>
 					</div>
 
-					<div class=" mt-1 text-gray-400">
+					<div class="md:mt-1 text-gray-400">
 						{dayjs(chat.chat.timestamp).format($i18n.t('MMMM DD, YYYY'))}
 					</div>
 				</div>

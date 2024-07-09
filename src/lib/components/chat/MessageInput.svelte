@@ -477,7 +477,7 @@
 
 			<div class="w-full relative">
 				{#if prompt.charAt(0) === '/'}
-					<Prompts bind:this={promptsElement} bind:prompt />
+					<!-- <Prompts bind:this={promptsElement} bind:prompt /> -->
 				{:else if prompt.charAt(0) === '#'}
 					<Documents
 						bind:this={documentsElement}
@@ -504,7 +504,7 @@
 					/>
 				{/if}
 
-				<Models
+				<!-- <Models
 					bind:this={modelsElement}
 					bind:prompt
 					bind:user
@@ -514,7 +514,7 @@
 						atSelectedModel = e.detail;
 						chatTextAreaElement?.focus();
 					}}
-				/>
+				/> -->
 
 				{#if atSelectedModel !== undefined}
 					<div
@@ -905,51 +905,52 @@
 									editButton?.click();
 								}
 
-								if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'ArrowUp') {
-									e.preventDefault();
+								// if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'ArrowUp') {
+								// 	e.preventDefault();
 
-									(promptsElement || documentsElement || modelsElement).selectUp();
+								// 	(promptsElement || documentsElement || modelsElement).selectUp();
 
-									const commandOptionButton = [
-										...document.getElementsByClassName('selected-command-option-button')
-									]?.at(-1);
-									commandOptionButton.scrollIntoView({ block: 'center' });
-								}
+								// 	const commandOptionButton = [
+								// 		...document.getElementsByClassName('selected-command-option-button')
+								// 	]?.at(-1);
+								// 	commandOptionButton.scrollIntoView({ block: 'center' });
+								// }
 
-								if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'ArrowDown') {
-									e.preventDefault();
+								// if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'ArrowDown') {
+								// 	e.preventDefault();
 
-									(promptsElement || documentsElement || modelsElement).selectDown();
+								// 	(promptsElement || documentsElement || modelsElement).selectDown();
 
-									const commandOptionButton = [
-										...document.getElementsByClassName('selected-command-option-button')
-									]?.at(-1);
-									commandOptionButton.scrollIntoView({ block: 'center' });
-								}
+								// 	const commandOptionButton = [
+								// 		...document.getElementsByClassName('selected-command-option-button')
+								// 	]?.at(-1);
+								// 	commandOptionButton.scrollIntoView({ block: 'center' });
+								// }
 
-								if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'Enter') {
-									e.preventDefault();
+								// if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'Enter') {
+								// 	e.preventDefault();
 
-									const commandOptionButton = [
-										...document.getElementsByClassName('selected-command-option-button')
-									]?.at(-1);
+								// 	const commandOptionButton = [
+								// 		...document.getElementsByClassName('selected-command-option-button')
+								// 	]?.at(-1);
 
-									if (commandOptionButton) {
-										commandOptionButton?.click();
-									} else {
-										document.getElementById('send-message-button')?.click();
-									}
-								}
+								// 	if (commandOptionButton) {
+								// 		commandOptionButton?.click();
+								// 	} else {
+								// 		document.getElementById('send-message-button')?.click();
+								// 	}
+								// }
 
-								if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'Tab') {
-									e.preventDefault();
+								// if (['/', '#', '@'].includes(prompt.charAt(0)) && e.key === 'Tab') {
+								// 	e.preventDefault();
 
-									const commandOptionButton = [
-										...document.getElementsByClassName('selected-command-option-button')
-									]?.at(-1);
+								// 	const commandOptionButton = [
+								// 		...document.getElementsByClassName('selected-command-option-button')
+								// 	]?.at(-1);
 
-									commandOptionButton?.click();
-								} else if (e.key === 'Tab') {
+								// 	commandOptionButton?.click();
+								// } else 
+								if (e.key === 'Tab') {
 									const words = findWordIndices(prompt);
 
 									if (words.length > 0) {
