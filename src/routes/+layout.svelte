@@ -14,6 +14,7 @@
 
 	import { WEBUI_BASE_URL } from '$lib/constants';
 	import i18n, { initI18n, getLanguages } from '$lib/i18n';
+	import { page } from '$app/stores';
 
 	setContext('i18n', i18n);
 
@@ -21,6 +22,12 @@
 	const BREAKPOINT = 768;
 
 	onMount(async () => {
+		// Save query param "?prompt=command" to allow links with preselected prompts
+		// Used localStorage to persist choice since user may close browser while waiting for account confirmation
+		if ($page.url.searchParams.has("prompt")) {
+			localStorage.setItem("preselectedPrompt", $page.url.searchParams.get("prompt") ?? "");
+		}
+
 		theme.set(localStorage.theme);
 
 		mobile.set(window.innerWidth < BREAKPOINT);

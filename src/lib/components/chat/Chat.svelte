@@ -190,6 +190,12 @@
 			}
 		}
 
+		const preselectedPrompt = "/" + localStorage.getItem("preselectedPrompt") ?? "";
+		const isValidCommand = $prompts.find((prompt) => { return prompt.command === preselectedPrompt; }) !== undefined;
+		if (preselectedPrompt && isValidCommand) {
+			selectedPromptCommand = preselectedPrompt;
+		}
+
 		selectedModels = selectedModels.map((modelId) =>
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
@@ -536,7 +542,8 @@
 			})
 		);
 
-		await chats.set(await getChatList(localStorage.token));
+		chats.set(await getChatList(localStorage.token));
+		localStorage.setItem("preselectedPrompt", "");
 	};
 
 	const getWebSearchResults = async (model: string, parentId: string, responseId: string) => {
