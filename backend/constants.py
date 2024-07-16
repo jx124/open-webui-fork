@@ -35,6 +35,7 @@ class ERROR_MESSAGES(str, Enum):
     MODEL_ID_TAKEN = "Uh-oh! This model id is already registered. Please choose another model id string."
 
     NAME_TAG_TAKEN = "Uh-oh! This name tag is already registered. Please choose another name tag string."
+    ROLE_NAME_TAKEN = lambda name="": f"Uh-oh! The role name {name} is already registered. Please choose another role name string."
     INVALID_TOKEN = (
         "Your session has expired or the token is invalid. Please sign in again."
     )
@@ -44,7 +45,8 @@ class ERROR_MESSAGES(str, Enum):
         "The password provided is incorrect. Please check for typos and try again."
     )
     INVALID_TRUSTED_HEADER = "Your provider has not provided a trusted header. Please contact your administrator for assistance."
-
+    INVALID_ROLE_CHANGE = "You are not allowed to change the 'pending' or 'admin' roles."
+    INVALID_ROLE_DELETION = lambda num=0: f"This role cannot be deleted as {num} {'user is' if num==1 else 'users are'} assigned to it."
     EXISTING_USERS = "You can't turn off authentication because there are existing users. If you want to disable WEBUI_AUTH, make sure your web interface doesn't have any existing users and is a fresh installation."
 
     UNAUTHORIZED = "401 Unauthorized"

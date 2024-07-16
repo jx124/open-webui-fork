@@ -7,7 +7,7 @@ from utils.misc import get_gravatar_url
 
 from apps.webui.internal.db import DB, JSONField
 from apps.webui.models.chats import Chats
-from apps.webui.models.roles import Role
+from apps.webui.models.roles import Role, RoleForm
 
 ####################
 # User DB Schema
@@ -148,6 +148,12 @@ class UsersTable:
             return user_to_usermodel(user)
         except:
             return None
+
+    def get_users_by_role_id(self, role_id: int) -> List[UserModel]:
+        return [
+            user_to_usermodel(user)
+            for user in User.select().join(Role).where(Role.id == role_id)
+        ]
 
     def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
         try:

@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
-	import { getSignUpEnabledStatus, toggleSignUpEnabledStatus } from '$lib/apis/auths';
 	import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
+	import { deleteRoleById, getRoles, updateUserRoles } from '$lib/apis/roles';
+	import type { RoleForm } from '$lib/apis/roles';
 
 	import { onMount, getContext } from 'svelte';
 	import { models, config } from '$lib/stores';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import { setDefaultModels } from '$lib/apis/configs';
+	import { toast } from 'svelte-sonner';
 
 	const i18n = getContext('i18n');
 
@@ -22,6 +24,26 @@
 		}
 	};
 
+	let userRoles: RoleForm[] = [];
+
+	const deleteRoleHandler = (role_id: number, idx: number) => {
+		if (role_id == 0) {
+			userRoles = userRoles.filter(
+				(_, roleIdx) => idx !== roleIdx
+			);
+		} else {
+			deleteRoleById(localStorage.token, role_id)
+				.then(() => {
+					userRoles = userRoles.filter(
+						(_, roleIdx) => idx !== roleIdx
+					);
+				})
+				.catch((err) => {
+					toast.error(err);
+				});
+		}
+	}
+
 	onMount(async () => {
 		permissions = await getUserPermissions(localStorage.token);
 
@@ -32,6 +54,8 @@
 		}
 
 		defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
+
+		userRoles = await getRoles(localStorage.token);
 	});
 </script>
 
@@ -43,6 +67,8 @@
 		await setDefaultModels(localStorage.token, defaultModelId);
 		await updateUserPermissions(localStorage.token, permissions);
 		await updateModelFilterConfig(localStorage.token, whitelistEnabled, whitelistModels);
+		userRoles = await updateUserRoles(localStorage.token, userRoles);
+		
 		saveHandler();
 
 		await config.set(await getBackendConfig());
@@ -205,6 +231,84 @@
 							</div>
 						</div>
 					{/if}
+				</div>
+			</div>
+		</div>
+
+		<hr class=" dark:border-gray-700 my-2" />
+
+		<div class="mt-2 space-y-3">
+			<div class="mb-2">
+				<div class=" text-sm font-medium">Manage User Roles</div>
+			</div>
+			<div class="mb-2">
+				<div class="text-gray-400 dark:text-gray-500 text-xs font-medium">The "pending" and "admin" roles are fixed and cannot be modified.</div>
+			</div>
+			<div class="flex w-full gap-1.5">
+				<div class="flex-1 flex flex-col gap-2">
+					{#each userRoles as role, idx}
+						<div class="flex gap-1.5">
+							<input
+								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
+								placeholder="Enter role name"
+								bind:value={role.name}
+								disabled={["pending", "admin"].includes(role.name)}
+							/>
+
+							<div class="self-center flex items-center">
+								{#if idx === 0}
+									<button
+										class="px-1"
+										on:click={() => {
+											userRoles = [...userRoles, { id: 0, name: ""}];
+										}}
+										type="button"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 16 16"
+											fill="currentColor"
+											class="w-4 h-4"
+										>
+											<path
+												d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"
+											/>
+										</svg>
+									</button>
+								{:else if ["pending", "admin"].includes(role.name)}
+									<div
+										class="px-1"
+
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 16 16"
+											fill="currentColor"
+											class="w-4 h-4"
+										>
+										</svg>
+									</div>
+								{:else}
+									<button
+										class="px-1"
+										on:click={() => {
+											deleteRoleHandler(role.id, idx);
+										}}
+										type="button"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 16 16"
+											fill="currentColor"
+											class="w-4 h-4"
+										>
+											<path d="M3.75 7.25a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Z" />
+										</svg>
+									</button>
+								{/if}
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>
