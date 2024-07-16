@@ -67,8 +67,22 @@
 		await setDefaultModels(localStorage.token, defaultModelId);
 		await updateUserPermissions(localStorage.token, permissions);
 		await updateModelFilterConfig(localStorage.token, whitelistEnabled, whitelistModels);
-		userRoles = await updateUserRoles(localStorage.token, userRoles);
-		
+
+		let error = false;
+		await updateUserRoles(localStorage.token, userRoles)
+			.then((res) => {
+				userRoles = res;
+			})
+			.catch((err) => {
+				error = true;
+				console.log("catch", error);
+				toast.error(err);
+			});
+
+		if (error) {
+			return;
+		}
+
 		saveHandler();
 
 		await config.set(await getBackendConfig());
@@ -242,7 +256,7 @@
 				<div class=" text-sm font-medium">Manage User Roles</div>
 			</div>
 			<div class="mb-2">
-				<div class="text-gray-400 dark:text-gray-500 text-xs font-medium">The "pending" and "admin" roles are fixed and cannot be modified.</div>
+				<div class="text-gray-400 dark:text-gray-500 text-xs font-normal">The "pending" and "admin" roles are fixed and cannot be modified.</div>
 			</div>
 			<div class="flex w-full gap-1.5">
 				<div class="flex-1 flex flex-col gap-2">
@@ -252,7 +266,7 @@
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
 								placeholder="Enter role name"
 								bind:value={role.name}
-								disabled={["pending", "admin"].includes(role.name)}
+								disabled={idx === 0 || idx === 1}
 							/>
 
 							<div class="self-center flex items-center">
@@ -275,7 +289,7 @@
 											/>
 										</svg>
 									</button>
-								{:else if ["pending", "admin"].includes(role.name)}
+								{:else if idx === 1}
 									<div
 										class="px-1"
 

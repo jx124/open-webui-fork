@@ -81,7 +81,12 @@ async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
         if role.id == 0:
             Roles.insert_new_role(role.name)
         else:
-            Roles.update_role(role)
+            result = Roles.update_role(role)
+            if result is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=ERROR_MESSAGES.DUPLICATE_ROLES,
+                )
 
     return Roles.get_roles()
 

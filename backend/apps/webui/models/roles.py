@@ -64,10 +64,13 @@ class RolesTable:
     
     def update_role(self, role: RoleForm) -> Optional[RoleModel]:
         try:
-            Role.update(name=role.name).where(Role.id == role.id).execute()
+            result = Role.update(name=role.name).where(Role.id == role.id).execute()
 
-            result = Role.get(Role.id == role.id)
-            return RoleModel(**model_to_dict(result))
+            if result:
+                return RoleModel(**model_to_dict(Role.get(Role.id == role.id)))
+            else:
+                return None
+            
         except Exception as e:
             return None
         
