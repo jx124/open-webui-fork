@@ -263,7 +263,7 @@
 					{#each userRoles as role, idx}
 						<div class="flex gap-1.5">
 							<input
-								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
+								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none disabled:text-gray-500 disabled:dark:text-gray-600"
 								placeholder="Enter role name"
 								bind:value={role.name}
 								disabled={idx === 0 || idx === 1}

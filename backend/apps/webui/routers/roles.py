@@ -1,15 +1,12 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from fastapi import Depends, HTTPException, status
+from typing import List, Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel
-import json
 
 from apps.webui.models.roles import Roles, RoleForm, RoleModel
 from apps.webui.models.users import Users
 
-from utils.utils import get_current_user, get_admin_user
+from utils.utils import get_admin_user
 from constants import ERROR_MESSAGES
 
 router = APIRouter()
@@ -45,24 +42,6 @@ async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=ERROR_MESSAGES.ROLE_NAME_TAKEN(form_data.name),
     )
-
-
-# ############################
-# # GetPromptByCommand
-# ############################
-
-
-# @router.get("/command/{command}", response_model=Optional[PromptModel])
-# async def get_prompt_by_command(command: str, user=Depends(get_current_user)):
-#     prompt = Prompts.get_prompt_by_command(user.id, f"/{command}")
-
-#     if prompt:
-#         return prompt
-#     else:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail=ERROR_MESSAGES.NOT_FOUND,
-#         )
 
 
 ############################

@@ -1,11 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from peewee import *
 from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
-import time
-from utils.misc import get_gravatar_url
+from typing import List, Optional
 
-from apps.webui.internal.db import DB, JSONField
+from apps.webui.internal.db import DB
 
 ####################
 # Role DB Schema
