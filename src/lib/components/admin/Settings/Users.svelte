@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
 	import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
-	import { deleteRoleById, getRoles, updateUserRoles } from '$lib/apis/roles';
-	import type { RoleForm } from '$lib/apis/roles';
+	import { deleteRoleById, updateUserRoles } from '$lib/apis/roles';
 
 	import { onMount, getContext } from 'svelte';
-	import { models, config } from '$lib/stores';
+	import { models, config, userRoles, user } from '$lib/stores';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import { setDefaultModels } from '$lib/apis/configs';
 	import { toast } from 'svelte-sonner';
@@ -24,17 +23,15 @@
 		}
 	};
 
-	let userRoles: RoleForm[] = [];
-
 	const deleteRoleHandler = (role_id: number, idx: number) => {
 		if (role_id == 0) {
-			userRoles = userRoles.filter(
+			$userRoles = $userRoles.filter(
 				(_, roleIdx) => idx !== roleIdx
 			);
 		} else {
 			deleteRoleById(localStorage.token, role_id)
 				.then(() => {
-					userRoles = userRoles.filter(
+					$userRoles = $userRoles.filter(
 						(_, roleIdx) => idx !== roleIdx
 					);
 				})
@@ -54,8 +51,6 @@
 		}
 
 		defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
-
-		userRoles = await getRoles(localStorage.token);
 	});
 </script>
 
@@ -69,9 +64,9 @@
 		await updateModelFilterConfig(localStorage.token, whitelistEnabled, whitelistModels);
 
 		let error = false;
-		await updateUserRoles(localStorage.token, userRoles)
+		await updateUserRoles(localStorage.token, $userRoles)
 			.then((res) => {
-				userRoles = res;
+				$userRoles = res;
 			})
 			.catch((err) => {
 				error = true;
@@ -260,7 +255,7 @@
 			</div>
 			<div class="flex w-full gap-1.5">
 				<div class="flex-1 flex flex-col gap-2">
-					{#each userRoles as role, idx}
+					{#each $userRoles as role, idx}
 						<div class="flex gap-1.5">
 							<input
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none disabled:text-gray-500 disabled:dark:text-gray-600"
@@ -274,7 +269,7 @@
 									<button
 										class="px-1"
 										on:click={() => {
-											userRoles = [...userRoles, { id: 0, name: ""}];
+											$userRoles = [...$userRoles, { id: 0, name: ""}];
 										}}
 										type="button"
 									>

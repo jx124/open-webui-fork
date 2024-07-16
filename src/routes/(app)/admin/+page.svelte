@@ -1,6 +1,6 @@
 <script>
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, showSidebar } from '$lib/stores';
+	import { WEBUI_NAME, config, user, showSidebar, userRoles } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount, getContext } from 'svelte';
 
@@ -23,6 +23,8 @@
 	import UserChatsModal from '$lib/components/admin/UserChatsModal.svelte';
 	import AddUserModal from '$lib/components/admin/AddUserModal.svelte';
 	import DeleteModal from '$lib/components/DeleteModal.svelte';
+	import RoleSelector from '$lib/components/admin/RoleSelector.svelte';
+	import { getRoles } from '$lib/apis/roles';
 
 	const i18n = getContext('i18n');
 
@@ -87,9 +89,15 @@
 			for (const user of users) {
 				userTokenUsages[user.id] = user.token_count;
 			}
+
+			$userRoles = await getRoles(localStorage.token);
 		}
 		loaded = true;
 	});
+
+	$: if ($userRoles) {
+		getUsers(localStorage.token).then((res) => {users = res;});
+	}
 </script>
 
 {#key selectedUser}
@@ -205,29 +213,15 @@
 					.slice((page - 1) * 20, page * 20) as user}
 					<tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700 text-xs">
 						<td class="px-3 py-2 min-w-[7rem] w-28">
-							<button
-								class=" flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg {user.role ===
-									'admin' && 'text-sky-600 dark:text-sky-200 bg-sky-200/30'} {user.role ===
-									'user' && 'text-green-600 dark:text-green-200 bg-green-200/30'} {user.role ===
-									'pending' && 'text-gray-600 dark:text-gray-200 bg-gray-200/30'}"
-								on:click={() => {
-									if (user.role === 'user') {
-										updateRoleHandler(user.id, 'admin');
-									} else if (user.role === 'pending') {
-										updateRoleHandler(user.id, 'user');
-									} else {
-										updateRoleHandler(user.id, 'pending');
-									}
-								}}
-							>
-								<div
-									class="w-1 h-1 rounded-full {user.role === 'admin' &&
-										'bg-sky-600 dark:bg-sky-300'} {user.role === 'user' &&
-										'bg-green-600 dark:bg-green-300'} {user.role === 'pending' &&
-										'bg-gray-600 dark:bg-gray-300'}"
-								/>
-								{$i18n.t(user.role)}</button
-							>
+							<RoleSelector 
+								items={$userRoles.map((role) => ({
+									value: role.name,
+									label: role.name
+								}))}
+								user={user}
+								value={user.role}
+								{updateRoleHandler}
+							/>
 						</td>
 						<td class="px-3 py-2 font-medium text-gray-900 dark:text-white w-max">
 							<div class="flex flex-row w-max">
