@@ -4,7 +4,7 @@
 	import { deleteRoleById, updateUserRoles } from '$lib/apis/roles';
 	import type { RoleForm } from '$lib/apis/roles';
 
-	import { onMount, getContext } from 'svelte';
+	import { onMount, getContext, tick } from 'svelte';
 	import { models, config, userRoles, user } from '$lib/stores';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import { setDefaultModels } from '$lib/apis/configs';
@@ -43,6 +43,12 @@
 				});
 		}
 	}
+
+	const scrollToBottom = async () => {
+		await tick();
+		const element = document.getElementById('user-settings-container');
+		element.scrollTop = element.scrollHeight;
+	};
 
 	onMount(async () => {
 		permissions = await getUserPermissions(localStorage.token);
@@ -89,7 +95,7 @@
 		await config.set(await getBackendConfig());
 	}}
 >
-	<div class=" space-y-3 pr-1.5 overflow-y-scroll max-h-80">
+	<div class=" space-y-3 pr-1.5 overflow-y-scroll max-h-80"  id="user-settings-container">
 		<div>
 			<div class=" mb-2 text-sm font-medium">{$i18n.t('User Permissions')}</div>
 
@@ -268,6 +274,7 @@
 								placeholder="Enter role name"
 								bind:value={role.name}
 								disabled={idx === 0 || idx === 1}
+								required
 							/>
 
 							<div class="self-center flex items-center">
@@ -276,6 +283,7 @@
 										class="px-1"
 										on:click={() => {
 											_userRoles = [..._userRoles, { id: 0, name: ""}];
+											scrollToBottom();
 										}}
 										type="button"
 									>
