@@ -96,7 +96,10 @@
 	});
 
 	$: if ($userRoles) {
-		getUsers(localStorage.token).then((res) => {users = res;});
+		// update role displayed when roles are edited
+		getUsers(localStorage.token).then((res) => {
+			users = res;
+		});
 	}
 </script>
 

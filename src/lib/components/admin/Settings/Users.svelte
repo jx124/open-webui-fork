@@ -2,6 +2,7 @@
 	import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
 	import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
 	import { deleteRoleById, updateUserRoles } from '$lib/apis/roles';
+	import type { RoleForm } from '$lib/apis/roles';
 
 	import { onMount, getContext } from 'svelte';
 	import { models, config, userRoles, user } from '$lib/stores';
@@ -23,15 +24,17 @@
 		}
 	};
 
+	let _userRoles: RoleForm[] = [];
+
 	const deleteRoleHandler = (role_id: number, idx: number) => {
 		if (role_id == 0) {
-			$userRoles = $userRoles.filter(
+			_userRoles = _userRoles.filter(
 				(_, roleIdx) => idx !== roleIdx
 			);
 		} else {
 			deleteRoleById(localStorage.token, role_id)
 				.then(() => {
-					$userRoles = $userRoles.filter(
+					_userRoles = _userRoles.filter(
 						(_, roleIdx) => idx !== roleIdx
 					);
 				})
@@ -51,6 +54,8 @@
 		}
 
 		defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
+
+		_userRoles = $userRoles;
 	});
 </script>
 
@@ -64,8 +69,9 @@
 		await updateModelFilterConfig(localStorage.token, whitelistEnabled, whitelistModels);
 
 		let error = false;
-		await updateUserRoles(localStorage.token, $userRoles)
+		await updateUserRoles(localStorage.token, _userRoles)
 			.then((res) => {
+				_userRoles = res;
 				$userRoles = res;
 			})
 			.catch((err) => {
@@ -255,7 +261,7 @@
 			</div>
 			<div class="flex w-full gap-1.5">
 				<div class="flex-1 flex flex-col gap-2">
-					{#each $userRoles as role, idx}
+					{#each _userRoles as role, idx}
 						<div class="flex gap-1.5">
 							<input
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none disabled:text-gray-500 disabled:dark:text-gray-600"
@@ -269,7 +275,7 @@
 									<button
 										class="px-1"
 										on:click={() => {
-											$userRoles = [...$userRoles, { id: 0, name: ""}];
+											_userRoles = [..._userRoles, { id: 0, name: ""}];
 										}}
 										type="button"
 									>
