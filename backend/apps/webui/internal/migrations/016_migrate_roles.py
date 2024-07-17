@@ -49,9 +49,9 @@ def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
 
     migrator.add_fields("user", role=pw.CharField(max_length=255))
 
-    migrator.sql("UPDATE user SET role = subquery.rolename "
-                 "FROM (SELECT user.id AS userid, role.name AS rolename FROM user JOIN role ON user.role_id = role.id) "
-                 "AS subquery WHERE user.id = subquery.userid;")
+    migrator.sql('UPDATE "user" SET role = subquery.rolename '
+                 'FROM (SELECT "user".id AS userid, "role".name AS rolename FROM "user" JOIN "role" ON "user".role_id = "role".id) '
+                 'AS subquery WHERE "user".id = subquery.userid;')
 
     migrator.remove_fields("user", "role_id")
 
@@ -59,9 +59,9 @@ def migrate_roles_to_table(migrator: Migrator, database: pw.Database):
     Role = migrator.orm["role"]
     
     migrator.add_fields("user", role_id=pw.ForeignKeyField(Role, backref="users", default=1))
-    
-    migrator.sql("UPDATE user SET role_id = subquery.roleid "
-                 "FROM (SELECT user.id AS userid, role.id AS roleid FROM user JOIN role ON user.role = role.name) "
-                 "AS subquery WHERE user.id = subquery.userid;")
+
+    migrator.sql('UPDATE "user" SET role_id = subquery.roleid '
+                 'FROM (SELECT "user".id AS userid, "role".id AS roleid FROM "user" JOIN "role" ON "user".role = "role".name) '
+                 'AS subquery WHERE "user".id = subquery.userid;')
     
     migrator.remove_fields("user", "role")
