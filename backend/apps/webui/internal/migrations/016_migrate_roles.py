@@ -36,6 +36,12 @@ with suppress(ImportError):
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
 
+    Role = migrator.orm["role"]
+
+    Role.create(name="pending")
+    Role.create(name="admin")
+    Role.create(name="user")
+
     migrate_roles_to_table(migrator, database)
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):

@@ -45,10 +45,6 @@ def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
         class Meta:
             table_name = "role"
 
-    Role.create(name="pending")
-    Role.create(name="admin")
-    Role.create(name="user")
-
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your rollback migrations here."""
 
