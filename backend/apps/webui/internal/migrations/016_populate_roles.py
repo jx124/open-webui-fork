@@ -1,4 +1,4 @@
-"""Peewee migrations -- 017_add_role_uniqueness_constraint.py.
+"""Peewee migrations -- 016_populate_roles.py.
 
 Some examples (model - class or model name)::
 
@@ -29,17 +29,23 @@ from contextlib import suppress
 import peewee as pw
 from peewee_migrate import Migrator
 
+
 with suppress(ImportError):
     import playhouse.postgres_ext as pw_pext
 
 
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
+    Role = migrator.orm["role"]
 
-    migrator.change_fields("role", name=pw.CharField(null=False, default="pending", unique=True))
+    Role.create(name="pending")
+    Role.create(name="admin")
+    Role.create(name="user")
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your rollback migrations here."""
+    Role = migrator.orm["role"]
 
-    migrator.change_fields("role", name=pw.TextField(null=False, default="pending"))
-    
+    Role.delete().where(Role.name == "pending").execute()
+    Role.delete().where(Role.name == "admin").execute()
+    Role.delete().where(Role.name == "user").execute()

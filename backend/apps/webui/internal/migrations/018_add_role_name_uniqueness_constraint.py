@@ -1,4 +1,4 @@
-"""Peewee migrations -- 016_migrate_roles.py.
+"""Peewee migrations -- 018_add_role_uniqueness_constraint.py.
 
 Some examples (model - class or model name)::
 
@@ -36,32 +36,10 @@ with suppress(ImportError):
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
 
-    Role = migrator.orm["role"]
-
-    Role.create(name="pending")
-    Role.create(name="admin")
-    Role.create(name="user")
-
-    migrate_roles_to_table(migrator, database)
+    migrator.change_fields("role", name=pw.CharField(null=False, default="pending", unique=True))
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your rollback migrations here."""
 
-    migrator.add_fields("user", role=pw.CharField(max_length=255))
-
-    migrator.sql('UPDATE "user" SET role = subquery.rolename '
-                 'FROM (SELECT "user".id AS userid, "role".name AS rolename FROM "user" JOIN "role" ON "user".role_id = "role".id) '
-                 'AS subquery WHERE "user".id = subquery.userid;')
-
-    migrator.remove_fields("user", "role_id")
-
-def migrate_roles_to_table(migrator: Migrator, database: pw.Database):
-    Role = migrator.orm["role"]
+    migrator.change_fields("role", name=pw.TextField(null=False, default="pending"))
     
-    migrator.add_fields("user", role_id=pw.ForeignKeyField(Role, backref="users", default=1))
-
-    migrator.sql('UPDATE "user" SET role_id = subquery.roleid '
-                 'FROM (SELECT "user".id AS userid, "role".id AS roleid FROM "user" JOIN "role" ON "user".role = "role".name) '
-                 'AS subquery WHERE "user".id = subquery.userid;')
-    
-    migrator.remove_fields("user", "role")
