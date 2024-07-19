@@ -58,7 +58,7 @@ async def get_session_user_chat_list(
 async def delete_all_user_chats(request: Request, user=Depends(get_current_user)):
 
     if (
-        user.role == "user"
+        user.role != "admin"
         and not request.app.state.config.USER_PERMISSIONS["chat"]["deletion"]
     ):
         raise HTTPException(
@@ -190,10 +190,10 @@ async def get_shared_chat_by_id(share_id: str, user=Depends(get_current_user)):
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
         )
 
-    if user.role == "user":
-        chat = Chats.get_chat_by_share_id(share_id)
-    elif user.role == "admin":
+    if user.role == "admin":
         chat = Chats.get_chat_by_id(share_id)
+    else:
+        chat = Chats.get_chat_by_share_id(share_id)
 
     if chat:
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})

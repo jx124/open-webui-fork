@@ -235,7 +235,7 @@ async def get_ollama_tags(
         models = await get_all_models()
 
         if app.state.config.ENABLE_MODEL_FILTER:
-            if user.role == "user":
+            if user.role != "admin":
                 models["models"] = list(
                     filter(
                         lambda model: model["name"]
@@ -946,7 +946,7 @@ async def get_openai_models(
         models = await get_all_models()
 
         if app.state.config.ENABLE_MODEL_FILTER:
-            if user.role == "user":
+            if user.role != "admin":
                 models["models"] = list(
                     filter(
                         lambda model: model["name"]
@@ -1230,18 +1230,12 @@ async def deprecated_proxy(
     body = await request.body()
     headers = dict(request.headers)
 
-    if user.role in ["user", "admin"]:
-        if path in ["pull", "delete", "push", "copy", "create"]:
-            if user.role != "admin":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-                )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
+    if path in ["pull", "delete", "push", "copy", "create"]:
+        if user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+            )
 
     headers.pop("host", None)
     headers.pop("authorization", None)
