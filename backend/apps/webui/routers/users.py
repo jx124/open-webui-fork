@@ -66,6 +66,11 @@ async def update_user_permissions(
 async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin_user)):
 
     if user.id != form_data.id and form_data.id != Users.get_first_user().id:
+        if "," in form_data.role or len(form_data.role) > 255:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.INVALID_ROLE_FORMAT,
+            )
         return Users.update_user_role_by_id(form_data.id, form_data.role)
 
     raise HTTPException(

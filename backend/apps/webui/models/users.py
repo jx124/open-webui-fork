@@ -161,7 +161,7 @@ class UsersTable:
 
     def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
         try:
-            role, _ = Role.get_or_create(name=role)
+            role, _ = Role.get_or_create(name=role.strip())
             query = User.update(role_id=role.id).where(User.id == id)
             query.execute()
 

@@ -46,6 +46,7 @@ class ERROR_MESSAGES(str, Enum):
     )
     INVALID_TRUSTED_HEADER = "Your provider has not provided a trusted header. Please contact your administrator for assistance."
     INVALID_ROLE_CHANGE = "You are not allowed to change the 'pending' or 'admin' roles."
+    INVALID_ROLE_FORMAT = "Role names cannot contain commas and must be at most 255 characters long."
     INVALID_ROLE_DELETION = lambda num=0: f"This role cannot be deleted as {num} {'user is' if num==1 else 'users are'} assigned to it."
     DUPLICATE_ROLES = "Roles must be unique."
     EXISTING_USERS = "You can't turn off authentication because there are existing users. If you want to disable WEBUI_AUTH, make sure your web interface doesn't have any existing users and is a fresh installation."

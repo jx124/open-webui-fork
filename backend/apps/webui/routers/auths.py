@@ -261,7 +261,7 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
                 "id": user.id,
                 "email": user.email,
                 "name": user.name,
-                "role": user.role,
+                "role": user.role.strip(),
                 "profile_image_url": user.profile_image_url,
             }
         else:
@@ -305,8 +305,8 @@ async def update_default_user_role(
     request: Request, form_data: UpdateRoleForm, user=Depends(get_admin_user)
 ):
     roles = [role.name for role in Roles.get_roles()]
-    if form_data.role in roles:
-        request.app.state.config.DEFAULT_USER_ROLE = form_data.role
+    if form_data.role.strip() in roles:
+        request.app.state.config.DEFAULT_USER_ROLE = form_data.role.strip()
     return request.app.state.config.DEFAULT_USER_ROLE
 
 

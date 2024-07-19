@@ -28,8 +28,15 @@ async def get_roles(user=Depends(get_admin_user)):
 
 @router.post("/create", response_model=Optional[RoleModel])
 async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
+    if "," in form_data.name or len(form_data.name) > 255:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.INVALID_ROLE_FORMAT,
+        )
+
     role = Roles.get_role_by_name(form_data.name)
     if role == None:
+
         role = Roles.insert_new_role(form_data.name)
 
         if role:
@@ -52,6 +59,11 @@ async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
 @router.post("/update", response_model=List[RoleModel])
 async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
     for role in roles:
+        if "," in role.name or len(role.name) > 255:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.INVALID_ROLE_FORMAT,
+            )
         if (role.id == 1 and role.name != "pending") or (role.id == 2 and role.name != "admin"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

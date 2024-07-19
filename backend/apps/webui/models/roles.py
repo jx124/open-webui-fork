@@ -39,7 +39,7 @@ class RolesTable:
 
     def insert_new_role(self, name: str) -> Optional[RoleModel]:
         try:
-            result = Role.get_or_create(name=name)
+            result = Role.get_or_create(name=name.strip())
             if result:
                 return RoleModel(**model_to_dict(result))
             else:
@@ -62,7 +62,7 @@ class RolesTable:
     
     def update_role(self, role: RoleForm) -> Optional[RoleModel]:
         try:
-            result = Role.update(name=role.name).where(Role.id == role.id).execute()
+            result = Role.update(name=role.name.strip()).where(Role.id == role.id).execute()
 
             if result:
                 return RoleModel(**model_to_dict(Role.get(Role.id == role.id)))
