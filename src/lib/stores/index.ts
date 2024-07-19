@@ -131,6 +131,7 @@ type Prompt = {
 	timestamp: number;
 	is_visible: boolean;
 	additional_info: string;
+	permitted_roles: number[];
 };
 
 type Config = {

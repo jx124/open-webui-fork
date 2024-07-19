@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { prompts } from '$lib/stores';
+	import { prompts, userRoles } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -10,6 +10,8 @@
 	import { getPrompts, updatePromptByCommand } from '$lib/apis/prompts';
 	import { page } from '$app/stores';
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
+	import { getRoles } from '$lib/apis/roles';
+	import RoleMultiSelector from '$lib/components/admin/RoleMultiSelector.svelte';
 
 	let loading = false;
 
@@ -22,6 +24,7 @@
 	let content = '';
 	let isVisible = true;
 	let additionalInfo = '';
+	let permittedRoles: number[] = [];
 
 	let showPreviewModal = false;
 
@@ -29,7 +32,9 @@
 		loading = true;
 
 		if (validateCommandString(command)) {
-			const prompt = await updatePromptByCommand(localStorage.token, command, title, content, isVisible, additionalInfo).catch(
+			const prompt = await updatePromptByCommand(
+				localStorage.token, command, title, content, isVisible, additionalInfo, permittedRoles)
+			.catch(
 				(error) => {
 					toast.error(error);
 					return null;
@@ -49,7 +54,7 @@
 		loading = false;
 	};
 
-	const validateCommandString = (inputString) => {
+	const validateCommandString = (inputString: string) => {
 		// Regular expression to match only alphanumeric characters and hyphen
 		const regex = /^[a-zA-Z0-9-]+$/;
 
@@ -58,7 +63,7 @@
 	};
 
 	onMount(async () => {
-		command = $page.url.searchParams.get('command');
+		command = $page.url.searchParams.get('command') ?? "";
 		if (command) {
 			const prompt = $prompts.filter((prompt) => prompt.command === command).at(0);
 
@@ -73,12 +78,15 @@
 				content = prompt.content;
 				isVisible = prompt.is_visible;
 				additionalInfo = prompt.additional_info;
+				permittedRoles = prompt.permitted_roles;
 			} else {
 				goto('/workspace/prompts');
 			}
 		} else {
 			goto('/workspace/prompts');
 		}
+
+		$userRoles = await getRoles(localStorage.token);
 	});
 </script>
 
@@ -195,6 +203,29 @@
 		</div>
 
 		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Permitted Roles</div>
+
+			<div class="text-xs text-gray-400 dark:text-gray-500 mb-2">
+				Allow users with these roles to view this prompt if prompt is set to 
+				<span class=" text-gray-600 dark:text-gray-300 font-medium">visible</span>.
+				Note that '<span class=" text-gray-600 dark:text-gray-300 font-medium">admin</span>' 
+				will always be a permitted role and cannot be added here.
+			</div>
+
+			<RoleMultiSelector 
+				items={
+					$userRoles.map((role) => ({
+						value: role.id,
+						label: role.name
+					})).filter((role) => {
+						return !["admin", "pending"].includes(role.label);
+					})
+				}
+				bind:permittedRoles
+			/>
+		</div>
+
+		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Prompt Visibility</div>
 
 			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
@@ -203,7 +234,7 @@
 					on:change={() => isVisible = !isVisible}
 					checked={isVisible}
 				>
-				Make prompt visible to other users
+				Make prompt visible to other users with the permitted roles.
 			</label>
 		</div>
 

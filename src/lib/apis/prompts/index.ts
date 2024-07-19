@@ -6,7 +6,8 @@ export const createNewPrompt = async (
 	title: string,
 	content: string,
 	isVisible: boolean,
-	additionalInfo: string
+	additionalInfo: string,
+	permittedRoles: number[]
 ) => {
 	let error = null;
 
@@ -22,7 +23,8 @@ export const createNewPrompt = async (
 			title: title,
 			content: content,
 			is_visible: isVisible,
-			additional_info: additionalInfo
+			additional_info: additionalInfo,
+			permitted_roles: permittedRoles
 		})
 	})
 		.then(async (res) => {
@@ -111,7 +113,8 @@ export const updatePromptByCommand = async (
 	title: string,
 	content: string,
 	isVisible: boolean,
-	additionalInfo: string
+	additionalInfo: string,
+	permittedRoles: number[]
 ) => {
 	let error = null;
 
@@ -127,7 +130,8 @@ export const updatePromptByCommand = async (
 			title: title,
 			content: content,
 			is_visible: isVisible,
-			additional_info: additionalInfo
+			additional_info: additionalInfo,
+			permitted_roles: permittedRoles
 		})
 	})
 		.then(async (res) => {
