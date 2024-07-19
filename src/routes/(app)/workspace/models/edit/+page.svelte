@@ -49,7 +49,7 @@
 			tags: []
 		},
 		params: {
-			system: ''
+			termination_seq: ""			
 		}
 	};
 
@@ -352,19 +352,18 @@
 					<div class=" self-center text-sm font-semibold">{$i18n.t('Model Params')}</div>
 				</div>
 
-				<!-- <div class=" text-sm font-semibold mb-2"></div> -->
-
 				<div class="mt-2">
-					<div class="my-1">
-						<div class=" text-xs font-semibold mb-2">{$i18n.t('System Prompt')}</div>
-						<div>
-							<textarea
-								class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg -mb-1"
-								placeholder={`Write your model system prompt content here\ne.g.) You are Mario from Super Mario Bros, acting as an assistant.`}
-								rows="4"
-								bind:value={info.params.system}
-							/>
+					<div class="mb-2">
+						<div class="mb-1.5 text-xs font-semibold mb-2">Chat Termination Sequence</div>
+						<div class="text-xs text-gray-400 dark:text-gray-500">
+							Disables the chat input interface when the LLM responds with the following sequence.
 						</div>
+						<textarea
+							bind:value={info.params.termination_seq}
+							placeholder="Enter termination sequence, e.g. '[Client has left]'"
+							class="mt-2 px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+							rows="1"
+						/>
 					</div>
 
 					<div class="flex w-full justify-between">

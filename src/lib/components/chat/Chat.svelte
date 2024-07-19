@@ -1435,8 +1435,8 @@
 				bind:showEvaluationModal
 				bind:showFeedbackModal
 				bind:evaluatedChat
+				bind:messages
 				{selectedModels}
-				{messages}
 				{submitPrompt}
 				{stopResponse}
 			/>

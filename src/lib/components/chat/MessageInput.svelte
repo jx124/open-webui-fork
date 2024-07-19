@@ -72,6 +72,17 @@
 			chatTextAreaElement.style.height = Math.min(chatTextAreaElement.scrollHeight, 200) + 'px';
 		}
 	}
+	
+	let chatTerminationSeq;
+	let disableChat = false;
+	$: if (selectedModels || messages) {
+		chatTerminationSeq = $models.find((m) => m.name === selectedModels[0])?.info?.params?.termination_seq;
+		if (messages[messages.length - 1]?.content === chatTerminationSeq) {
+			disableChat = true;
+		} else {
+			disableChat = false;
+		}
+	}
 
 	let mediaRecorder;
 	let audioChunks = [];
@@ -833,11 +844,14 @@
 						<textarea
 							id="chat-textarea"
 							bind:this={chatTextAreaElement}
+							disabled={disableChat}
 							class="scrollbar-hidden bg-gray-50 dark:bg-gray-850 dark:text-gray-100 outline-none w-full py-3 px-3 rounded-xl resize-none h-[48px]"
 							placeholder={chatInputPlaceholder !== ''
 								? chatInputPlaceholder
 								: isRecording
 								? $i18n.t('Listening...')
+								: disableChat
+								? "Chat is disabled as Client has left."
 								: $i18n.t('Send a Message')}
 							bind:value={prompt}
 							on:keypress={(e) => {}}
