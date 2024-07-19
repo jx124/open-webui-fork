@@ -13,6 +13,7 @@
 		updateDefaultUserRole,
 		updateJWTExpiresDuration
 	} from '$lib/apis/auths';
+	import { userRoles } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -130,9 +131,9 @@
 							updateDefaultUserRoleHandler(e.target.value);
 						}}
 					>
-						<option value="pending">{$i18n.t('pending')}</option>
-						<option value="user">{$i18n.t('user')}</option>
-						<option value="admin">{$i18n.t('admin')}</option>
+						{#each $userRoles as role}
+							<option value={role.name}>{role.name}</option>
+						{/each}
 					</select>
 				</div>
 			</div>

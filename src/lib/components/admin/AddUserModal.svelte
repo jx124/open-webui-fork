@@ -6,6 +6,8 @@
 
 	import Modal from '../common/Modal.svelte';
 	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { getRoles } from '$lib/apis/roles';
+	import { userRoles } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -73,31 +75,36 @@
 						console.log(idx, columns);
 
 						if (idx > 0) {
-							if (
-								columns.length === 4 &&
-								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
-							) {
-								const res = await addUser(
-									localStorage.token,
-									columns[0],
-									columns[1],
-									columns[2],
-									columns[3].toLowerCase()
-								).catch((error) => {
-									toast.error(`Row ${idx + 1}: ${error}`);
-									return null;
-								});
-
-								if (res) {
-									userCount = userCount + 1;
-								}
-							} else {
+							if (columns.length !== 4) {
 								toast.error(`Row ${idx + 1}: invalid format.`);
+								continue;
+							}
+							if (!validRoles.has(columns[3])) {
+								toast.error(`Row ${idx + 1}: invalid role, "${columns[3]}" does not exist.`);
+								continue;
+							}
+
+							const res = await addUser(
+								localStorage.token,
+								columns[0],
+								columns[1],
+								columns[2],
+								columns[3]
+							).catch((error) => {
+								toast.error(`Row ${idx + 1}: ${error}`);
+								return null;
+							});
+
+							if (res) {
+								userCount = userCount + 1;
 							}
 						}
 					}
 
-					toast.success(`Successfully imported ${userCount} users.`);
+					if (userCount > 0) {
+						toast.success(`Successfully imported ${userCount} users.`);
+					}
+
 					inputFiles = null;
 					const uploadInputElement = document.getElementById('upload-user-csv-input');
 
@@ -114,6 +121,13 @@
 			}
 		}
 	};
+
+	let validRoles: Set<string>;
+
+	onMount(async () => {
+		$userRoles = await getRoles(localStorage.token);
+		validRoles = new Set($userRoles.map(role => role.name));
+	})
 </script>
 
 <Modal size="sm" bind:show>
@@ -171,14 +185,14 @@
 
 								<div class="flex-1">
 									<select
-										class="w-full capitalize rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 disabled:text-gray-500 dark:disabled:text-gray-500 outline-none"
+										class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 disabled:text-gray-500 dark:disabled:text-gray-500 outline-none"
 										bind:value={_user.role}
 										placeholder={$i18n.t('Enter Your Role')}
 										required
 									>
-										<option value="pending"> pending </option>
-										<option value="user"> user </option>
-										<option value="admin"> admin </option>
+										{#each $userRoles as role}
+											<option value={role.name}> {role.name} </option>
+										{/each}
 									</select>
 								</div>
 							</div>

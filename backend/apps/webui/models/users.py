@@ -91,7 +91,11 @@ class UsersTable:
         role: str = "pending",
     ) -> Optional[UserModel]:
 
-        role, _ = Role.get_or_create(name=role)
+        role = Role.get(name=role)
+
+        if not role:
+            return None
+
         user = UserModel(
             **{
                 "id": id,

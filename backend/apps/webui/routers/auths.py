@@ -22,6 +22,7 @@ from apps.webui.models.auths import (
     ApiKey,
 )
 from apps.webui.models.users import Users
+from apps.webui.models.roles import Roles
 
 from utils.utils import (
     get_password_hash,
@@ -303,7 +304,8 @@ class UpdateRoleForm(BaseModel):
 async def update_default_user_role(
     request: Request, form_data: UpdateRoleForm, user=Depends(get_admin_user)
 ):
-    if form_data.role in ["pending", "user", "admin"]:
+    roles = [role.name for role in Roles.get_roles()]
+    if form_data.role in roles:
         request.app.state.config.DEFAULT_USER_ROLE = form_data.role
     return request.app.state.config.DEFAULT_USER_ROLE
 
