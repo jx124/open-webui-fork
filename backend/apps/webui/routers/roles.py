@@ -5,6 +5,7 @@ from fastapi import APIRouter
 
 from apps.webui.models.roles import Roles, RoleForm, RoleModel
 from apps.webui.models.users import Users
+from apps.webui.models.prompts import PromptRoles
 
 from utils.utils import get_admin_user
 from constants import ERROR_MESSAGES
@@ -92,12 +93,14 @@ async def delete_role_by_id(role_id: int, user=Depends(get_admin_user)):
     if role_id == 0:
         return True
     
-    num_users = len(Users.get_users_by_role_id(role_id))
+    num_users = Users.get_num_users_by_role_id(role_id)
     if num_users != 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.INVALID_ROLE_DELETION(num_users),
         )
-    
-    result = Roles.delete_role_by_id(role_id)
+
+    result = PromptRoles.delete_prompt_roles_by_role(role_id)
+    if result:
+        result = Roles.delete_role_by_id(role_id)
     return result

@@ -250,7 +250,7 @@ class PromptRolesTable:
         try:
             with self.db.atomic():
                 # delete everything and reinsert for now since the expected number of roles is still quite small
-                delete = PromptRole.delete().where(PromptRole.prompt_id == prompt_id).execute()
+                PromptRole.delete().where(PromptRole.prompt_id == prompt_id).execute()
                 return self.insert_new_prompt_roles_by_prompt(prompt_id, role_ids)
         except:
             return None
@@ -264,5 +264,13 @@ class PromptRolesTable:
         except:
             return False
 
+    def delete_prompt_roles_by_role(self, role_id: int) -> bool:
+        try:
+            query = PromptRole.delete().where(PromptRole.role_id == role_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
 
 PromptRoles = PromptRolesTable(DB)

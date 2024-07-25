@@ -176,6 +176,9 @@ class UsersTable:
             for user in User.select().join(Role).where(Role.id == role_id)
         ]
 
+    def get_num_users_by_role_id(self, role_id: int) -> int:
+        return User.select().join(Role).where(Role.id == role_id).count()
+
     def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
         try:
             role, _ = Role.get_or_create(name=role.strip())
