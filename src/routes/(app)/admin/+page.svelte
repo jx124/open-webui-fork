@@ -107,8 +107,6 @@
 				return { ...user, ...userStatistics[user?.id] };
 			});
 
-			console.log("users", users);
-
 			$userRoles = await getRoles(localStorage.token);
 		}
 		loaded = true;
@@ -117,8 +115,7 @@
 	$: if ($userRoles) {
 		// update role displayed when roles are edited
 		getUsers(localStorage.token).then((res) => {
-			users = res;
-			users = users.map((user) => {
+			users = res.map((user) => {
 				return { ...user, ...userStatistics[user?.id] };
 			});
 		});
