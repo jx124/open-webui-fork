@@ -105,6 +105,8 @@ async def get_user_chat_list_by_user_id(
 async def create_new_chat(form_data: ChatForm, user=Depends(get_current_user)):
     try:
         chat = Chats.insert_new_chat(user.id, form_data)
+        Users.increment_user_chat_attempts_by_id(user.id)
+
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     except Exception as e:
         log.exception(e)
@@ -303,13 +305,24 @@ async def update_chat_session_times(
     timings: ChatTimingForm, user=Depends(get_current_user)
 ):
     result = Chats.update_chat_session_times(user.id, timings)
-    if result:
-        return True
-    else:
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
+    
+    total_time = 0
+    for _, value in timings.timings.items():
+        total_time += value
+
+    result = Users.increment_user_session_time_by_id(user.id, total_time)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+
+    return True
 
 
 ############################

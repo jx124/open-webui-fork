@@ -488,7 +488,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
             if response_data is not None and response_data.get("usage"):
                 count = response_data["usage"].get("total_tokens", 0)
-                Users.update_user_token_count_by_id(user.id, count)
+                Users.increment_user_token_count_by_id(user.id, count)
                 
             return response_data
     except Exception as e:
@@ -519,7 +519,7 @@ async def stream_token_counter(stream, user_id):
 
             if result is not None and result.get("usage"):
                 count = result["usage"].get("total_tokens", 0)
-                Users.update_user_token_count_by_id(user_id, count)
+                Users.increment_user_token_count_by_id(user_id, count)
 
         except json.decoder.JSONDecodeError:
             pass

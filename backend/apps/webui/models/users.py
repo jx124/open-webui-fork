@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from peewee import *
 from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict
 import time
 from utils.misc import get_gravatar_url
 
@@ -29,6 +29,8 @@ class User(Model):
     settings = JSONField(null=True)
 
     token_count = BigIntegerField(default=0)
+    attempts = BigIntegerField(default=0)
+    session_time = BigIntegerField(default=0)
 
     class Meta:
         database = DB
@@ -54,7 +56,11 @@ class UserModel(BaseModel):
     api_key: Optional[str] = None
     settings: Optional[UserSettings] = None
 
-    token_count: int = 0
+class UserStatistics(BaseModel):
+    token_count: int
+    attempts: int
+    session_time: int
+
 
 ####################
 # Forms
@@ -105,8 +111,7 @@ class UsersTable:
                 "profile_image_url": profile_image_url,
                 "last_active_at": int(time.time()),
                 "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-                "token_count": 0
+                "updated_at": int(time.time())
             }
         )
         result = User.create(**user.model_dump(exclude={"role"}), role_id=role.id)
@@ -142,6 +147,18 @@ class UsersTable:
             for user in User.select().join(Role)
             # .limit(limit).offset(skip)
         ]
+    
+    def get_user_statistics(self) -> Dict[str, UserStatistics]:
+        stats: Dict[str, UserStatistics] = {}
+
+        query = User.select(User.id, User.token_count, User.attempts, User.session_time)
+        for user in query:
+            stats[user.id] = UserStatistics(
+                token_count=user.token_count,
+                attempts=user.attempts,
+                session_time=user.session_time
+            )
+        return stats
 
     def get_num_users(self) -> Optional[int]:
         return User.select().count()
@@ -236,9 +253,27 @@ class UsersTable:
         except:
             return None
         
-    def update_user_token_count_by_id(self, id: str, count: int) -> bool:
+    def increment_user_token_count_by_id(self, id: str, count: int) -> bool:
         try:
             query = User.update(token_count = User.token_count + count).where(User.id == id)
+            result = query.execute()
+
+            return True if result == 1 else False
+        except:
+            return False
+
+    def increment_user_chat_attempts_by_id(self, id: str) -> bool:
+        try:
+            query = User.update(attempts = User.attempts + 1).where(User.id == id)
+            result = query.execute()
+
+            return True if result == 1 else False
+        except:
+            return False
+
+    def increment_user_session_time_by_id(self, id: str, amount: int) -> bool:
+        try:
+            query = User.update(session_time = User.session_time + amount).where(User.id == id)
             result = query.execute()
 
             return True if result == 1 else False

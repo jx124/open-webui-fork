@@ -1,7 +1,7 @@
 from fastapi import Response, Request
 from fastapi import Depends, FastAPI, HTTPException, status
 from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -11,6 +11,7 @@ import logging
 
 from apps.webui.models.users import (
     UserModel,
+    UserStatistics,
     UserUpdateForm,
     UserRoleUpdateForm,
     UserSettings,
@@ -37,6 +38,16 @@ router = APIRouter()
 @router.get("/", response_model=List[UserModel])
 async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_user)):
     return Users.get_users(skip, limit)
+
+
+############################
+# GetUserStatistics
+############################
+
+
+@router.get("/statistics", response_model=Dict[str, UserStatistics])
+async def get_user_statistics(user=Depends(get_admin_user)):
+    return Users.get_user_statistics()
 
 
 ############################
