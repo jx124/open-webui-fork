@@ -263,6 +263,7 @@ async def get_chat_by_id(id: str, user=Depends(get_current_user)):
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
 
     if chat:
+        Chats.increment_chat_visits(id, user.id)
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     else:
         raise HTTPException(
@@ -301,7 +302,6 @@ async def update_chat_by_id(
 async def update_chat_session_times(
     timings: ChatTimingForm, user=Depends(get_current_user)
 ):
-    print(timings)
     result = Chats.update_chat_session_times(user.id, timings)
     if result:
         return True

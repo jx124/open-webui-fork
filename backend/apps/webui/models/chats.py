@@ -313,6 +313,14 @@ class ChatTable:
         except:
             return None
 
+    def increment_chat_visits(self, id: str, user_id: str) -> bool:
+        try:
+            # check user id so admin visiting chat does not increment visits
+            Chat.update(visits=Chat.visits + 1).where((Chat.id == id) & (Chat.user_id == user_id)).execute()
+            return True
+        except:
+            return False
+
     def get_chats(self, skip: int = 0, limit: int = 50) -> List[ChatModel]:
         return [
             ChatModel(**model_to_dict(chat))
