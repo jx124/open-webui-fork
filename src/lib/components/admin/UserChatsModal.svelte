@@ -9,6 +9,7 @@
 	import { getChatListByUserId, deleteChatById, getArchivedChatList } from '$lib/apis/chats';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { approximateToHumanReadable } from '$lib/utils';
+	import SortableHeader from './SortableHeader.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -17,6 +18,23 @@
 	
 	let chatTokenUsages = {};
 	let chats = [];
+
+	const sortFactory = (attribute, ascending = true) => {
+		return (a, b) => {
+			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
+			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
+			if (aValue < bValue) {
+				return ascending ? -1 : 1;
+			}
+			if (aValue > bValue) {
+				return ascending ? 1 : -1;
+			}
+			return 0;
+		}
+	}
+
+	let sortAttribute = "created_at";
+	let ascending = false;
 
 	const deleteChatHandler = async (chatId) => {
 		const res = await deleteChatById(localStorage.token, chatId).catch((error) => {
@@ -78,16 +96,31 @@
 									class="text-xs text-gray-700 uppercase bg-transparent dark:text-gray-200 border-b-2 dark:border-gray-800"
 								>
 									<tr>
-										<th scope="col" class="px-3 py-2 min-w-1/3"> {$i18n.t('Name')} </th>
-										<th scope="col" class="px-3 py-2 hidden md:table-cell"> {$i18n.t('Created at')} </th>
-										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Tokens Used </th>
-										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Chat Visits </th>
-										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Session Time </th>
+										<th scope="col" class="px-3 py-2 min-w-1/3">
+											<SortableHeader displayName={$i18n.t('Name')} attributeName="title"
+												bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+										</th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell">
+											<SortableHeader displayName={$i18n.t('Created at')} attributeName="created_at"
+												bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+										</th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell">
+											<SortableHeader displayName="Tokens Used" attributeName="token_count"
+												bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+										</th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell">
+											<SortableHeader displayName="Chat Visits" attributeName="visits"
+												bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+										</th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell">
+											<SortableHeader displayName="Session Time" attributeName="session_time"
+												bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+										</th>
 										<th scope="col" class="px-3 py-2 text-right" />
 									</tr>
 								</thead>
 								<tbody>
-									{#each chats as chat, idx}
+									{#each chats.sort(sortFactory(sortAttribute, ascending)) as chat, idx}
 										<tr
 											class="bg-transparent {idx !== chats.length - 1 &&
 												'border-b'} dark:bg-gray-900 dark:border-gray-850 text-xs"

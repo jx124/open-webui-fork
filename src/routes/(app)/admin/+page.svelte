@@ -23,6 +23,7 @@
 	import RoleSelector from '$lib/components/admin/RoleSelector.svelte';
 	import { getRoles } from '$lib/apis/roles';
 	import { approximateToHumanReadable } from '$lib/utils';
+	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -58,17 +59,9 @@
 
 		if (res) {
 			users = await getUsers(localStorage.token);
-		}
-	};
-
-	const editUserPasswordHandler = async (id, password) => {
-		const res = await deleteUserById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-		if (res) {
-			users = await getUsers(localStorage.token);
-			toast.success($i18n.t('Successfully updated.'));
+			users = users.map((user) => {
+				return { ...user, ...userStatistics[user?.id] };
+			});
 		}
 	};
 
@@ -80,8 +73,28 @@
 		});
 		if (res) {
 			users = await getUsers(localStorage.token);
+			users = users.map((user) => {
+				return { ...user, ...userStatistics[user?.id] };
+			});
 		}
 	};
+
+	const sortFactory = (attribute, ascending = true) => {
+		return (a, b) => {
+			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
+			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
+			if (aValue < bValue) {
+				return ascending ? -1 : 1;
+			}
+			if (aValue > bValue) {
+				return ascending ? 1 : -1;
+			}
+			return 0;
+		}
+	}
+
+	let sortAttribute = "role";
+	let ascending = true;
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
@@ -89,6 +102,12 @@
 		} else {
 			users = await getUsers(localStorage.token);
 			userStatistics = await getUserStatistics(localStorage.token);
+
+			users = users.map((user) => {
+				return { ...user, ...userStatistics[user?.id] };
+			});
+
+			console.log("users", users);
 
 			$userRoles = await getRoles(localStorage.token);
 		}
@@ -99,6 +118,9 @@
 		// update role displayed when roles are edited
 		getUsers(localStorage.token).then((res) => {
 			users = res;
+			users = users.map((user) => {
+				return { ...user, ...userStatistics[user?.id] };
+			});
 		});
 	}
 </script>
@@ -192,14 +214,38 @@
 		<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full">
 			<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400">
 				<tr>
-					<th scope="col" class="px-3 py-2"> {$i18n.t('Role')} </th>
-					<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
-					<th scope="col" class="px-3 py-2"> {$i18n.t('Email')} </th>
-					<th scope="col" class="px-3 py-2"> {$i18n.t('Last Active')} </th>
-					<th scope="col" class="px-3 py-2"> {$i18n.t('Created at')} </th>
-					<th scope="col" class="px-3 py-2"> Tokens Used </th>
-					<th scope="col" class="px-3 py-2"> Chat Attempts </th>
-					<th scope="col" class="px-3 py-2"> Total Chat Session Time </th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName={$i18n.t('Role')} attributeName="role"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2"> 
+						<SortableHeader displayName={$i18n.t('Name')} attributeName="name"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName={$i18n.t('Email')} attributeName="email"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName={$i18n.t('Last Active')} attributeName="last_active_at"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName={$i18n.t('Created at')} attributeName="created_at"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName="Tokens Used" attributeName="token_count"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName="Chat Attempts" attributeName="attempts"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName="Total Chat Session Time" attributeName="session_time"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
 
 					<th scope="col" class="px-3 py-2 w-32" />
 				</tr>
@@ -215,7 +261,8 @@
 							return name.includes(query);
 						}
 					})
-					.slice((page - 1) * 20, page * 20) as user}
+					.slice((page - 1) * 20, page * 20)
+					.sort(sortFactory(sortAttribute, ascending)) as user}
 					<tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700 text-xs">
 						<td class="px-3 py-2 min-w-[7rem] w-28">
 							<RoleSelector 
@@ -342,7 +389,7 @@
 
 	<div class=" text-gray-500 text-xs mt-2 text-left">
 		ⓘ {$i18n.t("Click on the user role button to change a user's role.")}<br>
-		ⓘ Token counts are estimates and do not include usage before tracking was enabled.
+		ⓘ Statistics are estimates and do not include usage before tracking was enabled.
 	</div>
 
 	<Pagination bind:page count={users.length} />
