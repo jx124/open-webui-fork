@@ -191,7 +191,15 @@ class RAGMiddleware(BaseHTTPMiddleware):
                 ],
             ]
 
-        response = await call_next(request)
+        # fix for RuntimeError: No response returned when disconnecting
+        # https://stackoverflow.com/a/72677699
+        response = None
+        try:
+            response = await call_next(request)
+        except RuntimeError as exc:
+            if str(exc) == 'No response returned.' and await request.is_disconnected():
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+            raise
 
         if return_citations:
             # Inject the citations into the response
@@ -334,8 +342,12 @@ class PipelineMiddleware(BaseHTTPMiddleware):
                 ],
             ]
 
-        response = await call_next(request)
-        return response
+        try:
+            return await call_next(request)
+        except RuntimeError as exc:
+            if str(exc) == 'No response returned.' and await request.is_disconnected():
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+            raise
 
     async def _receive(self, body: bytes):
         return {"type": "http.request", "body": body, "more_body": False}
@@ -360,17 +372,29 @@ async def check_url(request: Request, call_next):
     else:
         pass
 
-    start_time = int(time.time())
-    response = await call_next(request)
-    process_time = int(time.time()) - start_time
-    response.headers["X-Process-Time"] = str(process_time)
+    try:
+        start_time = int(time.time())
+        response = await call_next(request)
+        process_time = int(time.time()) - start_time
+        response.headers["X-Process-Time"] = str(process_time)
 
-    return response
+        return response
+    except RuntimeError as exc:
+        if str(exc) == 'No response returned.' and await request.is_disconnected():
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        raise
 
 
 @app.middleware("http")
 async def update_embedding_function(request: Request, call_next):
-    response = await call_next(request)
+    response = None
+    try:
+        response = await call_next(request)
+    except RuntimeError as exc:
+        if str(exc) == 'No response returned.' and await request.is_disconnected():
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        raise
+
     if "/embedding/update" in request.url.path:
         webui_app.state.EMBEDDING_FUNCTION = rag_app.state.EMBEDDING_FUNCTION
     return response
