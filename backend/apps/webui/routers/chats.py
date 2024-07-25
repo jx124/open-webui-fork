@@ -11,6 +11,7 @@ from apps.webui.models.users import Users
 from apps.webui.models.chats import (
     ChatModel,
     ChatResponse,
+    ChatTimingForm,
     ChatTitleForm,
     ChatForm,
     ChatTitleIdResponse,
@@ -284,6 +285,26 @@ async def update_chat_by_id(
 
         chat = Chats.update_chat_by_id(id, updated_chat)
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+        )
+
+
+############################
+# UpdateChatSessionTimes
+############################
+
+
+@router.post("/session/times", response_model=bool)
+async def update_chat_session_times(
+    timings: ChatTimingForm, user=Depends(get_current_user)
+):
+    print(timings)
+    result = Chats.update_chat_session_times(user.id, timings)
+    if result:
+        return True
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

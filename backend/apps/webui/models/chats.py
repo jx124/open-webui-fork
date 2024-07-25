@@ -26,6 +26,9 @@ class Chat(Model):
     share_id = CharField(null=True, unique=True)
     archived = BooleanField(default=False)
 
+    session_time = BigIntegerField(default=0) # Chat session length in seconds
+    visits = BigIntegerField(default=0) # Number of visits to this chat session
+
     class Meta:
         database = DB
 
@@ -42,6 +45,9 @@ class ChatModel(BaseModel):
     share_id: Optional[str] = None
     archived: bool = False
 
+    session_time: int = 0
+    visits: int = 0
+
 
 ####################
 # Forms
@@ -55,6 +61,9 @@ class ChatForm(BaseModel):
 class ChatTitleForm(BaseModel):
     title: str
 
+
+class ChatTimingForm(BaseModel):
+    timings: dict
 
 class ChatResponse(BaseModel):
     id: str
@@ -117,6 +126,21 @@ class ChatTable:
             return ChatModel(**model_to_dict(chat))
         except:
             return None
+        
+    def update_chat_session_times(self, user_id: str, data: ChatTimingForm) -> bool:
+        timings = data.timings
+
+        try:
+            for chat_id, time in timings.items():
+                query = Chat.update(
+                    session_time=Chat.session_time + time
+                ).where((Chat.id == chat_id) & (Chat.user_id == user_id))
+                query.execute()
+
+            return True
+        except:
+            return False
+    
 
     def insert_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
         # Get the existing chat to share
