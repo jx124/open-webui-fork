@@ -915,7 +915,7 @@
 
 									console.log(userMessageElement);
 
-									userMessageElement.scrollIntoView({ block: 'center' });
+									userMessageElement?.scrollIntoView({ block: 'center' });
 									editButton?.click();
 								}
 

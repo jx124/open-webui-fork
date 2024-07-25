@@ -525,6 +525,43 @@ export const updateChatById = async (token: string, id: string, chat: object) =>
 	return res;
 };
 
+type PageTimeMap = {
+	[key: string]: number
+}
+
+export const updateChatSessionTimes = async (token: string, data: PageTimeMap) => {
+	let error = null;
+
+	// keepalive: true allows request to be sent when window is closed
+	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/session/times`, {
+		method: 'POST',
+		keepalive: true,
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify({
+			timings: data
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err;
+			console.log(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const deleteChatById = async (token: string, id: string) => {
 	let error = null;
 
