@@ -15,7 +15,7 @@ from apps.webui.models.chats import (
     ChatTitleForm,
     ChatForm,
     ChatTitleIdResponse,
-    ChatTitleIdTokenCountResponse,
+    ChatInfoResponse,
     Chats,
 )
 
@@ -76,7 +76,7 @@ async def delete_all_user_chats(request: Request, user=Depends(get_current_user)
 ############################
 
 
-@router.get("/list/user/{user_id}", response_model=List[ChatTitleIdTokenCountResponse])
+@router.get("/list/user/{user_id}", response_model=List[ChatInfoResponse])
 async def get_user_chat_list_by_user_id(
     user_id: str, user=Depends(get_admin_user), skip: int = 0, limit: int = 50
 ):
@@ -84,6 +84,7 @@ async def get_user_chat_list_by_user_id(
         user_id, include_archived=True, skip=skip, limit=limit
     )
 
+    # TODO: create a separate field in database for token_count? 
     results = []
     for chat in chats:
         token_count = 0
@@ -91,7 +92,7 @@ async def get_user_chat_list_by_user_id(
         if usage is not None:
             token_count = usage.get("total_tokens", 0)
 
-        results.append(ChatTitleIdTokenCountResponse(**{**chat.model_dump(), "token_count": token_count}))
+        results.append(ChatInfoResponse(**{**chat.model_dump(), "token_count": token_count}))
 
     return results
 

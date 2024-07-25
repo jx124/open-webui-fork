@@ -8,6 +8,7 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { getChatListByUserId, deleteChatById, getArchivedChatList } from '$lib/apis/chats';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import { approximateToHumanReadable } from '$lib/utils';
 
 	const i18n = getContext('i18n');
 
@@ -38,8 +39,6 @@
 		for (const chat of chats) {
 			chatTokenUsages[chat.id] = chat.token_count;
 		}
-
-		console.log("chatTokenUsages", chatTokenUsages);
 	}
 </script>
 
@@ -79,9 +78,11 @@
 									class="text-xs text-gray-700 uppercase bg-transparent dark:text-gray-200 border-b-2 dark:border-gray-800"
 								>
 									<tr>
-										<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
+										<th scope="col" class="px-3 py-2 min-w-1/3"> {$i18n.t('Name')} </th>
 										<th scope="col" class="px-3 py-2 hidden md:table-cell"> {$i18n.t('Created at')} </th>
 										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Tokens Used </th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Chat Visits </th>
+										<th scope="col" class="px-3 py-2 hidden md:table-cell"> Session Time </th>
 										<th scope="col" class="px-3 py-2 text-right" />
 									</tr>
 								</thead>
@@ -91,7 +92,7 @@
 											class="bg-transparent {idx !== chats.length - 1 &&
 												'border-b'} dark:bg-gray-900 dark:border-gray-850 text-xs"
 										>
-											<td class="px-3 py-1 w-1/2">
+											<td class="px-3 py-1 min-w-1/3">
 												<a href="/s/{chat.id}" target="_blank">
 													<div class=" underline line-clamp-1">
 														{chat.title}
@@ -107,7 +108,19 @@
 
 											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
 												<div class="my-auto">
-													{chatTokenUsages[chat.id]}
+													{chat.token_count}
+												</div>
+											</td>
+
+											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
+												<div class="my-auto">
+													{chat.visits}
+												</div>
+											</td>
+
+											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
+												<div class="my-auto">
+													{approximateToHumanReadable(chat.session_time * 1000000000)}
 												</div>
 											</td>
 

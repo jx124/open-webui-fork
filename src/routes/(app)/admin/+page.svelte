@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { WEBUI_BASE_URL } from '$lib/constants';
 	import { WEBUI_NAME, config, user, showSidebar, userRoles } from '$lib/stores';
 	import { goto } from '$app/navigation';
@@ -10,10 +10,7 @@
 
 	import { toast } from 'svelte-sonner';
 
-	import { updateUserRole, getUsers, deleteUserById } from '$lib/apis/users';
-	import { getSignUpEnabledStatus, toggleSignUpEnabledStatus } from '$lib/apis/auths';
-
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import { updateUserRole, getUsers, deleteUserById, getUserStatistics } from '$lib/apis/users';
 
 	import EditUserModal from '$lib/components/admin/EditUserModal.svelte';
 	import SettingsModal from '$lib/components/admin/SettingsModal.svelte';
@@ -25,13 +22,20 @@
 	import DeleteModal from '$lib/components/DeleteModal.svelte';
 	import RoleSelector from '$lib/components/admin/RoleSelector.svelte';
 	import { getRoles } from '$lib/apis/roles';
+	import { approximateToHumanReadable } from '$lib/utils';
 
 	const i18n = getContext('i18n');
 
 	let loaded = false;
 	let tab = '';
 	let users = [];
-	let userTokenUsages = {};
+	let userStatistics: {
+		[key: string]: {
+			token_count: number,
+			attempts: number,
+			session_time: number,
+		}
+	} = {};
 
 	let search = '';
 	let selectedUser = null;
@@ -84,11 +88,7 @@
 			await goto('/');
 		} else {
 			users = await getUsers(localStorage.token);
-			userTokenUsages = {};
-
-			for (const user of users) {
-				userTokenUsages[user.id] = user.token_count;
-			}
+			userStatistics = await getUserStatistics(localStorage.token);
 
 			$userRoles = await getRoles(localStorage.token);
 		}
@@ -198,8 +198,10 @@
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Last Active')} </th>
 					<th scope="col" class="px-3 py-2"> {$i18n.t('Created at')} </th>
 					<th scope="col" class="px-3 py-2"> Tokens Used </th>
+					<th scope="col" class="px-3 py-2"> Chat Attempts </th>
+					<th scope="col" class="px-3 py-2"> Total Chat Session Time </th>
 
-					<th scope="col" class="px-3 py-2 text-right" />
+					<th scope="col" class="px-3 py-2 w-32" />
 				</tr>
 			</thead>
 			<tbody>
@@ -252,10 +254,18 @@
 						</td>
 
 						<td class=" px-3 py-2">
-							{userTokenUsages[user.id] ?? 0}
+							{userStatistics[user.id].token_count ?? 0}
 						</td>
 
-						<td class="px-3 py-2 text-right">
+						<td class=" px-3 py-2">
+							{userStatistics[user.id].attempts ?? 0}
+						</td>
+
+						<td class=" px-3 py-2">
+							{approximateToHumanReadable((userStatistics[user.id].session_time ?? 0) * 1000000000)}
+						</td>
+
+						<td class="px-3 py-2 text-right w-32">
 							<div class="flex justify-end w-full">
 								<div class="flex justify-start min-w-24">
 									<Tooltip content={$i18n.t('Chats')}>

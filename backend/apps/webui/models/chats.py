@@ -82,10 +82,12 @@ class ChatTitleIdResponse(BaseModel):
     updated_at: int
     created_at: int
 
-class ChatTitleIdTokenCountResponse(BaseModel):
+class ChatInfoResponse(BaseModel):
     id: str
     title: str
     token_count: int
+    session_time: int
+    visits: int
     updated_at: int
     created_at: int
 
