@@ -23,7 +23,8 @@
 		updateChatById,
 		getAllChatTags,
 		archiveChatById,
-		cloneChatById
+		cloneChatById,
+		getAllChats
 	} from '$lib/apis/chats';
 	import { toast } from 'svelte-sonner';
 	import { fade, slide } from 'svelte/transition';
@@ -135,18 +136,8 @@
 	});
 
 	// Helper function to fetch and add chat content to each chat
-	const enrichChatsWithContent = async (chatList) => {
-		const enrichedChats = await Promise.all(
-			chatList.map(async (chat) => {
-				const chatDetails = await getChatById(localStorage.token, chat.id).catch((error) => null); // Handle error or non-existent chat gracefully
-				if (chatDetails) {
-					chat.chat = chatDetails.chat; // Assuming chatDetails.chat contains the chat content
-				}
-				return chat;
-			})
-		);
-
-		await chats.set(enrichedChats);
+	const enrichChatsWithContent = async () => {
+		chats.set(await getAllChats(localStorage.token));
 	};
 
 	const loadChat = async (id) => {
@@ -412,7 +403,7 @@
 						placeholder={$i18n.t('Search')}
 						bind:value={search}
 						on:focus={() => {
-							enrichChatsWithContent($chats);
+							enrichChatsWithContent();
 						}}
 					/>
 				</div>
