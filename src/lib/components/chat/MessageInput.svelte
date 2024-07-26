@@ -1029,7 +1029,7 @@
 
 						<div class="self-end mb-2 flex space-x-1 mr-1">
 							{#if messages.length == 0 || messages.at(-1).done == true}
-								<Tooltip content={$i18n.t('Record voice')}>
+								<!-- <Tooltip content={$i18n.t('Record voice')}>
 									{#if speechRecognitionEnabled}
 										<button
 											id="voice-input-button"
@@ -1096,7 +1096,7 @@
 											{/if}
 										</button>
 									{/if}
-								</Tooltip>
+								</Tooltip> -->
 
 								<Tooltip content={$i18n.t('Send message')}>
 									<button
