@@ -15,10 +15,7 @@
 	import PromptSelector from '../chat/PromptSelector.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
-	import { page } from '$app/stores';
 
-	export let initNewChat: Function;
-	export let title: string = $WEBUI_NAME;
 	export let shareEnabled: boolean = false;
 
 	export let chat;
