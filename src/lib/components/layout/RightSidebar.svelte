@@ -21,7 +21,7 @@
         // wait for main message component to load first
         setTimeout(() => {
             $showRightSidebar = true;
-        }, 50);
+        }, 0);
     }
  
     let showShareChatModal = false;
