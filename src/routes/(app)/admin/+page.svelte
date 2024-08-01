@@ -136,7 +136,12 @@
 <AddUserModal
 	bind:show={showAddUserModal}
 	on:save={async () => {
-		users = await getUsers(localStorage.token);
+		const temp_users = await getUsers(localStorage.token);
+		userStatistics = await getUserStatistics(localStorage.token);
+
+		users = temp_users.map((user) => {
+			return { ...user, ...userStatistics[user?.id] };
+		});
 	}}
 />
 <UserChatsModal bind:show={showUserChatsModal} user={selectedUser} />
@@ -298,15 +303,15 @@
 						</td>
 
 						<td class=" px-3 py-2">
-							{userStatistics[user.id].token_count ?? 0}
+							{userStatistics[user.id]?.token_count ?? 0}
 						</td>
 
 						<td class=" px-3 py-2">
-							{userStatistics[user.id].attempts ?? 0}
+							{userStatistics[user.id]?.attempts ?? 0}
 						</td>
 
 						<td class=" px-3 py-2">
-							{approximateToHumanReadable((userStatistics[user.id].session_time ?? 0) * 1000000000)}
+							{approximateToHumanReadable((userStatistics[user.id]?.session_time ?? 0) * 1000000000)}
 						</td>
 
 						<td class="px-3 py-2 text-right w-32">

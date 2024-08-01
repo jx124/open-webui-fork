@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, getContext } from 'svelte';
-	import { addUser } from '$lib/apis/auths';
+	import { addUser, importUsersExcel } from '$lib/apis/auths';
 
 	import Modal from '../common/Modal.svelte';
 	import { WEBUI_BASE_URL } from '$lib/constants';
@@ -16,7 +16,8 @@
 
 	let loading = false;
 	let tab = '';
-	let inputFiles;
+	let inputCSVFiles;
+	let inputXLSXFiles;
 
 	let _user = {
 		name: '',
@@ -57,11 +58,11 @@
 				stopLoading();
 				show = false;
 			}
-		} else {
-			if (inputFiles) {
+		} else if (tab === "csv_import") {
+			if (inputCSVFiles) {
 				loading = true;
 
-				const file = inputFiles[0];
+				const file = inputCSVFiles[0];
 				const reader = new FileReader();
 
 				reader.onload = async (e) => {
@@ -105,7 +106,7 @@
 						toast.success(`Successfully imported ${userCount} users.`);
 					}
 
-					inputFiles = null;
+					inputCSVFiles = null;
 					const uploadInputElement = document.getElementById('upload-user-csv-input');
 
 					if (uploadInputElement) {
@@ -116,6 +117,43 @@
 				};
 
 				reader.readAsText(file);
+			} else {
+				toast.error($i18n.t('File not found.'));
+			}
+		} else if (tab === "excel_import") {
+			if (inputXLSXFiles) {
+				loading = true;
+
+				const file = inputXLSXFiles[0];
+				const reader = new FileReader();
+
+				reader.onload = async (e) => {
+					const xlsx = e.target.result;
+	
+					console.log("onload", xlsx);
+					const users = await importUsersExcel(localStorage.token, xlsx)
+						.catch((err) => {
+							toast.error(err);
+							loading = false;
+							return null;
+						});
+					
+
+					if (users.length > 0) {
+						toast.success(`Successfully imported ${users.length} users.`);
+					}
+
+					inputXLSXFiles = null;
+					const uploadInputElement = document.getElementById('upload-user-xlsx-input');
+
+					if (uploadInputElement) {
+						uploadInputElement.value = null;
+					}
+
+					stopLoading();
+				};
+
+				reader.readAsArrayBuffer(file);
 			} else {
 				toast.error($i18n.t('File not found.'));
 			}
@@ -171,10 +209,18 @@
 						>
 
 						<button
+							class="w-full rounded-lg p-1 {tab === 'excel_import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"
+							type="button"
+							on:click={() => {
+								tab = 'excel_import';
+							}}>Excel Import</button
+						>
+
+						<button
 							class="w-full rounded-lg p-1 {tab === 'import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"
 							type="button"
 							on:click={() => {
-								tab = 'import';
+								tab = 'csv_import';
 							}}>CSV Import</button
 						>
 					</div>
@@ -242,13 +288,47 @@
 									/>
 								</div>
 							</div>
-						{:else if tab === 'import'}
+						{:else if tab === 'excel_import'}
+							<div>
+								<div class="mb-3 w-full">
+									<input
+										id="upload-user-xlsx-input"
+										hidden
+										bind:files={inputXLSXFiles}
+										type="file"
+										accept=".xlsx"
+									/>
+
+									<button
+										class="w-full text-sm font-medium py-3 bg-transparent hover:bg-gray-100 border border-dashed dark:border-gray-800 dark:hover:bg-gray-850 text-center rounded-xl"
+										type="button"
+										on:click={() => {
+											document.getElementById('upload-user-xlsx-input')?.click();
+										}}
+									>
+										{#if inputXLSXFiles}
+											{inputXLSXFiles.length > 0 
+												? `${inputXLSXFiles.length} document selected: ${inputXLSXFiles[0].name}` 
+												: '0 documents selected.'}
+										{:else}
+											Click here to select an xlsx file.
+										{/if}
+									</button>
+								</div>
+
+								<div class=" text-xs text-gray-500">
+									ⓘ Ensure your Excel file includes these 3 columns: Name, Email, Role. <br />
+									ⓘ This file can be obtained by exporting from Canvas. <br />
+									ⓘ Users successfully imported will be emailed their login details.
+								</div>
+							</div>
+						{:else if tab === 'csv_import'}
 							<div>
 								<div class="mb-3 w-full">
 									<input
 										id="upload-user-csv-input"
 										hidden
-										bind:files={inputFiles}
+										bind:files={inputCSVFiles}
 										type="file"
 										accept=".csv"
 									/>
@@ -260,8 +340,10 @@
 											document.getElementById('upload-user-csv-input')?.click();
 										}}
 									>
-										{#if inputFiles}
-											{inputFiles.length > 0 ? `${inputFiles.length}` : ''} document(s) selected.
+										{#if inputCSVFiles}
+											{inputCSVFiles.length > 0 
+												? `${inputCSVFiles.length} document selected: ${inputCSVFiles[0].name}` 
+												: '0 documents selected.'}
 										{:else}
 											{$i18n.t('Click here to select a csv file.')}
 										{/if}

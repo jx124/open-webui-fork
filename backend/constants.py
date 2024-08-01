@@ -40,7 +40,7 @@ class ERROR_MESSAGES(str, Enum):
         "Your session has expired or the token is invalid. Please sign in again."
     )
     INVALID_CRED = "The email or password provided is incorrect. Please check for typos and try logging in again."
-    INVALID_EMAIL_FORMAT = "The email format you entered is invalid. Please double-check and make sure you're using a valid email address (e.g., yourname@example.com)."
+    INVALID_EMAIL_FORMAT = lambda email="": f"The email format you entered is invalid{(': ' + email) if email else ''}. Please double-check and make sure you're using a valid email address (e.g., yourname@example.com)."
     INVALID_PASSWORD = (
         "The password provided is incorrect. Please check for typos and try again."
     )
@@ -59,6 +59,11 @@ class ERROR_MESSAGES(str, Enum):
 
     FILE_NOT_SENT = "FILE_NOT_SENT"
     FILE_NOT_SUPPORTED = "Oops! It seems like the file format you're trying to upload is not supported. Please upload a file with a supported format (e.g., JPG, PNG, PDF, TXT) and try again."
+    
+    INVALID_IMPORT_FILE = "The file cannot be opened."
+    MISSING_COLUMNS_IMPORT = lambda cols: f"Missing columns: {', '.join(cols)}"
+    MISSING_ROLES = lambda roles: f"These roles do not exist: {', '.join(roles)}. Please create the roles before importing new users."
+    EXISTING_EMAIL_IMPORT = lambda emails: f"These emails are already in use: {', '.join(emails)}"
 
     NOT_FOUND = "We could not find what you're looking for :/"
     USER_NOT_FOUND = "We could not find what you're looking for :/"

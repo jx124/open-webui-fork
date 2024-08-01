@@ -5,9 +5,11 @@ from typing import List, Union, Optional, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-import time
-import uuid
 import logging
+
+import pandas as pd
+import secrets
+import io
 
 from apps.webui.models.users import (
     UserModel,
@@ -19,7 +21,9 @@ from apps.webui.models.users import (
 )
 from apps.webui.models.auths import Auths
 from apps.webui.models.chats import Chats
+from apps.webui.models.roles import Roles
 
+from utils.misc import validate_email_format
 from utils.utils import get_verified_user, get_password_hash, get_admin_user
 from constants import ERROR_MESSAGES
 
@@ -234,3 +238,86 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
         status_code=status.HTTP_403_FORBIDDEN,
         detail=ERROR_MESSAGES.ACTION_PROHIBITED,
     )
+
+
+############################
+# ImportUsersByExcel
+############################
+
+
+@router.post("/import", response_model=List[UserModel])
+async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
+    users = None
+
+    try:
+        recv_bytes = await request.body()
+        users = pd.read_excel(io.BytesIO(recv_bytes))
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.INVALID_IMPORT_FILE
+        )
+
+    if len(users) == 0:
+        return None
+
+    required_columns = set(["Name", "Email", "Role"])
+
+    if not required_columns.issubset(users.columns):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.MISSING_COLUMNS_IMPORT(required_columns.difference(users.columns))
+        )
+    
+    users = users[["Name", "Email", "Role"]]
+    
+    available_roles = set([role.name for role in Roles.get_roles()])
+    user_roles = set([role.strip() for role in users["Role"]])
+    
+    if not user_roles.issubset(available_roles):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.MISSING_ROLES(user_roles.difference(available_roles))
+        )
+    
+    existing_emails = set(Auths.get_emails())
+    user_emails = set([email.lower() for email in users["Email"]])
+
+    if existing_emails.intersection(user_emails):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.EXISTING_EMAIL_IMPORT(existing_emails.intersection(user_emails))
+        )
+    
+    for email in user_emails:
+        if not validate_email_format(email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT(email)
+            )
+        
+    users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
+    print(users)
+
+    new_users = []
+
+    for user in users.itertuples():
+        _, name, email, password, role = user
+
+        email_user_account_details(user)
+
+        hashed = get_password_hash(password)
+        result = Auths.insert_new_auth(
+            email.lower(),
+            hashed,
+            name,
+            "/user.png",
+            role,
+        )
+        new_users.append(result)
+
+    return new_users
+
+async def email_user_account_details(user):
+    # TODO: implement after getting gmail API credentials
+    pass

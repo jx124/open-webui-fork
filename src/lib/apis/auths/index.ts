@@ -134,6 +134,37 @@ export const addUser = async (
 	return res;
 };
 
+export const importUsersExcel = async (
+	token: string,
+	xlsx: ArrayBuffer
+) => {
+	let error = null;
+
+	const res = await fetch(`${WEBUI_API_BASE_URL}/users/import`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'array',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: xlsx
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const updateUserProfile = async (token: string, name: string, profileImageUrl: string) => {
 	let error = null;
 

@@ -192,6 +192,12 @@ class AuthsTable:
                 return False
         except:
             return False
+        
+    def get_emails(self) -> List[str]:
+        result = [
+            auth.email for auth in Auth.select(Auth.email)
+        ]
+        return result
 
 
 Auths = AuthsTable(DB)
