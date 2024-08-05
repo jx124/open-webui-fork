@@ -75,18 +75,13 @@ Table prompt {
   image_url text [default: ""]
   deadline timestamp [null]
   evaluation_id integer [null, ref: > evaluation.id]
+  model_id text [null, ref: > model.id]
 }
 
 Table promptrole {
   id integer [primary key]
   prompt_id integer [ref: > prompt.id]
   role_id integer [ref: > role.id]
-}
-
-Table promptmodel {
-  id integer [primary key]
-  prompt_id integer [ref: > prompt.id]
-  model_id text [ref: > model.id]
 }
 
 Table role {
@@ -122,7 +117,8 @@ Table user {
 
 Table evaluation {
   id integer [primary key]
-  content text
+  title varchar [not null, unique]
+  content text [default: ""]
 }
 
 Table studentclass {
@@ -133,7 +129,8 @@ Table studentclass {
 
 Table class {
   id integer [primary key]
-  instructor_id varchar [ref: < user.id]
+  name varchar [not null, unique]
+  instructor_id varchar [ref: > user.id]
 }
 
 Table classprompt {
