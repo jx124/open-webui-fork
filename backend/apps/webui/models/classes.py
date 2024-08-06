@@ -16,7 +16,7 @@ from apps.webui.models.roles import Role
 class Class(Model):
     id = AutoField()
     name = CharField(null=False, unique=True)
-    instructor_id = ForeignKeyField(User)
+    instructor = ForeignKeyField(User)
 
     class Meta:
         database = DB
@@ -25,6 +25,7 @@ class Class(Model):
 class ClassModel(BaseModel):
     id: int
     name: str
+    instructor_id: str
     instructor_name: str
 
 
@@ -60,6 +61,7 @@ class ClassPrompt(Model):
 
 
 class ClassForm(BaseModel):
+    id: int
     name: str
     instructor_id: str
 
@@ -67,7 +69,9 @@ class ClassForm(BaseModel):
 def class_to_classmodel(class_: Class) -> ClassModel:
     # flattens the class dict so "name" is visible to ClassModel
     class_dict = model_to_dict(class_)
-    return ClassModel(**class_dict, instructor_name=class_dict["instructor_id"]["name"])
+    return ClassModel(**class_dict,
+                      instructor_id=class_dict["instructor"]["id"],
+                      instructor_name=class_dict["instructor"]["name"])
 
 
 class ClassesTable:
@@ -103,13 +107,41 @@ class ClassesTable:
             return class_to_classmodel(class_)
         except:
             return None
+        
+    def get_class_by_id(self, user_id:str, user_role: str, class_id: int) -> Optional[ClassModel]:
+        try:
+            class_ = Class.select()\
+                .join(User)\
+                .where((Class.id == class_id) & ((Class.instructor.id == user_id) | (user_role == "admin"))).get()
+
+            return class_to_classmodel(class_)
+        except:
+            return None
  
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
-            result = Class.create(**form_data.model_dump())
+            result = Class.create(**form_data.model_dump(exclude={"id"}))
             return class_to_classmodel(result)
-        except Exception as e:
+        except:
             return None
+
+    def update_class_by_id(self, form_data: ClassForm) -> bool:
+        try:
+            query = Class.update(**form_data.model_dump(exclude={"id"})).where(Class.id == form_data.id)
+            query.execute()
+
+            return True
+        except:
+            return False
+        
+    def delete_class_by_id(self, class_id: int) -> bool:
+        try:
+            query = Class.delete().where(Class.id == class_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
 
 
 Classes = ClassesTable(DB)
