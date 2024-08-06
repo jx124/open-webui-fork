@@ -24,18 +24,19 @@ class ERROR_MESSAGES(str, Enum):
     ENV_VAR_NOT_FOUND = "Required environment variable not found. Terminating now."
     CREATE_USER_ERROR = "Oops! Something went wrong while creating your account. Please try again later. If the issue persists, contact support for assistance."
     DELETE_USER_ERROR = "Oops! Something went wrong. We encountered an issue while trying to delete the user. Please give it another shot."
-    EMAIL_MISMATCH = "Uh-oh! This email does not match the email your provider is registered with. Please check your email and try again."
-    EMAIL_TAKEN = "Uh-oh! This email is already registered. Sign in with your existing account or choose another email to start anew."
+    EMAIL_MISMATCH = "This email does not match the email your provider is registered with. Please check your email and try again."
+    EMAIL_TAKEN = "This email is already registered. Sign in with your existing account or choose another email to start anew."
     USERNAME_TAKEN = (
-        "Uh-oh! This username is already registered. Please choose another username."
+        "This username is already registered. Please choose another username."
     )
-    COMMAND_TAKEN = lambda cmd="": f"Uh-oh! The command {cmd} is already registered. Please choose another command string."
-    FILE_EXISTS = "Uh-oh! This file is already registered. Please choose another file."
+    COMMAND_TAKEN = lambda cmd="": f"The command {cmd} is already registered. Please choose another command string."
+    CLASS_NAME_TAKEN = lambda cmd="": f"The class name {cmd} is already registered. Please choose another name."
+    FILE_EXISTS = "This file is already registered. Please choose another file."
 
-    MODEL_ID_TAKEN = "Uh-oh! This model id is already registered. Please choose another model id string."
+    MODEL_ID_TAKEN = "This model id is already registered. Please choose another model id string."
 
-    NAME_TAG_TAKEN = "Uh-oh! This name tag is already registered. Please choose another name tag string."
-    ROLE_NAME_TAKEN = lambda name="": f"Uh-oh! The role name {name} is already registered. Please choose another role name string."
+    NAME_TAG_TAKEN = "This name tag is already registered. Please choose another name tag string."
+    ROLE_NAME_TAKEN = lambda name="": f"The role name {name} is already registered. Please choose another role name string."
     INVALID_TOKEN = (
         "Your session has expired or the token is invalid. Please sign in again."
     )
