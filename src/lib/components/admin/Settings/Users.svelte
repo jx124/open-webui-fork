@@ -50,6 +50,8 @@
 		element.scrollTop = element.scrollHeight;
 	};
 
+	const excludedRoles = new Set(["pending", "admin", "instructor"])
+
 	onMount(async () => {
 		permissions = await getUserPermissions(localStorage.token);
 
@@ -61,7 +63,8 @@
 
 		defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
 
-		_userRoles = $userRoles;
+
+		_userRoles = $userRoles.filter((role) => !excludedRoles.has(role.name));
 	});
 </script>
 
@@ -77,7 +80,7 @@
 		let error = false;
 		await updateUserRoles(localStorage.token, _userRoles)
 			.then((res) => {
-				_userRoles = res;
+				_userRoles = res.filter((role) => !excludedRoles.has(role.name));
 				$userRoles = res;
 			})
 			.catch((err) => {
@@ -263,7 +266,7 @@
 				<div class=" text-sm font-medium">Manage User Roles</div>
 			</div>
 			<div class="mb-2">
-				<div class="text-gray-400 dark:text-gray-500 text-xs font-normal">The "pending" and "admin" roles are fixed and cannot be modified.</div>
+				<div class="text-gray-400 dark:text-gray-500 text-xs font-normal">The "pending", "admin", and "instructor" roles are fixed and cannot be modified.</div>
 			</div>
 			<div class="flex w-full gap-1.5">
 				<div class="flex-1 flex flex-col gap-2">
@@ -273,7 +276,6 @@
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none disabled:text-gray-500 disabled:dark:text-gray-600"
 								placeholder="Enter role name"
 								bind:value={role.name}
-								disabled={idx === 0 || idx === 1}
 								required
 							/>
 
@@ -298,19 +300,6 @@
 											/>
 										</svg>
 									</button>
-								{:else if idx === 1}
-									<div
-										class="px-1"
-
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 16 16"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-										</svg>
-									</div>
 								{:else}
 									<button
 										class="px-1"

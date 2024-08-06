@@ -65,7 +65,10 @@ async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_ROLE_FORMAT,
             )
-        if (role.id == 1 and role.name != "pending") or (role.id == 2 and role.name != "admin"):
+        if ((role.id == 1 and role.name != "pending") 
+            or (role.id == 2 and role.name != "admin") 
+            or (role.id == 4 and role.name != "instructor")):
+
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_ROLE_CHANGE,
@@ -92,6 +95,13 @@ async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
 async def delete_role_by_id(role_id: int, user=Depends(get_admin_user)):
     if role_id == 0:
         return True
+    
+    # "pending", "admin", and "instructor" roles cannot be deleted
+    if role_id in [1, 2, 4]:
+        raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ERROR_MESSAGES.INVALID_ROLE_CHANGE,
+            )
     
     num_users = Users.get_num_users_by_role_id(role_id)
     if num_users != 0:

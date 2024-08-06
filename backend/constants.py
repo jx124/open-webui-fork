@@ -46,7 +46,7 @@ class ERROR_MESSAGES(str, Enum):
         "The password provided is incorrect. Please check for typos and try again."
     )
     INVALID_TRUSTED_HEADER = "Your provider has not provided a trusted header. Please contact your administrator for assistance."
-    INVALID_ROLE_CHANGE = "You are not allowed to change the 'pending' or 'admin' roles."
+    INVALID_ROLE_CHANGE = "You are not allowed to change the 'pending', 'admin', or 'instructor' roles."
     INVALID_ROLE_FORMAT = "Role names cannot contain commas and must be at most 255 characters long."
     INVALID_ROLE_DELETION = lambda num=0: f"This role cannot be deleted as {num} {'user is' if num==1 else 'users are'} assigned to it."
     DUPLICATE_ROLES = "Roles must be unique."
