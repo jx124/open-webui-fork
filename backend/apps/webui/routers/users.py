@@ -1,7 +1,6 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional, Dict
+from fastapi import Request
+from fastapi import Depends, HTTPException, status
+from typing import List, Optional, Dict
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -24,7 +23,7 @@ from apps.webui.models.chats import Chats
 from apps.webui.models.roles import Roles
 
 from utils.misc import validate_email_format
-from utils.utils import get_verified_user, get_password_hash, get_admin_user
+from utils.utils import get_admin_or_instructor, get_verified_user, get_password_hash, get_admin_user
 from constants import ERROR_MESSAGES
 
 from config import SRC_LOG_LEVELS
@@ -40,7 +39,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[UserModel])
-async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_user)):
+async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_or_instructor)):
     return Users.get_users(skip, limit)
 
 
