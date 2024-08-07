@@ -5,8 +5,6 @@ from typing import List, Union, Optional
 
 from apps.webui.internal.db import DB
 from apps.webui.models.users import User
-from apps.webui.models.prompts import Prompt
-from apps.webui.models.roles import Role
 
 ####################
 # Class DB Schema
@@ -37,19 +35,6 @@ class ClassModel(BaseModel):
 class StudentClass(Model):
     student_id = ForeignKeyField(User)
     class_id = ForeignKeyField(Class)
-
-    class Meta:
-        database = DB
-
-
-####################
-# ClassPrompt DB Schema
-####################
-
-
-class ClassPrompt(Model):
-    class_id = ForeignKeyField(Class)
-    prompt_id = ForeignKeyField(Prompt)
 
     class Meta:
         database = DB
@@ -159,17 +144,3 @@ class StudentClassesTable:
 
 
 StudentClasses = StudentClassesTable(DB)
-
-
-####################
-# ClassPrompt Forms
-####################
-
-
-class ClassPromptsTable:
-    def __init__(self, db):
-        self.db = db
-        self.db.create_tables([ClassPrompt])
-
-
-ClassPrompts = ClassPromptsTable(DB)

@@ -1,12 +1,14 @@
 from pydantic import BaseModel
-from peewee import *
+import peewee as pw
 from playhouse.shortcuts import model_to_dict
 from typing import List, Union, Optional
 import time
-from collections import defaultdict
 
 from apps.webui.models.roles import Role
 from apps.webui.models.users import User
+from apps.webui.models.evaluations import Evaluation
+from apps.webui.models.models import Model
+from apps.webui.models.classes import Class, StudentClass
 
 from apps.webui.internal.db import DB
 
@@ -15,14 +17,19 @@ from apps.webui.internal.db import DB
 ####################
 
 
-class Prompt(Model):
-    command = CharField(unique=True)
-    user_id = CharField()
-    title = TextField()
-    content = TextField()
-    timestamp = BigIntegerField()
-    is_visible = BooleanField(default=True)
-    additional_info = TextField(default="")
+class Prompt(pw.Model):
+    command = pw.CharField(unique=True)
+    user_id = pw.CharField()
+    title = pw.TextField()
+    content = pw.TextField()
+    timestamp = pw.BigIntegerField()
+    is_visible = pw.BooleanField(default=True)
+    additional_info = pw.TextField(default="")
+
+    image_url = pw.TextField(default="")
+    deadline = pw.BigIntegerField(null=True)
+    evaluation = pw.ForeignKeyField(Evaluation, null=True)
+    model = pw.ForeignKeyField(Model, null=True)
 
     class Meta:
         database = DB
@@ -37,7 +44,22 @@ class PromptModel(BaseModel):
     timestamp: int  # timestamp in epoch
     is_visible: bool   # whether prompt is visible to others
     additional_info: str
-    permitted_roles: List[int]
+
+    image_url: str = ""
+    deadline: Optional[int]
+    evaluation_id: Optional[int]
+    selected_model_id: Optional[str]  # prevent namespace collision
+
+
+def prompt_to_promptmodel(prompt: pw.Model) -> PromptModel:
+    # flattens the prompt dict so "evaluation_id" and "model_id" is visible to PromptModel
+    prompt_dict = model_to_dict(prompt)
+    evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
+    model_id = None if prompt_dict.get("model") is None else prompt_dict.get("model", {}).get("id")
+    
+    return PromptModel(**prompt_dict,
+                       evaluation_id=evaluation_id,
+                       selected_model_id=model_id)
 
 
 ####################
@@ -47,8 +69,8 @@ class PromptModel(BaseModel):
 # Schema placed here to prevent circular dependencies
 
 class PromptRole(Model):
-    prompt_id = ForeignKeyField(Prompt)
-    role_id = ForeignKeyField(Role)
+    prompt_id = pw.ForeignKeyField(Prompt)
+    role_id = pw.ForeignKeyField(Role)
 
     class Meta:
         database = DB
@@ -57,6 +79,19 @@ class PromptRole(Model):
 class PromptRoleModel(BaseModel):
     prompt_id: int
     role_id: int
+
+
+####################
+# ClassPrompt DB Schema
+####################
+
+
+class ClassPrompt(Model):
+    class_id = pw.ForeignKeyField(Class)
+    prompt_id = pw.ForeignKeyField(Prompt)
+
+    class Meta:
+        database = DB
 
 
 ####################
@@ -70,7 +105,11 @@ class PromptForm(BaseModel):
     content: str
     is_visible: bool
     additional_info: str
-    permitted_roles: List[int]
+
+    image_url: str = ""
+    deadline: Optional[int]
+    evaluation_id: Optional[int]
+    selected_model_id: Optional[str]
 
 
 class PromptsTable:
@@ -79,134 +118,133 @@ class PromptsTable:
         self.db = db
         self.db.create_tables([Prompt])
 
-    def insert_new_prompt(
-        self, user_id: str, form_data: PromptForm
-    ) -> Optional[PromptModel]:
-        prompt = PromptModel(
-            **{
-                "id": 0,
-                "user_id": user_id,
-                "command": form_data.command,
-                "title": form_data.title,
-                "content": form_data.content,
-                "timestamp": int(time.time()),
-                "is_visible": form_data.is_visible,
-                "additional_info": form_data.additional_info,
-                "permitted_roles": form_data.permitted_roles
-            }
-        )
-
+    def insert_new_prompt(self, user_id: str, form_data: PromptForm) -> Optional[PromptModel]:
         try:
-            result = Prompt.create(**prompt.model_dump(exclude={'id', 'permitted_roles'}))
+            prompt = PromptModel(
+                **{
+                    "id": 0,
+                    "timestamp": int(time.time()),
+                    "user_id": user_id,
+
+                    "command": form_data.command,
+                    "title": form_data.title,
+                    "content": form_data.content,
+                    "is_visible": form_data.is_visible,
+                    "additional_info": form_data.additional_info,
+                    "image_url": form_data.image_url,
+                    "deadline": form_data.deadline,
+                    "evaluation_id": form_data.evaluation_id,
+                    "selected_model_id": form_data.selected_model_id
+                }
+            )
+
+            result = Prompt.create(**prompt.model_dump(exclude={'id'}))
             if result:
-                prompt_id = Prompt.get(Prompt.command == form_data.command).id
-                prompt.id = prompt_id
-                PromptRoles.insert_new_prompt_roles_by_prompt(prompt_id, form_data.permitted_roles)
-
-                return prompt
+                return prompt_to_promptmodel(result)
             return None
         except:
             return None
 
-    def get_prompt_by_command(self, user_id: str, command: str) -> Optional[PromptModel]:
+    def get_prompt_by_command(self, user_id: str, user_role: str, command: str) -> Optional[PromptModel]:
         try:
-            prompt = None
-            if (user_id):
-                # used a left outer join so admin role does not need to be added for every prompt
-                prompt = Prompt.select()\
-                    .join(PromptRole, JOIN.LEFT_OUTER)\
-                    .join(User, on=(User.id == Prompt.user_id))\
-                    .join(Role, on=(Role.id == User.role_id))\
-                    .where(Prompt.command == command)\
-                    .where(((Prompt.is_visible == True) & (User.role_id == PromptRole.role_id))       # user permitted
-                           | (Prompt.user_id == user_id)                                              # user's own prompt
-                           | ((Prompt.is_visible == True) & (Role.name == "admin"))).distinct().get() # user is admin
-            else:
-                # If no user_id is provided, directly return prompt to check for collisions when creating prompts
+            if user_role == "admin":
                 prompt = Prompt.get(Prompt.command == command)
+                return prompt_to_promptmodel(prompt)
 
-            # fill in the permitted roles manually since group concat is not supported
-            prompt_roles = []
-            prompt_roles_query = PromptRole.select().where(PromptRole.prompt_id == prompt.id)
-            for row in prompt_roles_query:
-                prompt_roles.append(row.role_id.id)
-            
-            return PromptModel(**model_to_dict(prompt), permitted_roles=prompt_roles)
+            elif user_role == "instructor":
+                prompt = Prompt.select()\
+                    .where((Prompt.command == command)
+                           & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get()
+                return prompt_to_promptmodel(prompt)
+
+            else:
+                return None
         except:
             return None
 
-    def get_prompts(self, user_id: str) -> List[PromptModel]:
-        prompts = [
-            model_to_dict(prompt)
+    def get_prompts(self, user_id: str, user_role: str) -> List[PromptModel]:
+        query = None
+        if user_role == "admin":
+            query = Prompt.select()
 
-            # used a left outer join so admin role does not need to be added for every prompt
-            for prompt in Prompt.select()\
-                .join(PromptRole, JOIN.LEFT_OUTER)\
-                .join(User, on=(User.id == Prompt.user_id))\
-                .join(Role, on=(Role.id == User.role_id))\
-                .where(((Prompt.is_visible == True) & (User.role_id == PromptRole.role_id))     # user permitted
-                        | (Prompt.user_id == user_id)                                           # user's own prompt
-                        | ((Prompt.is_visible == True) & (Role.name == "admin")))               # user is admin
+        elif user_role == "instructor":
+            query = Prompt.select().where(((Prompt.user_id == user_id) | Prompt.is_visible == True))
+
+        else:
+            query = Prompt.select()\
+                .join(ClassPrompt, on=(Prompt.id == ClassPrompt.prompt_id))\
+                .join(Class, on=(ClassPrompt.class_id == Class.id))\
+                .join(StudentClass, on=(Class.class_id == StudentClass.id))\
+                .join(User, on=(StudentClass.user_id == User.id))\
                 .distinct()
-        ]
 
-        # fill in the permitted roles manually since group concat is not supported
-        prompt_roles = defaultdict(list[int])
-        prompt_roles_query = PromptRole.select()
-        for row in prompt_roles_query:
-            prompt_roles[row.prompt_id.id].append(row.role_id.id)
-        
-        for prompt in prompts:
-            prompt["permitted_roles"] = prompt_roles[prompt["id"]]
-
-        return [PromptModel(**prompt) for prompt in prompts]
+        return [prompt_to_promptmodel(prompt) for prompt in query]
     
     def update_prompt_by_command(
-        self, user_id: str, command: str, form_data: PromptForm
-    ) -> Optional[PromptModel]:
+        self, user_id: str, user_role: str, form_data: PromptForm
+    ) -> bool:
         try:
-            query = Prompt.update(
-                title=form_data.title,
-                content=form_data.content,
-                timestamp=int(time.time()),
-                is_visible=form_data.is_visible,
-                additional_info=form_data.additional_info
-            ).where(Prompt.command == command, (Prompt.is_visible == True) | (Prompt.user_id == user_id))
-            # we do not check the roles here since we only allow admins to update/delete prompts, which is validated by
-            # the router
+            command = f"/{form_data.command}"
+            result = None
 
-            result = query.execute()
+            prompt = PromptModel(
+                **{
+                    "id": 0,
+                    "command": command,
+                    "user_id": "",
+                    "timestamp": int(time.time()),
+
+                    "title": form_data.title,
+                    "content": form_data.content,
+                    "is_visible": form_data.is_visible,
+                    "additional_info": form_data.additional_info,
+                    "image_url": form_data.image_url,
+                    "deadline": form_data.deadline,
+                    "evaluation_id": form_data.evaluation_id,
+                    "selected_model_id": form_data.selected_model_id
+                }
+            )
+
+            if user_role == "admin":
+                query = Prompt.update(**prompt.model_dump(exclude={"id", "user_id", "selected_model_id"}),
+                                      model_id=form_data.selected_model_id)\
+                    .where(Prompt.command == command)
+                result = query.execute()
+
+            elif user_role == "instructor":
+                query = Prompt.update(**prompt.model_dump(exclude={"id", "user_id", "selected_model_id"}),
+                                      model_id=form_data.selected_model_id)\
+                    .where((Prompt.command == command) & 
+                           ((Prompt.user_id == user_id) | Prompt.is_visible == True))
+                result = query.execute()
 
             if result:
-                prompt = Prompt.get(Prompt.command == command)
-                prompt = PromptModel(**model_to_dict(prompt), permitted_roles=form_data.permitted_roles)
-                
-                PromptRoles.update_prompt_roles_by_prompt(prompt.id, form_data.permitted_roles)
+                return True
 
-                return prompt
-
-            return None
+            return False
         except:
-            return None
+            return False
 
-    def delete_prompt_by_command(self, user_id: str, command: str) -> bool:
+    def delete_prompt_by_command(self, user_id: str, user_role: str, command: str) -> bool:
         try:
-            prompt = Prompts.get_prompt_by_command(user_id, command)
-
+            prompt = Prompts.get_prompt_by_command(user_id, user_role, command)
             if not prompt:
                 return False
 
-            PromptRoles.delete_prompt_roles_by_prompt(prompt.id)
+            result = None
+            if user_role == "admin":
+                query = Prompt.delete().where(Prompt.command == command)
+                result = query.execute()
 
-            query = Prompt.delete().where(
-                Prompt.command == command,
-                (Prompt.is_visible == True) | (Prompt.user_id == user_id)
-            )
-            # we do not check the roles here since we only allow admins to update/delete prompts, which is validated by
-            # the router
-            query.execute()  # Remove the rows, return number of rows removed.
+            elif user_role == "instructor":
+                query = Prompt.delete()\
+                    .where((Prompt.command == command) & 
+                           ((Prompt.user_id == user_id) | Prompt.is_visible == True))
+                result = query.execute()
 
-            return True
+            if result:
+                return True
+            return False
         except:
             return False
 
@@ -274,3 +312,17 @@ class PromptRolesTable:
             return False
 
 PromptRoles = PromptRolesTable(DB)
+
+
+####################
+# ClassPrompt Forms
+####################
+
+
+class ClassPromptsTable:
+    def __init__(self, db):
+        self.db = db
+        self.db.create_tables([ClassPrompt])
+
+
+ClassPrompts = ClassPromptsTable(DB)
