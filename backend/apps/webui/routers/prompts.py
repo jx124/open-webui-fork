@@ -29,9 +29,9 @@ async def get_prompts(user=Depends(get_current_user)):
 async def create_new_prompt(form_data: PromptForm, user=Depends(get_admin_or_instructor)):
     prompt = Prompts.get_prompt_by_command(user.id, "admin", form_data.command)
 
-    if prompt == None:
+    if prompt is None:
         prompt = Prompts.insert_new_prompt(user.id, form_data)
-        print("create prompt", prompt)
+
         if prompt:
             return prompt.id
         raise HTTPException(
@@ -73,7 +73,6 @@ async def get_prompt_by_command(command: str, user=Depends(get_current_user)):
 async def update_prompt_by_command(
     form_data: PromptForm, user=Depends(get_admin_or_instructor)
 ):
-    print("update prompt", form_data)
     result = Prompts.update_prompt_by_command(user.id, user.role, form_data)
     if result:
         return result

@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { prompts } from '$lib/stores';
+	import { prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -12,6 +12,8 @@
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
 	import DatePicker from '$lib/components/common/DatePicker.svelte';
+	import ItemMultiSelector from '$lib/components/admin/ItemMultiSelector.svelte';
+	import { getClassList } from '$lib/apis/classes';
 
 	let loading = false;
 
@@ -25,7 +27,9 @@
 		image_url: "/user.png",
 		deadline: null,
 		evaluation_id: null,
-		selected_model_id: null
+		selected_model_id: null,
+
+		assigned_classes: []
 	};
 
 	let showPreviewModal = false;
@@ -33,6 +37,14 @@
 	let profileImageInputElement: HTMLInputElement;
 	let hasDeadline = false;
 	let selectedDateTime: string | null;
+
+	let classes;
+	let classItems: {
+		label: string,
+		value: number
+	}[];
+
+	let promptAuthorId: string;
 
 	const updateHandler = async () => {
 		loading = true;
@@ -74,10 +86,6 @@
 			const prompt = $prompts.filter((prompt) => prompt.command === form_data.command).at(0);
 
 			if (prompt) {
-				console.log(prompt);
-
-				console.log(prompt.command);
-
 				form_data.title = prompt.title;
 				await tick();
 				form_data.command = prompt.command.slice(1);
@@ -93,12 +101,27 @@
 
 				form_data.evaluation_id = prompt.evaluation_id
 				form_data.selected_model_id = prompt.selected_model_id
+
+				form_data.assigned_classes = prompt.assigned_classes
+
+				promptAuthorId = prompt.user_id
 			} else {
 				goto('/workspace/prompts');
 			}
 		} else {
 			goto('/workspace/prompts');
 		}
+
+		classes = await getClassList(localStorage.token).catch((error) => {
+			toast.error(error);
+		})
+
+		classItems = classes.map((c) => {
+			return {
+				label: c.name,
+				value: c.id,
+			};
+		})
 	});
 </script>
 
@@ -303,7 +326,7 @@
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
 				>
-				are allowed. This will be part of the hyperlink to this prompt.
+				are allowed. This will be part of the hyperlink to this prompt and cannot be modified in the future.
 			</div>
 		</div>
 
@@ -344,7 +367,11 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
-			TODO
+			<ItemMultiSelector 
+				addItemLabel={"Add Class"}
+				searchPlaceholder={"Search clases"} 
+				bind:items={classItems}
+				bind:selectedItems={form_data.assigned_classes} />
 		</div>
 
 		<div class="my-2">
@@ -403,18 +430,20 @@
 			</div>
 		</div>
 
-		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Draft</div>
+		{#if promptAuthorId === $user?.id}
+			<div class="my-2">
+				<div class=" text-sm font-semibold mb-1">Draft</div>
 
-			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
-				<input
-					type="checkbox"
-					on:change={() => form_data.is_visible = !form_data.is_visible}
-					checked={!form_data.is_visible}
-				>
-				Save as draft. Instructors and students will not be able to see this prompt.
-			</label>
-		</div>
+				<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+					<input
+						type="checkbox"
+						on:change={() => form_data.is_visible = !form_data.is_visible}
+						checked={!form_data.is_visible}
+					>
+					Save as draft. Instructors and students will not be able to see this prompt.
+				</label>
+			</div>
+		{/if}
 
 		<div class="my-2 flex justify-end">
 			<button

@@ -1,7 +1,8 @@
+from collections import defaultdict
 from pydantic import BaseModel
 import peewee as pw
 from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
+from typing import Dict, List, Union, Optional
 import time
 
 from apps.webui.models.roles import Role
@@ -18,6 +19,7 @@ from apps.webui.internal.db import DB
 
 
 class Prompt(pw.Model):
+    id = pw.AutoField()
     command = pw.CharField(unique=True)
     user_id = pw.CharField()
     title = pw.TextField()
@@ -50,17 +52,19 @@ class PromptModel(BaseModel):
     evaluation_id: Optional[int]
     selected_model_id: Optional[str]  # prevent namespace collision
 
+    assigned_classes: List[int]
 
-def prompt_to_promptmodel(prompt: pw.Model) -> PromptModel:
+
+def prompt_to_promptmodel(prompt: pw.Model, classes: List[int] = []) -> PromptModel:
     # flattens the prompt dict so "evaluation_id" and "model_id" is visible to PromptModel
     prompt_dict = model_to_dict(prompt)
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
     model_id = None if prompt_dict.get("model") is None else prompt_dict.get("model", {}).get("id")
     
     return PromptModel(**prompt_dict,
-                       evaluation_id=evaluation_id,
-                       selected_model_id=model_id)
-
+                        evaluation_id=evaluation_id,
+                        selected_model_id=model_id,
+                        assigned_classes=classes)
 
 ####################
 # PromptRole DB Schema
@@ -94,6 +98,11 @@ class ClassPrompt(Model):
         database = DB
 
 
+class ClassPromptModel(BaseModel):
+    class_id: int
+    prompt_id: int
+
+
 ####################
 # Prompt Forms
 ####################
@@ -110,6 +119,8 @@ class PromptForm(BaseModel):
     deadline: Optional[str]
     evaluation_id: Optional[int]
     selected_model_id: Optional[str]
+
+    assigned_classes: List[int]
 
 
 class PromptsTable:
@@ -134,52 +145,78 @@ class PromptsTable:
                     "image_url": form_data.image_url,
                     "deadline": form_data.deadline,
                     "evaluation_id": form_data.evaluation_id,
-                    "selected_model_id": form_data.selected_model_id
+                    "selected_model_id": form_data.selected_model_id,
+                    "assigned_classes": form_data.assigned_classes,
                 }
             )
 
-            result = Prompt.create(**prompt.model_dump(exclude={'id'}))
-            if result:
-                return prompt_to_promptmodel(result)
+            with self.db.atomic():
+                result = Prompt.create(**prompt.model_dump(exclude={'id'}))
+                if result:
+                    ClassPrompts.insert_new_class_prompts_by_prompt(result.id, form_data.assigned_classes)
+
+                    return prompt_to_promptmodel(result)
             return None
         except:
             return None
 
     def get_prompt_by_command(self, user_id: str, user_role: str, command: str) -> Optional[PromptModel]:
         try:
+            classes = []
             if user_role == "admin":
                 prompt = Prompt.get(Prompt.command == command)
-                return prompt_to_promptmodel(prompt)
+
+                if prompt:
+                    classes = ClassPrompts.get_classes_by_prompt(prompt.id)
+
+                return prompt_to_promptmodel(prompt, classes)
 
             elif user_role == "instructor":
                 prompt = Prompt.select()\
                     .where((Prompt.command == command)
                            & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get()
-                return prompt_to_promptmodel(prompt)
+                
+                if prompt:
+                    classes = ClassPrompts.get_classes_by_prompt(prompt.id)
+                
+                return prompt_to_promptmodel(prompt, classes)
 
             else:
                 return None
         except:
             return None
+        
+    def get_prompt_id_by_command(self, command: str) -> Optional[int]:
+        try:
+            return Prompt.select(Prompt.id).where(Prompt.command == command).get()
+        except:
+            return None
 
+    # TODO: define list model with less info
     def get_prompts(self, user_id: str, user_role: str) -> List[PromptModel]:
-        query = None
-        if user_role == "admin":
-            query = Prompt.select()
+        try:
+            query = None
+            if user_role == "admin":
+                query = Prompt.select()
 
-        elif user_role == "instructor":
-            query = Prompt.select().where(((Prompt.user_id == user_id) | Prompt.is_visible == True))
+            elif user_role == "instructor":
+                query = Prompt.select()\
+                    .where(((Prompt.user_id == user_id) | Prompt.is_visible == True))
 
-        else:
-            query = Prompt.select()\
-                .join(ClassPrompt, on=(Prompt.id == ClassPrompt.prompt_id))\
-                .join(Class, on=(ClassPrompt.class_id == Class.id))\
-                .join(StudentClass, on=(Class.class_id == StudentClass.id))\
-                .join(User, on=(StudentClass.user_id == User.id))\
-                .distinct()
+            else:
+                query = Prompt.select()\
+                    .join(ClassPrompt, on=(Prompt.id == ClassPrompt.prompt_id))\
+                    .join(Class, on=(ClassPrompt.class_id == Class.id))\
+                    .join(StudentClass, on=(Class.class_id == StudentClass.id))\
+                    .join(User, on=(StudentClass.user_id == User.id))\
+                    .distinct()
+                
+            result = ClassPrompts.get_all_classes_by_prompts()
 
-        return [prompt_to_promptmodel(prompt) for prompt in query]
-    
+            return [prompt_to_promptmodel(prompt, result[prompt.id]) for prompt in query]
+        except:
+            return None
+
     def update_prompt_by_command(
         self, user_id: str, user_role: str, form_data: PromptForm
     ) -> bool:
@@ -193,6 +230,7 @@ class PromptsTable:
                     "command": command,
                     "user_id": "",
                     "timestamp": int(time.time()),
+                    "assigned_classes": [],
 
                     "title": form_data.title,
                     "content": form_data.content,
@@ -205,21 +243,30 @@ class PromptsTable:
                 }
             )
 
-            if user_role == "admin":
-                query = Prompt.update(**prompt.model_dump(exclude={"id", "user_id", "selected_model_id"}),
-                                      model_id=form_data.selected_model_id)\
-                    .where(Prompt.command == command)
-                result = query.execute()
+            prompt_id = self.get_prompt_id_by_command(command)
+            if prompt_id is None:
+                return False
 
-            elif user_role == "instructor":
-                query = Prompt.update(**prompt.model_dump(exclude={"id", "user_id", "selected_model_id"}),
-                                      model_id=form_data.selected_model_id)\
-                    .where((Prompt.command == command) & 
-                           ((Prompt.user_id == user_id) | Prompt.is_visible == True))
-                result = query.execute()
+            excluded_columns = {"id", "user_id", "selected_model_id", "assigned_classes"}
 
-            if result:
-                return True
+            with self.db.atomic():
+                if user_role == "admin":
+                    query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
+                                        model_id=form_data.selected_model_id)\
+                        .where(Prompt.command == command)
+                    result = query.execute()
+
+                elif user_role == "instructor":
+                    query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
+                                        model_id=form_data.selected_model_id)\
+                        .where((Prompt.command == command) & 
+                            ((Prompt.user_id == user_id) | Prompt.is_visible == True))
+                    result = query.execute()
+
+                if result:
+                    ClassPrompts.update_class_prompts_by_prompt(prompt_id, form_data.assigned_classes)
+
+                    return True
 
             return False
         except:
@@ -232,15 +279,18 @@ class PromptsTable:
                 return False
 
             result = None
-            if user_role == "admin":
-                query = Prompt.delete().where(Prompt.command == command)
-                result = query.execute()
+            with self.db.atomic():
+                ClassPrompts.delete_class_prompts_by_prompt(prompt.id)
 
-            elif user_role == "instructor":
-                query = Prompt.delete()\
-                    .where((Prompt.command == command) & 
-                           ((Prompt.user_id == user_id) | Prompt.is_visible == True))
-                result = query.execute()
+                if user_role == "admin":
+                    query = Prompt.delete().where(Prompt.command == command)
+                    result = query.execute()
+
+                elif user_role == "instructor":
+                    query = Prompt.delete()\
+                        .where((Prompt.command == command) & 
+                            ((Prompt.user_id == user_id) | Prompt.is_visible == True))
+                    result = query.execute()
 
             if result:
                 return True
@@ -323,6 +373,70 @@ class ClassPromptsTable:
     def __init__(self, db):
         self.db = db
         self.db.create_tables([ClassPrompt])
+
+    def insert_new_class_prompts_by_prompt(
+        self, prompt_id: int, class_ids: List[int] 
+    ) -> List[ClassPromptModel]:
+        data = [{ "class_id": class_id, "prompt_id": prompt_id } for class_id in class_ids]
+
+        try:
+            result = ClassPrompt.insert_many(data).execute()
+            if result:
+                return ClassPrompt.select()
+            else:
+                return None
+        except:
+            return None
+ 
+    def get_classes_by_prompt(self, prompt_id: int) -> List[int]:
+        try:
+            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id).where(ClassPrompt.prompt_id == prompt_id)
+            return [row.class_id.id for row in query]
+        except:
+            return []
+    
+    def get_all_classes_by_prompts(self):
+        # returns defaultdict of prompt_id -> [class_ids]
+        try:
+            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id)
+            result = defaultdict(lambda: [])
+
+            for row in query:
+                result[row.prompt_id.id].append(row.class_id.id)
+
+            return result
+        except:
+            return {}
+
+
+    def update_class_prompts_by_prompt(
+        self, prompt_id: int, role_ids: List[int]
+    ) -> List[ClassPromptModel]:
+        try:
+            with self.db.atomic():
+                # delete everything and reinsert for now since the expected number of roles is still quite small
+                ClassPrompt.delete().where(ClassPrompt.prompt_id == prompt_id).execute()
+                return self.insert_new_class_prompts_by_prompt(prompt_id, role_ids)
+        except:
+            return None
+
+    def delete_class_prompts_by_prompt(self, prompt_id: int) -> bool:
+        try:
+            query = ClassPrompt.delete().where(ClassPrompt.prompt_id == prompt_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
+
+    def delete_class_prompts_by_class(self, class_id: int) -> bool:
+        try:
+            query = ClassPrompt.delete().where(ClassPrompt.class_id == class_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
 
 
 ClassPrompts = ClassPromptsTable(DB)

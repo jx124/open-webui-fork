@@ -10,7 +10,9 @@ export type PromptForm = {
     image_url: string,
     deadline: string | null,
     evaluation_id: number | null,
-    selected_model_id: string | null
+    selected_model_id: string | null,
+
+	assigned_classes: number[]
 }
 
 export const createNewPrompt = async (

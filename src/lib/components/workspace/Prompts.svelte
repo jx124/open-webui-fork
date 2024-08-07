@@ -181,11 +181,7 @@
 					for (const prompt of savedPrompts) {
 						await createNewPrompt(
 							localStorage.token,
-							prompt.command.charAt(0) === '/' ? prompt.command.slice(1) : prompt.command,
-							prompt.title,
-							prompt.content,
-							prompt.is_visible,
-							prompt.additional_info
+							prompt
 						).catch((error) => {
 							toast.error(error);
 							return null;

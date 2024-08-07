@@ -9,6 +9,8 @@
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
 	import DatePicker from '$lib/components/common/DatePicker.svelte';
+	import { getClassList } from '$lib/apis/classes';
+	import ItemMultiSelector from '$lib/components/admin/ItemMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -24,7 +26,9 @@
 		image_url: "/user.png",
 		deadline: null,
 		evaluation_id: null,
-		selected_model_id: null
+		selected_model_id: null,
+
+		assigned_classes: []
 	};
 
 	let showPreviewModal = false;
@@ -34,6 +38,12 @@
 	let profileImageInputElement: HTMLInputElement;
 	let hasDeadline = false;
 	let selectedDateTime: string | null;
+
+	let classes;
+	let classItems: {
+		label: string,
+		value: number
+	}[];
 
 	const submitHandler = async () => {
 		loading = true;
@@ -104,6 +114,17 @@
 
 			sessionStorage.removeItem('prompt');
 		}
+
+		classes = await getClassList(localStorage.token).catch((error) => {
+			toast.error(error);
+		})
+
+		classItems = classes.map((c) => {
+			return {
+				label: c.name,
+				value: c.id,
+			};
+		})
 	});
 </script>
 
@@ -306,7 +327,7 @@
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
 				>
-				are allowed. This will be part of the hyperlink to this prompt.
+				are allowed. This will be part of the hyperlink to this prompt and cannot be modified in the future.
 			</div>
 		</div>
 
@@ -347,7 +368,11 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
-			TODO
+			<ItemMultiSelector 
+				addItemLabel={"Add Class"}
+				searchPlaceholder={"Search clases"} 
+				bind:items={classItems}
+				bind:selectedItems={form_data.assigned_classes} />
 		</div>
 
 		<div class="my-2">
