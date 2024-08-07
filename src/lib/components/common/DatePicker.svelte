@@ -4,12 +4,23 @@
 	import ChevronLeft from '../icons/ChevronLeft.svelte';
 	import ChevronRight from '../icons/ChevronRight.svelte';
 	import CalendarBlank from '../icons/CalendarBlank.svelte';
+	import { CalendarDateTime, parseDate } from '@internationalized/date';
 	
     export let header = "";
-    export let selectedDate;
+	
+	let selectedDate;
+
+	export let selectedDateTime;
+	export let placeholder: string | null;
+	let parsedPlaceholder = placeholder ? parseDate(placeholder.split("T")[0]) : undefined;
+	
+	$: if (selectedDate) {
+		selectedDateTime = new CalendarDateTime(selectedDate?.year, selectedDate?.month, selectedDate?.day, 23, 59, 59).toString();
+	} 
+    
 </script>
 
-<DatePicker.Root weekdayFormat="short" fixedWeeks={true}>
+<DatePicker.Root weekdayFormat="short" fixedWeeks={true} value={parsedPlaceholder}>
 	<div class="flex w-full max-w-[232px] flex-col gap-1.5">
 		<DatePicker.Label class="block select-none text-sm font-medium">{header}</DatePicker.Label>
 		<DatePicker.Input

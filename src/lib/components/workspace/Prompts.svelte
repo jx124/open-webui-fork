@@ -3,7 +3,7 @@
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import { WEBUI_NAME, prompts } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
 	import DeleteModal from '../DeleteModal.svelte';
@@ -20,8 +20,12 @@
 	const deletePrompt = async (command) => {
 		showDeleteModal = false;
 		await deletePromptByCommand(localStorage.token, command);
-		await prompts.set(await getPrompts(localStorage.token));
+		$prompts = await getPrompts(localStorage.token);
 	};
+
+	onMount(async () => {
+		$prompts = await getPrompts(localStorage.token);
+	})
 </script>
 
 <svelte:head>
@@ -83,20 +87,27 @@
 <hr class=" dark:border-gray-850 my-2.5" />
 
 <div class="my-3 mb-5">
-	{#each $prompts.filter((p) => query === '' || p.command.includes(query)) as prompt}
+	{#each $prompts.filter((p) => query === '' || p.title.toLowerCase().includes(query) || p.command.toLowerCase().includes(query)) as prompt}
 		<div
 			class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
 		>
-			<div class=" flex flex-1 space-x-4 cursor-pointer w-full">
-				<a href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}>
-					<div class=" flex-1 self-center pl-5">
-						<div class=" font-bold">{prompt.command}</div>
+			<div class="flex flex-1 space-x-4 cursor-pointer w-full">
+				<a class="flex items-center " href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}>
+					<img
+						src={prompt.image_url ? prompt.image_url : "/user.png"}
+						alt="profile"
+						class="rounded-full h-12 w-12 object-cover"
+					/>
+					<div class=" flex-1 self-center pl-3">
+						<div class=" font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
 						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{prompt.title}
+							{prompt.command}
 						</div>
-						<div class="text-xs text-gray-400 dark:text-gray-500">
-							Visibility: {prompt.is_visible ? "Everyone" : "Only You"}
-						</div>
+						{#if prompt.deadline}
+							<div class="text-xs text-gray-400 dark:text-gray-500">
+								Due: {new Date(prompt.deadline).toString()}
+							</div>
+						{/if}
 					</div>
 				</a>
 			</div>

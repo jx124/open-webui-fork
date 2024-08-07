@@ -127,11 +127,17 @@ type Prompt = {
 	id: number,
 	command: string;
 	user_id: string;
+	user_name: string;
 	title: string;
 	content: string;
 	timestamp: number;
 	is_visible: boolean;
 	additional_info: string;
+
+	image_url: string,
+    deadline: string | null,
+    evaluation_id: number | null,
+    selected_model_id: string | null
 };
 
 type Config = {

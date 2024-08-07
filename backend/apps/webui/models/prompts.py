@@ -27,7 +27,7 @@ class Prompt(pw.Model):
     additional_info = pw.TextField(default="")
 
     image_url = pw.TextField(default="")
-    deadline = pw.BigIntegerField(null=True)
+    deadline = pw.DateTimeField(null=True)
     evaluation = pw.ForeignKeyField(Evaluation, null=True)
     model = pw.ForeignKeyField(Model, null=True)
 
@@ -46,7 +46,7 @@ class PromptModel(BaseModel):
     additional_info: str
 
     image_url: str = ""
-    deadline: Optional[int]
+    deadline: Optional[str]
     evaluation_id: Optional[int]
     selected_model_id: Optional[str]  # prevent namespace collision
 
@@ -107,7 +107,7 @@ class PromptForm(BaseModel):
     additional_info: str
 
     image_url: str = ""
-    deadline: Optional[int]
+    deadline: Optional[str]
     evaluation_id: Optional[int]
     selected_model_id: Optional[str]
 

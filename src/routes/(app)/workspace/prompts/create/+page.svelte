@@ -21,7 +21,7 @@
 		is_visible: false,
 		additional_info: "",
 
-		image_url: "",
+		image_url: "/user.png",
 		deadline: null,
 		evaluation_id: null,
 		selected_model_id: null
@@ -33,7 +33,7 @@
 
 	let profileImageInputElement: HTMLInputElement;
 	let hasDeadline = false;
-	let selectedDate;
+	let selectedDateTime: string | null;
 
 	const submitHandler = async () => {
 		loading = true;
@@ -214,7 +214,7 @@
 						<img
 							src={form_data.image_url !== '' ? form_data.image_url : generateInitialsImage(form_data.title)}
 							alt="profile"
-							class="rounded-full size-25 object-cover"
+							class="rounded-full h-24 w-24 object-cover"
 						/>
 
 						<div
@@ -355,13 +355,20 @@
 			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
 				<input
 					type="checkbox"
-					on:change={() => hasDeadline = !hasDeadline}
+					on:change={() => {
+						hasDeadline = !hasDeadline;
+						if (!hasDeadline) {
+							form_data.deadline = null;
+						} else {
+							form_data.deadline = selectedDateTime;
+						}
+					}}
 					checked={hasDeadline}
 				>
 				Set deadline for completion.
 			</label>
 			{#if hasDeadline}
-			 <DatePicker bind:selectedDate />
+				<DatePicker bind:selectedDateTime={form_data.deadline} placeholder={selectedDateTime} />
 			{/if}
 		</div>
 
