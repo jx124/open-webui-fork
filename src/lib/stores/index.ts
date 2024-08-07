@@ -124,6 +124,7 @@ type TitleSettings = {
 };
 
 type Prompt = {
+	id: number,
 	command: string;
 	user_id: string;
 	title: string;
@@ -131,7 +132,6 @@ type Prompt = {
 	timestamp: number;
 	is_visible: boolean;
 	additional_info: string;
-	permitted_roles: number[];
 };
 
 type Config = {

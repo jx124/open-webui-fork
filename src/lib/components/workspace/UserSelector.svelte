@@ -6,7 +6,7 @@
 
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { mobile } from '$lib/stores';
+	import { mobile, user } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -58,6 +58,7 @@
                 bind:value={label}
                 required
                 readonly
+                disabled={$user?.role === "instructor"}
             />
         </DropdownMenu.Trigger>
 

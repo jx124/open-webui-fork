@@ -6,13 +6,14 @@
 	import { getUsers } from '$lib/apis/users';
 	import { type ClassForm, createNewClass } from '$lib/apis/classes';
 	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
 	let form_data: ClassForm = {
 		id: 0,
 		name: "",
-		instructor_id: ""
+		instructor_id: $user?.id ?? ""
 	};
 
     let pageLoading = false;
@@ -41,9 +42,13 @@
     onMount(async () => {
 		pageLoading = true;
 
-        const users = await getUsers(localStorage.token);
-        const validUsers = users.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers.map(user => { 
+        const users = await getUsers(localStorage.token).catch((error) => {
+			pageLoading = false;
+			toast.error(error);
+		});
+
+        const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
+        items = validUsers?.map(user => { 
             return {
                 value: user.id,
                 label: user.name
@@ -134,6 +139,7 @@
 
 				<UserSelector 
 					bind:value={form_data.instructor_id}
+					externalLabel={$user?.role === "instructor" ? $user?.name : ""}
 					{items}
 					placeholder={"Select an instructor"}
 					searchPlaceholder={"Search for an instructor"}

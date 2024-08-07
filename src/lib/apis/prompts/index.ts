@@ -1,13 +1,21 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
 
+export type PromptForm = {
+	command: string,
+    title: string,
+    content: string,
+    is_visible: boolean,
+    additional_info: string,
+
+    image_url: string,
+    deadline: number | null,
+    evaluation_id: number | null,
+    selected_model_id: string | null
+}
+
 export const createNewPrompt = async (
 	token: string,
-	command: string,
-	title: string,
-	content: string,
-	isVisible: boolean,
-	additionalInfo: string,
-	permittedRoles: number[]
+	form_data: PromptForm
 ) => {
 	let error = null;
 
@@ -19,12 +27,8 @@ export const createNewPrompt = async (
 			authorization: `Bearer ${token}`
 		},
 		body: JSON.stringify({
-			command: `/${command}`,
-			title: title,
-			content: content,
-			is_visible: isVisible,
-			additional_info: additionalInfo,
-			permitted_roles: permittedRoles
+			...form_data,
+			command: `/${form_data.command}`,
 		})
 	})
 		.then(async (res) => {
@@ -109,30 +113,18 @@ export const getPromptByCommand = async (token: string, command: string) => {
 
 export const updatePromptByCommand = async (
 	token: string,
-	command: string,
-	title: string,
-	content: string,
-	isVisible: boolean,
-	additionalInfo: string,
-	permittedRoles: number[]
+	form_data: PromptForm
 ) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/prompts/command/${command}/update`, {
+	const res = await fetch(`${WEBUI_API_BASE_URL}/prompts/command/${form_data.command}/update`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
 			authorization: `Bearer ${token}`
 		},
-		body: JSON.stringify({
-			command: `/${command}`,
-			title: title,
-			content: content,
-			is_visible: isVisible,
-			additional_info: additionalInfo,
-			permitted_roles: permittedRoles
-		})
+		body: JSON.stringify(form_data)
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();

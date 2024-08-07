@@ -2,39 +2,45 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { prompts, userRoles } from '$lib/stores';
+	import { prompts } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
 
-	import { getPrompts, updatePromptByCommand } from '$lib/apis/prompts';
+	import { getPrompts, type PromptForm, updatePromptByCommand } from '$lib/apis/prompts';
 	import { page } from '$app/stores';
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
-	import { getRoles } from '$lib/apis/roles';
-	import RoleMultiSelector from '$lib/components/admin/RoleMultiSelector.svelte';
+	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
+	import DatePicker from '$lib/components/common/DatePicker.svelte';
 
 	let loading = false;
 
-	// ///////////
-	// Prompt
-	// ///////////
+	let form_data: PromptForm = {
+		command: "",
+		title: "",
+		content: "",
+		is_visible: false,
+		additional_info: "",
 
-	let title = '';
-	let command = '';
-	let content = '';
-	let isVisible = true;
-	let additionalInfo = '';
-	let permittedRoles: number[] = [];
+		image_url: "",
+		deadline: null,
+		evaluation_id: null,
+		selected_model_id: null
+	};
 
 	let showPreviewModal = false;
+
+	let profileImageInputElement: HTMLInputElement;
+	let hasDeadline = false;
+	let selectedDate;
 
 	const updateHandler = async () => {
 		loading = true;
 
-		if (validateCommandString(command)) {
+		if (validateCommandString(form_data.command)) {
 			const prompt = await updatePromptByCommand(
-				localStorage.token, command, title, content, isVisible, additionalInfo, permittedRoles)
-			.catch(
+				localStorage.token, form_data
+			).catch(
 				(error) => {
 					toast.error(error);
 					return null;
@@ -63,34 +69,31 @@
 	};
 
 	onMount(async () => {
-		command = $page.url.searchParams.get('command') ?? "";
-		if (command) {
-			const prompt = $prompts.filter((prompt) => prompt.command === command).at(0);
+		form_data.command = $page.url.searchParams.get('command') ?? "";
+		if (form_data.command) {
+			const prompt = $prompts.filter((prompt) => prompt.command === form_data.command).at(0);
 
 			if (prompt) {
 				console.log(prompt);
 
 				console.log(prompt.command);
 
-				title = prompt.title;
+				form_data.title = prompt.title;
 				await tick();
-				command = prompt.command.slice(1);
-				content = prompt.content;
-				isVisible = prompt.is_visible;
-				additionalInfo = prompt.additional_info;
-				permittedRoles = prompt.permitted_roles;
+				form_data.command = prompt.command.slice(1);
+				form_data.content = prompt.content;
+				form_data.is_visible = prompt.is_visible;
+				form_data.additional_info = prompt.additional_info;
 			} else {
 				goto('/workspace/prompts');
 			}
 		} else {
 			goto('/workspace/prompts');
 		}
-
-		$userRoles = await getRoles(localStorage.token);
 	});
 </script>
 
-<PreviewModal bind:show={showPreviewModal} bind:previewContent={additionalInfo}/>
+<PreviewModal bind:show={showPreviewModal} bind:previewContent={form_data.additional_info}/>
 
 <div class="w-full max-h-full">
 	<button
@@ -122,6 +125,139 @@
 			updateHandler();
 		}}
 	>
+
+		<input
+			id="profile-image-input"
+			bind:this={profileImageInputElement}
+			type="file"
+			hidden
+			accept="image/*"
+			on:change={(e) => {
+				const files = profileImageInputElement.files ?? [];
+				let reader = new FileReader();
+				reader.onload = (event) => {
+					let originalImageUrl = `${event.target.result}`;
+
+					const img = new Image();
+					img.src = originalImageUrl;
+
+					img.onload = function () {
+						const canvas = document.createElement('canvas');
+						const ctx = canvas.getContext('2d');
+
+						// Calculate the aspect ratio of the image
+						const aspectRatio = img.width / img.height;
+
+						// Calculate the new width and height to fit within 100x100
+						let newWidth, newHeight;
+						if (aspectRatio > 1) {
+							newWidth = 100 * aspectRatio;
+							newHeight = 100;
+						} else {
+							newWidth = 100;
+							newHeight = 100 / aspectRatio;
+						}
+
+						// Set the canvas size
+						canvas.width = 100;
+						canvas.height = 100;
+
+						// Calculate the position to center the image
+						const offsetX = (100 - newWidth) / 2;
+						const offsetY = (100 - newHeight) / 2;
+
+						// Draw the image on the canvas
+						ctx?.drawImage(img, offsetX, offsetY, newWidth, newHeight);
+
+						// Get the base64 representation of the compressed image
+						const compressedSrc = canvas.toDataURL('image/jpeg');
+
+						// Display the compressed image
+						form_data.image_url = compressedSrc;
+
+						profileImageInputElement.files = null;
+					};
+				};
+
+				if (
+					files.length > 0 &&
+					['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(files[0]['type'])
+				) {
+					reader.readAsDataURL(files[0]);
+				}
+			}}
+		/>
+
+		<div class="flex space-x-5">
+			<div class="flex flex-col">
+				<div class="self-center mt-2">
+					<button
+						class="relative rounded-full dark:bg-gray-700"
+						type="button"
+						on:click={() => {
+							profileImageInputElement.click();
+						}}
+					>
+						<img
+							src={form_data.image_url !== '' ? form_data.image_url : generateInitialsImage(form_data.title)}
+							alt="profile"
+							class="rounded-full size-25 object-cover"
+						/>
+
+						<div
+							class="absolute flex justify-center rounded-full bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50"
+						>
+							<div class="my-auto text-gray-100">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									class="w-5 h-5"
+								>
+									<path
+										d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.886L17.5 5.501a2.121 2.121 0 0 0-3-3L3.58 13.419a4 4 0 0 0-.885 1.343Z"
+									/>
+								</svg>
+							</div>
+						</div>
+					</button>
+				</div>
+			</div>
+
+			<div class="flex-1 flex flex-col self-center gap-0.5">
+				<div class=" mb-0.5 text-sm font-medium">{$i18n.t('Profile Image')}</div>
+
+				<div>
+					<button
+						class=" text-xs text-center text-gray-800 dark:text-gray-400 rounded-full px-4 py-0.5 bg-gray-100 dark:bg-gray-850"
+						type="button"
+						on:click={async () => {
+							if (canvasPixelTest()) {
+								form_data.image_url = generateInitialsImage(form_data.title);
+							} else {
+								toast.info(
+									$i18n.t(
+										'Fingerprint spoofing detected: Unable to use initials as avatar. Defaulting to default profile image.'
+									),
+									{
+										duration: 1000 * 10
+									}
+								);
+							}
+						}}>{$i18n.t('Use Initials')}</button
+					>
+
+					<button
+						class=" text-xs text-center text-gray-800 dark:text-gray-400 rounded-lg px-2 py-1"
+						type="button"
+						on:click={async () => {
+							form_data.image_url = '/user.png';
+						}}>{$i18n.t('Remove')}</button
+					>
+				</div>
+			</div>
+		</div>
+
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-2">{$i18n.t('Title')}*</div>
 
@@ -129,7 +265,7 @@
 				<input
 					class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
 					placeholder={$i18n.t('Add a short title for this prompt')}
-					bind:value={title}
+					bind:value={form_data.title}
 					required
 				/>
 			</div>
@@ -147,7 +283,7 @@
 				<input
 					class="px-3 py-1.5 text-sm w-full bg-transparent border disabled:text-gray-500 dark:border-gray-600 outline-none rounded-r-lg"
 					placeholder="short-summary"
-					bind:value={command}
+					bind:value={form_data.command}
 					disabled
 					required
 				/>
@@ -158,12 +294,7 @@
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
 				>
-				{$i18n.t('are allowed - Activate this command by typing')}&nbsp;"<span
-					class=" text-gray-600 dark:text-gray-300 font-medium"
-				>
-					/{command}
-				</span>" &nbsp;
-				{$i18n.t('to chat input.')}
+				are allowed. This will be part of the hyperlink to this prompt.
 			</div>
 		</div>
 
@@ -176,9 +307,9 @@
 				<div>
 					<textarea
 						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
-						placeholder={$i18n.t(`Write a summary in 50 words that summarizes [topic or keyword].`)}
+						placeholder={"Write your prompt here."}
 						rows="6"
-						bind:value={content}
+						bind:value={form_data.content}
 						required
 					/>
 				</div>
@@ -203,39 +334,33 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Permitted Roles</div>
-
-			<div class="text-xs text-gray-400 dark:text-gray-500 mb-2">
-				Allow users with these roles to view this prompt if prompt is set to 
-				<span class=" text-gray-600 dark:text-gray-300 font-medium">visible</span>.
-				Note that '<span class=" text-gray-600 dark:text-gray-300 font-medium">admin</span>' 
-				will always be a permitted role and cannot be added here.
-			</div>
-
-			<RoleMultiSelector 
-				items={
-					$userRoles.map((role) => ({
-						value: role.id,
-						label: role.name
-					})).filter((role) => {
-						return !["admin", "pending"].includes(role.label);
-					})
-				}
-				bind:permittedRoles
-			/>
+			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
+			TODO
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Prompt Visibility</div>
-
+			<div class=" text-sm font-semibold mb-1">Deadline</div>
 			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
 				<input
 					type="checkbox"
-					on:change={() => isVisible = !isVisible}
-					checked={isVisible}
+					on:change={() => hasDeadline = !hasDeadline}
+					checked={hasDeadline}
 				>
-				Make prompt visible to other users with the permitted roles.
+				Set deadline for completion.
 			</label>
+			{#if hasDeadline}
+			 <DatePicker bind:selectedDate />
+			{/if}
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Evaluation Prompt</div>
+			TODO
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Model</div>
+			TODO
 		</div>
 
 		<div class="my-2">
@@ -249,7 +374,7 @@
 						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
 						placeholder="Include additional information for the user to refer to in the right sidebar. This supports HTML."
 						rows="6"
-						bind:value={additionalInfo}
+						bind:value={form_data.additional_info}
 					/>
 				</div>
 				<button class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
@@ -260,6 +385,19 @@
 					<div class="self-center text-sm font-medium">Preview HTML</div>
 				</button>
 			</div>
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Draft</div>
+
+			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
+				<input
+					type="checkbox"
+					on:change={() => form_data.is_visible = !form_data.is_visible}
+					checked={!form_data.is_visible}
+				>
+				Save as draft. Instructors and students will not be able to see this prompt.
+			</label>
 		</div>
 
 		<div class="my-2 flex justify-end">

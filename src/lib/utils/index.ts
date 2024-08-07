@@ -160,7 +160,7 @@ export const generateInitialsImage = (name) => {
 					: '')
 			: '';
 
-	ctx.fillText(initials.toUpperCase(), canvas.width / 2, canvas.height / 2);
+	ctx.fillText(initials.toUpperCase(), canvas.width / 2, (canvas.height + 10) / 2);
 
 	return canvas.toDataURL();
 };

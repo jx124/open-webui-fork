@@ -55,9 +55,13 @@
         form_data.instructor_id = class_.instructor_id;
         instructorName = class_.instructor_name;
 
-        const users = await getUsers(localStorage.token);
-        const validUsers = users.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers.map(user => { 
+        const users = await getUsers(localStorage.token).catch((error) => {
+			pageLoading = false;
+			toast.error(error);
+		});
+
+        const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
+        items = validUsers?.map(user => { 
             return {
                 value: user.id,
                 label: user.name
