@@ -51,14 +51,14 @@ def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     @migrator.create_model
     class Class(pw.Model):
         name = pw.CharField(null=False, unique=True)
-        instructor_id = pw.ForeignKeyField(User)
+        instructor_id = pw.ForeignKeyField(User, field=User.id)
 
         class Meta:
             table_name = "class"
 
     @migrator.create_model
     class StudentClass(pw.Model):
-        student_id = pw.ForeignKeyField(User)
+        student_id = pw.ForeignKeyField(User, field=User.id)
         class_id = pw.ForeignKeyField(Class)
 
         class Meta:
