@@ -110,7 +110,13 @@
         >
             <div class=" flex flex-1 space-x-4 cursor-pointer w-full">
                 <a href={`/workspace/classes/edit?id=${encodeURIComponent(class_.id)}`}>
-                    <div class=" flex-1 self-center pl-5">
+					<div class="flex items-center ">
+						<img
+							src={class_.image_url ? class_.image_url : "/user.png"}
+							alt="profile"
+							class="rounded-full h-16 w-16 object-cover"
+						/>
+						<div class=" flex-1 self-center pl-5">
                         <div class=" font-bold">{class_.name}</div>
                         <div class="text-xs text-gray-400 dark:text-gray-500">
                             Instructor: {class_.instructor_name}
@@ -121,7 +127,7 @@
 						<div class="text-xs text-gray-400 dark:text-gray-500">
                             {assignedPromptLabel(class_.assigned_prompts)}
                         </div>
-                    </div>
+					</div>
                 </a>
             </div>
             <div class="flex flex-row space-x-1 self-center">

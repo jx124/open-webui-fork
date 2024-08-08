@@ -355,6 +355,7 @@ class Class(pw.Model):
     id = pw.AutoField()
     name = pw.CharField(null=False, unique=True)
     instructor = pw.ForeignKeyField(User)
+    image_url = pw.TextField(default="")
 
     class Meta:
         database = DB
@@ -365,6 +366,7 @@ class ClassModel(BaseModel):
     name: str
     instructor_id: str
     instructor_name: str
+    image_url: str
 
     assigned_prompts: List[int]
     assigned_students: List[str]
@@ -379,6 +381,7 @@ class ClassForm(BaseModel):
     id: int
     name: str
     instructor_id: str
+    image_url: str
     
     assigned_prompts: List[int]
     assigned_students: List[str]

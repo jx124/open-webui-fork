@@ -147,6 +147,7 @@ type Class = {
     name: string,
     instructor_id: string,
     instructor_name: string,
+	image_url: string,
 
     assigned_prompts: number[],
 	assigned_students: string[]

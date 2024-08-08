@@ -10,6 +10,7 @@
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
+	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -17,6 +18,7 @@
 		id: 0,
 		name: "",
 		instructor_id: $user?.id ?? "",
+		image_url: "",
 
 		assigned_prompts: [],
         assigned_students: [],
@@ -144,6 +146,7 @@
 				submitHandler();
 			}}
 		>
+			<ProfileImageEditor bind:image_url={form_data.image_url} bind:initialsSource={form_data.name}/>
 			<div class="my-2">
 				<div class=" text-sm font-semibold mb-2">{$i18n.t('Name')}*</div>
 

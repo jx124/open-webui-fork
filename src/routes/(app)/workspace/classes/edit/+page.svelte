@@ -11,6 +11,7 @@
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
+	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -18,6 +19,7 @@
 		id: 0,
 		name: "",
 		instructor_id: "",
+        image_url: "",
 
         assigned_prompts: [],
         assigned_students: [],
@@ -39,6 +41,7 @@
 
         if (class_) {
 			toast.success('Class updated successfully');
+            await goto('/workspace/classes');
 		}
 	};
 
@@ -66,6 +69,7 @@
         form_data.name = class_.name;
         form_data.instructor_id = class_.instructor_id;
         instructorName = class_.instructor_name;
+        form_data.image_url = class_.image_url;
 
         form_data.assigned_prompts = class_.assigned_prompts;
         form_data.assigned_students = class_.assigned_students;
@@ -161,6 +165,7 @@
                 submitHandler();
             }}
         >
+            <ProfileImageEditor bind:image_url={form_data.image_url} bind:initialsSource={form_data.name}/>
             <div class="my-2">
                 <div class=" text-sm font-semibold mb-2">{$i18n.t('Name')}*</div>
 
@@ -209,7 +214,7 @@
                     type="submit"
                     disabled={loading}
                 >
-                    <div class=" self-center font-medium">{$i18n.t('Save & Create')}</div>
+                    <div class=" self-center font-medium">{$i18n.t('Save & Update')}</div>
 
                     {#if loading}
                         <div class="ml-1.5 self-center">
