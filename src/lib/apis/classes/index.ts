@@ -5,6 +5,7 @@ export type ClassForm = {
 	name: string,
 	instructor_id: string,
 	assigned_prompts: number[],
+	assigned_students: string[],
 }
 
 export const getClassList = async (token: string = '') => {
@@ -47,11 +48,7 @@ export const createNewClass = async (
 			'Content-Type': 'application/json',
 			...(token && { authorization: `Bearer ${token}` })
 		},
-        body: JSON.stringify({
-			id: 0,
-            name: form_data.name,
-            instructor_id: form_data.instructor_id
-        })
+        body: JSON.stringify(form_data)
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();

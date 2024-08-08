@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { prompts, user } from '$lib/stores';
+	import { classes, prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -38,7 +38,6 @@
 	let hasDeadline = false;
 	let selectedDateTime: string | null;
 
-	let classes;
 	let classItems: {
 		label: string,
 		value: number
@@ -112,11 +111,11 @@
 			goto('/workspace/prompts');
 		}
 
-		classes = await getClassList(localStorage.token).catch((error) => {
+		$classes = await getClassList(localStorage.token).catch((error) => {
 			toast.error(error);
 		})
 
-		classItems = classes.map((c) => {
+		classItems = $classes.map((c) => {
 			return {
 				label: c.name,
 				value: c.id,
@@ -231,7 +230,7 @@
 						}}
 					>
 						<img
-							src={form_data.image_url !== '' ? form_data.image_url : generateInitialsImage(form_data.title)}
+							src={form_data.image_url !== '' ? form_data.image_url : "/user.png"}
 							alt="profile"
 							class="rounded-full h-24 w-24 object-cover"
 						/>

@@ -9,6 +9,7 @@
 	import { prompts, user } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
+	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -16,7 +17,9 @@
 		id: 0,
 		name: "",
 		instructor_id: $user?.id ?? "",
+
 		assigned_prompts: [],
+        assigned_students: [],
 	};
 
     let pageLoading = false;
@@ -168,6 +171,7 @@
 
 			<div class="my-2">
 				<div class=" text-sm font-semibold mb-2">Students</div>
+				<UserTableSelector bind:selectedUsers={form_data.assigned_students} />
 			</div>
 
 			<div class="my-2">

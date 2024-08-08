@@ -10,13 +10,17 @@
 	import { prompts } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
+	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 
 	const i18n = getContext('i18n');
 
     let form_data: ClassForm = {
 		id: 0,
 		name: "",
-		instructor_id: ""
+		instructor_id: "",
+
+        assigned_prompts: [],
+        assigned_students: [],
 	};
 
     let instructorName = "";
@@ -62,6 +66,9 @@
         form_data.name = class_.name;
         form_data.instructor_id = class_.instructor_id;
         instructorName = class_.instructor_name;
+
+        form_data.assigned_prompts = class_.assigned_prompts;
+        form_data.assigned_students = class_.assigned_students;
 
         const users = await getUsers(localStorage.token).catch((error) => {
 			pageLoading = false;
@@ -181,6 +188,7 @@
 
             <div class="my-2">
                 <div class=" text-sm font-semibold mb-2">Students</div>
+				<UserTableSelector bind:selectedUsers={form_data.assigned_students} />
             </div>
 
             <div class="my-2">

@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { prompts } from '$lib/stores';
+	import { classes, prompts } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
@@ -39,7 +39,6 @@
 	let hasDeadline = false;
 	let selectedDateTime: string | null;
 
-	let classes;
 	let classItems: {
 		label: string,
 		value: number
@@ -115,11 +114,11 @@
 			sessionStorage.removeItem('prompt');
 		}
 
-		classes = await getClassList(localStorage.token).catch((error) => {
+		$classes = await getClassList(localStorage.token).catch((error) => {
 			toast.error(error);
 		})
 
-		classItems = classes.map((c) => {
+		classItems = $classes.map((c) => {
 			return {
 				label: c.name,
 				value: c.id,
@@ -233,7 +232,7 @@
 						}}
 					>
 						<img
-							src={form_data.image_url !== '' ? form_data.image_url : generateInitialsImage(form_data.title)}
+							src={form_data.image_url !== '' ? form_data.image_url : "/user.png"}
 							alt="profile"
 							class="rounded-full h-24 w-24 object-cover"
 						/>
@@ -372,7 +371,8 @@
 				addItemLabel={"Add Class"}
 				searchPlaceholder={"Search clases"} 
 				bind:items={classItems}
-				bind:selectedItems={form_data.assigned_classes} />
+				bind:selectedItems={form_data.assigned_classes}
+			/>
 		</div>
 
 		<div class="my-2">
