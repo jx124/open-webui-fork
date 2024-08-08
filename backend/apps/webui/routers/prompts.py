@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter
 
-from apps.webui.models.prompts import Prompts, PromptForm, PromptModel
+from apps.webui.models.prompts_classes import Prompts, PromptForm, PromptModel
 
 from utils.utils import get_admin_or_instructor, get_current_user
 from constants import ERROR_MESSAGES

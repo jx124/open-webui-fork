@@ -15,7 +15,7 @@ from apps.webui.models.roles import Role, RoleForm
 
 
 class User(Model):
-    id = CharField(unique=True)
+    id = CharField(unique=True, primary_key=True)
     name = CharField()
     email = CharField()
     role_id = ForeignKeyField(Role, backref="users", default=1)

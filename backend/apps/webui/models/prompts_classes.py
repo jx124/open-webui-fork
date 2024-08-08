@@ -9,9 +9,9 @@ from apps.webui.models.roles import Role
 from apps.webui.models.users import User
 from apps.webui.models.evaluations import Evaluation
 from apps.webui.models.models import Model
-from apps.webui.models.classes import Class, StudentClass
 
 from apps.webui.internal.db import DB
+
 
 ####################
 # Prompts DB Schema
@@ -55,7 +55,7 @@ class PromptModel(BaseModel):
     assigned_classes: List[int]
 
 
-def prompt_to_promptmodel(prompt: pw.Model, classes: List[int] = []) -> PromptModel:
+def prompt_to_promptmodel(prompt: Model, classes: List[int] = []) -> PromptModel:
     # flattens the prompt dict so "evaluation_id" and "model_id" is visible to PromptModel
     prompt_dict = model_to_dict(prompt)
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
@@ -65,42 +65,6 @@ def prompt_to_promptmodel(prompt: pw.Model, classes: List[int] = []) -> PromptMo
                         evaluation_id=evaluation_id,
                         selected_model_id=model_id,
                         assigned_classes=classes)
-
-####################
-# PromptRole DB Schema
-####################
-
-# Schema placed here to prevent circular dependencies
-
-class PromptRole(Model):
-    prompt_id = pw.ForeignKeyField(Prompt)
-    role_id = pw.ForeignKeyField(Role)
-
-    class Meta:
-        database = DB
-
-
-class PromptRoleModel(BaseModel):
-    prompt_id: int
-    role_id: int
-
-
-####################
-# ClassPrompt DB Schema
-####################
-
-
-class ClassPrompt(Model):
-    class_id = pw.ForeignKeyField(Class)
-    prompt_id = pw.ForeignKeyField(Prompt)
-
-    class Meta:
-        database = DB
-
-
-class ClassPromptModel(BaseModel):
-    class_id: int
-    prompt_id: int
 
 
 ####################
@@ -303,6 +267,24 @@ Prompts = PromptsTable(DB)
 
 
 ####################
+# PromptRole DB Schema
+####################
+
+
+class PromptRole(pw.Model):
+    prompt_id = pw.ForeignKeyField(Prompt)
+    role_id = pw.ForeignKeyField(Role)
+
+    class Meta:
+        database = DB
+
+
+class PromptRoleModel(BaseModel):
+    prompt_id: int
+    role_id: int
+
+
+####################
 # PromptRole Forms
 ####################
 
@@ -365,6 +347,182 @@ PromptRoles = PromptRolesTable(DB)
 
 
 ####################
+# Class DB Schema
+####################
+
+
+class Class(pw.Model):
+    id = pw.AutoField()
+    name = pw.CharField(null=False, unique=True)
+    instructor = pw.ForeignKeyField(User)
+
+    class Meta:
+        database = DB
+
+
+class ClassModel(BaseModel):
+    id: int
+    name: str
+    instructor_id: str
+    instructor_name: str
+
+    assigned_prompts: List[int]
+
+
+####################
+# Class Forms
+####################
+
+
+class ClassForm(BaseModel):
+    id: int
+    name: str
+    instructor_id: str
+
+
+def class_to_classmodel(class_: Class, prompts: List[int] = []) -> ClassModel:
+    # flattens the class dict so "name" is visible to ClassModel
+    try:
+        class_dict = model_to_dict(class_)
+        print("\nclass_dict:", class_dict)
+        return ClassModel(**class_dict,
+                        instructor_id=class_dict["instructor"]["id"],
+                        instructor_name=class_dict["instructor"]["name"],
+                        assigned_prompts=prompts)
+    except Exception as e:
+        print("class_to_classmodel exception", e)
+
+class ClassesTable:
+    def __init__(self, db):
+        self.db = db
+        self.db.create_tables([Class])
+
+    # peewee inserts wrong columns into the SQL for some reason, so we need to select the column for every query in
+    # this class.
+    def get_classes(self, user_id: str, user_role: str) -> List[ClassModel]:
+        try:
+            query = None
+            if user_role == "admin":
+                query = Class.select()
+                print("\n\nget_classes query", query.sql())
+
+            elif user_role == "instructor":
+                query = Class.select()\
+                    .where(Class.instructor == user_id)
+                print("\n\nget_classes query", query.sql())
+
+            else:
+                query = Class.select()\
+                            .join(StudentClass, on=(Class.id == StudentClass.class_id))\
+                            .join(User, on=(User.id == StudentClass.student_id))\
+                            .where((User.id == user_id))
+                
+            result = ClassPrompts.get_all_prompts_by_classes()
+            
+            return [class_to_classmodel(class_, result[class_.id]) for class_ in query]
+        except Exception as e:
+            print("get_classes exception", e)
+            return None
+
+    def get_class_by_name(self, name: str) -> Optional[ClassModel]:
+        try:
+            class_ = Class.select()\
+                .where(Class.name == name).get()
+            print("get_class_by_name query", class_.sql())
+            return class_to_classmodel(class_)
+        except Exception as e:
+            print("get_class_by_name exception", e)
+            return None
+        
+    def get_class_by_id(self, user_id:str, user_role: str, class_id: int) -> Optional[ClassModel]:
+        try:
+            class_ = Class.select()\
+                .where((Class.id == class_id) & ((Class.instructor == user_id) | (user_role == "admin"))).get()
+
+            return class_to_classmodel(class_)
+        except Exception as e:
+            print("get_class_by_id exception", e)
+            return None
+ 
+    def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
+        try:
+            result = Class.create(**form_data.model_dump(exclude={"id"}))
+            return class_to_classmodel(result)
+        except Exception as e:
+            print("insert_new_class exception", e)
+            return None
+
+    def update_class_by_id(self, form_data: ClassForm) -> bool:
+        try:
+            query = Class.update(**form_data.model_dump(exclude={"id"})).where(Class.id == form_data.id)
+            query.execute()
+
+            return True
+        except Exception as e:
+            print("update_class_by_id exception", e)
+            return None
+        
+    def delete_class_by_id(self, class_id: int) -> bool:
+        try:
+            query = Class.delete().where(Class.id == class_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except Exception as e:
+            print("delete_class_by_id exception", e)
+            return None
+
+
+Classes = ClassesTable(DB)
+
+
+####################
+# StudentClass DB Schema
+####################
+
+
+class StudentClass(pw.Model):
+    student_id = pw.ForeignKeyField(User)
+    class_id = pw.ForeignKeyField(Class)
+
+    class Meta:
+        database = DB
+
+
+####################
+# StudentClass Forms
+####################
+
+
+class StudentClassesTable:
+    def __init__(self, db):
+        self.db = db
+        self.db.create_tables([StudentClass])
+
+
+StudentClasses = StudentClassesTable(DB)
+
+
+
+####################
+# ClassPrompt DB Schema
+####################
+
+
+class ClassPrompt(pw.Model):
+    class_id = pw.ForeignKeyField(Class)
+    prompt_id = pw.ForeignKeyField(Prompt)
+
+    class Meta:
+        database = DB
+
+
+class ClassPromptModel(BaseModel):
+    class_id: int
+    prompt_id: int
+
+
+####################
 # ClassPrompt Forms
 ####################
 
@@ -407,7 +565,21 @@ class ClassPromptsTable:
             return result
         except:
             return {}
+        
+    def get_all_prompts_by_classes(self):
+        # returns defaultdict of class_ids -> [prompt_ids]
+        try:
+            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id)
+            print(query.sql())
+            result = defaultdict(lambda: [])
 
+            for row in query:
+                result[row.class_id.id].append(row.prompt_id.id)
+
+            return result
+        except Exception as e:
+            print("get_all_prompts_by_classes exception", e)
+            return {}
 
     def update_class_prompts_by_prompt(
         self, prompt_id: int, role_ids: List[int]
