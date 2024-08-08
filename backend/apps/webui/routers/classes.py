@@ -80,7 +80,7 @@ async def update_class_by_id(
     # check for name collision
     class_ = Classes.get_class_by_name(form_data.name)
     if class_ is None or class_.id == form_data.id:
-        result = Classes.update_class_by_id(form_data)
+        result = Classes.update_class_by_id(user.id, user.role, form_data)
         if result:
             return result
 
@@ -110,5 +110,5 @@ async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
     
-    result = Classes.delete_class_by_id(class_id)
+    result = Classes.delete_class_by_id(user.id, user.role, class_id)
     return result

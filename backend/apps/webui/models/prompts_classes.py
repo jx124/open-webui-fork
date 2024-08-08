@@ -367,6 +367,7 @@ class ClassModel(BaseModel):
     instructor_name: str
 
     assigned_prompts: List[int]
+    assigned_students: List[str]
 
 
 ####################
@@ -378,19 +379,18 @@ class ClassForm(BaseModel):
     id: int
     name: str
     instructor_id: str
+    
+    assigned_prompts: List[int]
+    assigned_students: List[str]
 
+def class_to_classmodel(class_: Class, prompts: List[int] = [], students: List[str] = []) -> ClassModel:
+    class_dict = model_to_dict(class_)
+    return ClassModel(**class_dict,
+                    instructor_id=class_dict["instructor"]["id"],
+                    instructor_name=class_dict["instructor"]["name"],
+                    assigned_prompts=prompts,
+                    assigned_students=students)
 
-def class_to_classmodel(class_: Class, prompts: List[int] = []) -> ClassModel:
-    # flattens the class dict so "name" is visible to ClassModel
-    try:
-        class_dict = model_to_dict(class_)
-        print("\nclass_dict:", class_dict)
-        return ClassModel(**class_dict,
-                        instructor_id=class_dict["instructor"]["id"],
-                        instructor_name=class_dict["instructor"]["name"],
-                        assigned_prompts=prompts)
-    except Exception as e:
-        print("class_to_classmodel exception", e)
 
 class ClassesTable:
     def __init__(self, db):
@@ -404,12 +404,10 @@ class ClassesTable:
             query = None
             if user_role == "admin":
                 query = Class.select()
-                print("\n\nget_classes query", query.sql())
 
             elif user_role == "instructor":
                 query = Class.select()\
                     .where(Class.instructor == user_id)
-                print("\n\nget_classes query", query.sql())
 
             else:
                 query = Class.select()\
@@ -417,21 +415,23 @@ class ClassesTable:
                             .join(User, on=(User.id == StudentClass.student_id))\
                             .where((User.id == user_id))
                 
-            result = ClassPrompts.get_all_prompts_by_classes()
+            prompts = ClassPrompts.get_all_prompts_by_classes()
+            students = StudentClasses.get_all_students_by_classes()
             
-            return [class_to_classmodel(class_, result[class_.id]) for class_ in query]
-        except Exception as e:
-            print("get_classes exception", e)
+            return [class_to_classmodel(class_, prompts[class_.id], students[class_.id]) for class_ in query]
+        except:
             return None
 
     def get_class_by_name(self, name: str) -> Optional[ClassModel]:
         try:
             class_ = Class.select()\
                 .where(Class.name == name).get()
-            print("get_class_by_name query", class_.sql())
-            return class_to_classmodel(class_)
-        except Exception as e:
-            print("get_class_by_name exception", e)
+            
+            prompts = ClassPrompts.get_prompts_by_class(class_.id)
+            students = StudentClasses.get_students_by_class(class_.id)
+
+            return class_to_classmodel(class_, prompts, students)
+        except:
             return None
         
     def get_class_by_id(self, user_id:str, user_role: str, class_id: int) -> Optional[ClassModel]:
@@ -439,37 +439,68 @@ class ClassesTable:
             class_ = Class.select()\
                 .where((Class.id == class_id) & ((Class.instructor == user_id) | (user_role == "admin"))).get()
 
-            return class_to_classmodel(class_)
-        except Exception as e:
-            print("get_class_by_id exception", e)
+            prompts = ClassPrompts.get_prompts_by_class(class_.id)
+            students = StudentClasses.get_students_by_class(class_.id)
+
+            return class_to_classmodel(class_, prompts, students)
+        except:
             return None
  
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
-            result = Class.create(**form_data.model_dump(exclude={"id"}))
-            return class_to_classmodel(result)
-        except Exception as e:
-            print("insert_new_class exception", e)
+            with self.db.atomic():
+                result = Class.create(**form_data.model_dump(exclude={"id", "assigned_prompts", "assigned_students"}))
+                if result:
+                    ClassPrompts.insert_new_class_prompts_by_class(result.id, form_data.assigned_prompts)
+                    StudentClasses.insert_new_student_classes_by_class(result.id, form_data.assigned_students)
+
+            return class_to_classmodel(result, form_data.assigned_prompts, form_data.assigned_students)
+        except:
             return None
 
-    def update_class_by_id(self, form_data: ClassForm) -> bool:
+    def update_class_by_id(self, user_id: str, user_role: str, form_data: ClassForm) -> bool:
+        excluded_columns = {"id", "assigned_prompts", "assigned_students"}
+        
         try:
-            query = Class.update(**form_data.model_dump(exclude={"id"})).where(Class.id == form_data.id)
-            query.execute()
+            with self.db.atomic():
+                query = None
+                if user_role == "admin":
+                    query = Class.update(**form_data.model_dump(exclude=excluded_columns))\
+                        .where(Class.id == form_data.id)
+                    
+                if user_role == "instructor":
+                    query = Class.update(**form_data.model_dump(exclude=excluded_columns))\
+                        .where((Class.id == form_data.id) & (Class.instructor == user_id))
+
+                result = query.execute()
+
+                if result:
+                    ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assigned_prompts)
+                    StudentClasses.update_student_classes_by_class(form_data.id, form_data.assigned_students)
 
             return True
-        except Exception as e:
-            print("update_class_by_id exception", e)
+        except:
             return None
         
-    def delete_class_by_id(self, class_id: int) -> bool:
+    def delete_class_by_id(self, user_id: str, user_role: str, class_id: int) -> bool:
         try:
-            query = Class.delete().where(Class.id == class_id)
-            query.execute()  # Remove the rows, return number of rows removed.
+            with self.db.atomic():
+                query = None
+
+                if user_role == "admin":
+                    query = Class.delete().where(Class.id == class_id)
+
+                elif user_role == "instructor":
+                    query = Prompt.delete()\
+                        .where((Class.id == class_id) & (Class.instructor == user_id))
+
+                result = query.execute()
+                if result:
+                    ClassPrompts.delete_class_prompts_by_class(class_id)
+                    StudentClasses.delete_student_classes_by_class(class_id)
 
             return True
-        except Exception as e:
-            print("delete_class_by_id exception", e)
+        except:
             return None
 
 
@@ -489,6 +520,11 @@ class StudentClass(pw.Model):
         database = DB
 
 
+class StudentClassModel(BaseModel):
+    student_id: str
+    class_id: int
+
+
 ####################
 # StudentClass Forms
 ####################
@@ -499,6 +535,115 @@ class StudentClassesTable:
         self.db = db
         self.db.create_tables([StudentClass])
 
+    def insert_new_student_classes_by_student(
+        self, student_id: str, class_ids: List[int]
+    ) -> List[StudentClassModel]:
+        data = [{ "student_id": student_id, "class_id": class_id } for class_id in class_ids]
+        
+        try:
+            result = StudentClass.insert_many(data).execute()
+            if result:
+                return StudentClass.select()
+            else:
+                return None
+        except:
+            return None
+
+    def insert_new_student_classes_by_class(
+        self, class_id: str, student_ids: List[str]
+    ) -> List[StudentClassModel]:
+        data = [{ "student_id": student_id, "class_id": class_id } for student_id in student_ids]
+        
+        try:
+            result = StudentClass.insert_many(data).execute()
+            if result:
+                return StudentClass.select()
+            else:
+                return None
+        except:
+            return None
+
+    def get_classes_by_student(self, student_id: str) -> List[int]:
+        try:
+            query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)\
+                .where(StudentClass.student_id == student_id)
+            return [row.class_id.id for row in query]
+        except:
+            return []
+
+    def get_students_by_class(self, class_id: int) -> List[str]:
+        try:
+            query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)\
+                .where(StudentClass.class_id == class_id)
+            return [row.student_id.id for row in query]
+        except:
+            return []
+
+    def get_all_classes_by_students(self):
+        # returns defaultdict of student_id -> [class_ids]
+        try:
+            query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)
+            result = defaultdict(lambda: [])
+
+            for row in query:
+                result[row.student_id.id].append(row.class_id.id)
+
+            return result
+        except:
+            return defaultdict(lambda: [])
+ 
+    def get_all_students_by_classes(self):
+        # returns defaultdict of class_id -> [student_ids]
+        try:
+            query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)
+            result = defaultdict(lambda: [])
+
+            for row in query:
+                result[row.class_id.id].append(row.student_id.id)
+
+            return result
+        except:
+            return defaultdict(lambda: [])
+
+    def update_student_classes_by_student(
+        self, student_id: str, class_ids: List[int]
+    ) -> List[StudentClassModel]:
+        try:
+            with self.db.atomic():
+                # delete everything and reinsert for now since the expected number of classes/students is still quite small
+                StudentClass.delete().where(StudentClass.student_id == student_id).execute()
+                return self.insert_new_student_classes_by_student(student_id, class_ids)
+        except:
+            return []
+
+    def update_student_classes_by_class(
+        self, class_id: str, student_ids: List[str]
+    ) -> List[StudentClassModel]:
+        try:
+            with self.db.atomic():
+                # delete everything and reinsert for now since the expected number of classes/students is still quite small
+                StudentClass.delete().where(StudentClass.class_id == class_id).execute()
+                return self.insert_new_student_classes_by_class(class_id, student_ids)
+        except:
+            return []
+
+    def delete_student_classes_by_student(self, student_id: str):
+        try:
+            query = StudentClass.delete().where(StudentClass.student_id == student_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
+
+    def delete_student_classes_by_class(self, class_id: int):
+        try:
+            query = StudentClass.delete().where(StudentClass.class_id == class_id)
+            query.execute()  # Remove the rows, return number of rows removed.
+
+            return True
+        except:
+            return False
 
 StudentClasses = StudentClassesTable(DB)
 
@@ -532,6 +677,20 @@ class ClassPromptsTable:
         self.db = db
         self.db.create_tables([ClassPrompt])
 
+    def insert_new_class_prompts_by_class(
+        self, class_id: int, prompt_ids: List[int] 
+    ) -> List[ClassPromptModel]:
+        data = [{ "class_id": class_id, "prompt_id": prompt_id } for prompt_id in prompt_ids]
+
+        try:
+            result = ClassPrompt.insert_many(data).execute()
+            if result:
+                return ClassPrompt.select()
+            else:
+                return None
+        except:
+            return None
+
     def insert_new_class_prompts_by_prompt(
         self, prompt_id: int, class_ids: List[int] 
     ) -> List[ClassPromptModel]:
@@ -552,6 +711,13 @@ class ClassPromptsTable:
             return [row.class_id.id for row in query]
         except:
             return []
+        
+    def get_prompts_by_class(self, class_id: int) -> List[int]:
+        try:
+            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id).where(ClassPrompt.class_id == class_id)
+            return [row.prompt_id.id for row in query]
+        except:
+            return []
     
     def get_all_classes_by_prompts(self):
         # returns defaultdict of prompt_id -> [class_ids]
@@ -564,33 +730,42 @@ class ClassPromptsTable:
 
             return result
         except:
-            return {}
+            return defaultdict(lambda: [])
         
     def get_all_prompts_by_classes(self):
-        # returns defaultdict of class_ids -> [prompt_ids]
+        # returns defaultdict of class_id -> [prompt_ids]
         try:
             query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id)
-            print(query.sql())
             result = defaultdict(lambda: [])
 
             for row in query:
                 result[row.class_id.id].append(row.prompt_id.id)
 
             return result
-        except Exception as e:
-            print("get_all_prompts_by_classes exception", e)
-            return {}
+        except:
+            return defaultdict(lambda: [])
 
     def update_class_prompts_by_prompt(
-        self, prompt_id: int, role_ids: List[int]
+        self, prompt_id: int, class_ids: List[int]
     ) -> List[ClassPromptModel]:
         try:
             with self.db.atomic():
-                # delete everything and reinsert for now since the expected number of roles is still quite small
+                # delete everything and reinsert for now since the expected number of classes/prompts is still quite small
                 ClassPrompt.delete().where(ClassPrompt.prompt_id == prompt_id).execute()
-                return self.insert_new_class_prompts_by_prompt(prompt_id, role_ids)
+                return self.insert_new_class_prompts_by_prompt(prompt_id, class_ids)
         except:
-            return None
+            return []
+
+    def update_class_prompts_by_class(
+        self, class_id: int, prompt_ids: List[int]
+    ) -> List[ClassPromptModel]:
+        try:
+            with self.db.atomic():
+                # delete everything and reinsert for now since the expected number of classes/prompts is still quite small
+                ClassPrompt.delete().where(ClassPrompt.class_id == class_id).execute()
+                return self.insert_new_class_prompts_by_class(class_id, prompt_ids)
+        except:
+            return []
 
     def delete_class_prompts_by_prompt(self, prompt_id: int) -> bool:
         try:
