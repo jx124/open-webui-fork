@@ -3,13 +3,12 @@
 
 	import { onMount, getContext, tick } from 'svelte';
     
-	import { WEBUI_NAME } from '$lib/stores';
+	import { classes, prompts, WEBUI_NAME } from '$lib/stores';
 	import { deleteClassById, getClassList } from '$lib/apis/classes';
 	import DeleteModal from '../DeleteModal.svelte';
 
 	const i18n = getContext('i18n');
 
-	let classes = [];
     let showDeleteModal = false;
 
     let selectedClassName = '';
@@ -25,14 +24,21 @@
 			showDeleteModal = false;
 			toast.success("Successfully deleted " + selectedClassName);
 
-			classes = await getClassList(localStorage.token).catch((error) => {
+			$classes = await getClassList(localStorage.token).catch((error) => {
 				toast.error(error);
 			});
 		}
 	}
 
+	const assignedPromptLabel = (prompt_ids: number[]) => {
+		if (prompt_ids.length === 0) {
+			return "No assigned prompts"
+		}
+		return "Assigned Prompts: " + $prompts.filter((p) =>prompt_ids.includes(p.id)).map(p => p.title).join(", ");
+	}
+
 	onMount(async () => {
-		classes = await getClassList(localStorage.token).catch((error) => {
+		$classes = await getClassList(localStorage.token).catch((error) => {
 			toast.error(error);
 		});
 	});
@@ -96,7 +102,7 @@
 <hr class=" dark:border-gray-850 my-2.5" />
 
 <div class=" my-2 mb-5" id="class-list">
-	{#each classes.filter((c) => searchValue === '' || c.name
+	{#each $classes.filter((c) => searchValue === '' || c.name
 				.toLowerCase()
 				.includes(searchValue.toLowerCase())) as class_}
 		<div
@@ -113,7 +119,7 @@
                             Students: 0
                         </div>
 						<div class="text-xs text-gray-400 dark:text-gray-500">
-                            Assigned Prompts: test, ...
+                            {assignedPromptLabel(class_.assigned_prompts)}
                         </div>
                     </div>
                 </a>

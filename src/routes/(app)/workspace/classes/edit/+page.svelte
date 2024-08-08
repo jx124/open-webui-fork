@@ -7,6 +7,9 @@
 	import { type ClassForm, getClassById, updateClass } from '$lib/apis/classes';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { prompts } from '$lib/stores';
+	import { getPrompts } from '$lib/apis/prompts';
+	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -40,6 +43,11 @@
         label: string
     }[];
 
+    let promptItems: {
+        value: number,
+        label: string
+    }[];
+
     onMount(async () => {
         pageLoading = true;
 
@@ -65,6 +73,18 @@
             return {
                 value: user.id,
                 label: user.name
+            };
+        })
+
+		$prompts = await getPrompts(localStorage.token).catch((error) => {
+			pageLoading = false;
+			toast.error(error);
+		});
+
+		promptItems = $prompts?.map(prompt => { 
+            return {
+                value: prompt.id,
+                label: prompt.title
             };
         })
 
@@ -165,6 +185,12 @@
 
             <div class="my-2">
                 <div class=" text-sm font-semibold mb-2">Prompts</div>
+                <PromptMultiSelector 
+					addItemLabel={"Add Prompt"}
+					searchPlaceholder={"Search Prompts"} 
+					bind:items={promptItems}
+					bind:selectedItems={form_data.assigned_prompts}
+				/>
             </div>
 
             <div class="my-2 flex justify-end">

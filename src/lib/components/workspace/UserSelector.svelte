@@ -53,7 +53,7 @@
     
         <DropdownMenu.Trigger aria-label={placeholder} class="w-full">
             <input
-                class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+                class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg disabled:opacity-75 "
                 {placeholder}
                 bind:value={label}
                 required

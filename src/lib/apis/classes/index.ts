@@ -3,7 +3,8 @@ import { WEBUI_API_BASE_URL } from '$lib/constants';
 export type ClassForm = {
 	id: number,
 	name: string,
-	instructor_id: string
+	instructor_id: string,
+	assigned_prompts: number[],
 }
 
 export const getClassList = async (token: string = '') => {

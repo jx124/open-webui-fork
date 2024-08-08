@@ -24,6 +24,7 @@ export const models: Writable<Model[]> = writable([]);
 export const modelfiles = writable([]);
 export const prompts: Writable<Prompt[]> = writable([]);
 export const userRoles: Writable<RoleForm[]> = writable([]);
+export const classes: Writable<Class[]> = writable([]);
 export const documents = writable([
 	{
 		collection_name: 'collection_name',
@@ -140,6 +141,16 @@ type Prompt = {
 
 	assigned_classes: number[];
 };
+
+type Class = {
+	id: number,
+    name: string,
+    instructor_id: string,
+    instructor_name: string,
+
+    assigned_prompts: number[]
+};
+
 
 type Config = {
 	status: boolean;
