@@ -171,14 +171,15 @@ class PromptsTable:
                 query = Prompt.select()\
                     .join(ClassPrompt, on=(Prompt.id == ClassPrompt.prompt_id))\
                     .join(Class, on=(ClassPrompt.class_id == Class.id))\
-                    .join(StudentClass, on=(Class.class_id == StudentClass.id))\
-                    .join(User, on=(StudentClass.user_id == User.id))\
+                    .join(StudentClass, on=(Class.id == StudentClass.class_id))\
+                    .join(User, on=(StudentClass.student_id == User.id))\
                     .distinct()
                 
             result = ClassPrompts.get_all_classes_by_prompts()
 
             return [prompt_to_promptmodel(prompt, result[prompt.id]) for prompt in query]
-        except:
+        except Exception as e:
+            print("get_prompts exception", e)
             return None
 
     def update_prompt_by_command(

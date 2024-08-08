@@ -77,7 +77,7 @@
 	let disableChat = false;
 	$: if (selectedModels || messages) {
 		chatTerminationSeq = $models.find((m) => m.name === selectedModels[0])?.info?.params?.termination_seq;
-		if (messages[messages.length - 1]?.content === chatTerminationSeq) {
+		if (messages.length > 0 && messages[messages.length - 1]?.content === chatTerminationSeq) {
 			disableChat = true;
 		} else {
 			disableChat = false;
