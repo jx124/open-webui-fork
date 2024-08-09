@@ -43,7 +43,7 @@ def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     migrator.add_fields("prompt", image_url=pw.TextField(default=""))
     migrator.add_fields("prompt", deadline=pw.DateTimeField(null=True))
     migrator.add_fields("prompt", evaluation_id=pw.ForeignKeyField(Evaluation, null=True))
-    migrator.add_fields("prompt", model_id=pw.ForeignKeyField(Model, null=True))
+    migrator.add_fields("prompt", model_id=pw.ForeignKeyField(Model, field=Model.id, null=True))
 
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
