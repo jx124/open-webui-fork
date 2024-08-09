@@ -1,4 +1,4 @@
-"""Peewee migrations -- 023_update_prompt_fields.py.
+"""Peewee migrations -- 024_update_prompt_fields.py.
 
 Some examples (model - class or model name)::
 

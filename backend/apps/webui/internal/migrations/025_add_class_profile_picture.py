@@ -1,4 +1,4 @@
-"""Peewee migrations -- 021_add_user_attempts_and_session_time.py.
+"""Peewee migrations -- 025_add_class_profile_picture.py.
 
 Some examples (model - class or model name)::
 
@@ -36,12 +36,11 @@ with suppress(ImportError):
 
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
-    
-    migrator.change_fields("user", id=pw.CharField(unique=True, primary_key=True))
+
+    migrator.add_fields("class", image_url=pw.TextField(default=""))
+
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your rollback migrations here."""
 
-    migrator.change_fields("user", id=pw.CharField(unique=True))
-
-
+    migrator.remove_fields("class", "image_url")

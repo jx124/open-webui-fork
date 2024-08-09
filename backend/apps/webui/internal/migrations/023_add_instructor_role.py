@@ -1,4 +1,4 @@
-"""Peewee migrations -- 016_populate_roles.py.
+"""Peewee migrations -- 023_add_instructor_role.py.
 
 Some examples (model - class or model name)::
 
