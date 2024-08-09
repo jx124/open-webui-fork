@@ -130,7 +130,6 @@
 				reader.onload = async (e) => {
 					const xlsx = e.target.result;
 	
-					console.log("onload", xlsx);
 					const users = await importUsersExcel(localStorage.token, xlsx)
 						.catch((err) => {
 							toast.error(err);

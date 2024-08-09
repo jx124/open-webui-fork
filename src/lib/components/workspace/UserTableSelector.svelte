@@ -13,6 +13,7 @@
 	import { mobile } from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import Search from '../icons/Search.svelte';
+	import ImportStudentModal from './ImportStudentModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -52,6 +53,14 @@
 	let sortAttribute = "name";
 	let ascending = true;
 
+    let show = false;
+
+    const saveHandler = (event) => {
+        const userIds = event.detail;
+        const newUsersSet = new Set<string>(userIds).union(new Set(selectedUsers));
+        selectedUsers = Array.from(newUsersSet);
+    }
+
 	onMount(async () => {
 		users = await getUsers(localStorage.token).catch((error) => toast.error(error));
         loaded = true;
@@ -66,6 +75,10 @@
 		? _unselectedUsers.filter((user) => (user.name.toLowerCase() + user.email.toLowerCase()).includes(searchValue.toLowerCase()))
 		: _unselectedUsers;
 </script>
+
+<ImportStudentModal 
+    bind:show
+    on:save={saveHandler}/>
 
 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full">
     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400">
@@ -224,6 +237,7 @@
     <button
         class="ml-2 text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800 flex"
         type="button"
+        on:click={() => show = !show}
     >
         <div class="self-center font-medium">Import Students</div>
     </button>
