@@ -137,7 +137,7 @@ type Prompt = {
 	image_url: string;
     deadline: string | null;
     evaluation_id: number | null;
-    selected_model_id: string | null;
+    selected_model_id: string;
 
 	assigned_classes: number[];
 };

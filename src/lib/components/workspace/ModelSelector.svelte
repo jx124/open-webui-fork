@@ -5,12 +5,12 @@
 
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { mobile, user } from '$lib/stores';
+	import { mobile } from '$lib/stores';
 
 	export let value = '';
-	export let placeholder = "Select a user"
+	export let placeholder = "Select a model"
 	export let searchEnabled = true;
-	export let searchPlaceholder = "Search users";
+	export let searchPlaceholder = "Search models";
 
 	export let items = [
 		{ value: 'mango', label: 'Mango' },
@@ -44,7 +44,7 @@
         bind:open={show}
         onOpenChange={async () => {
             searchValue = '';
-            window.setTimeout(() => document.getElementById('user-search-input')?.focus(), 0);
+            window.setTimeout(() => document.getElementById('model-search-input')?.focus(), 0);
         }}
     >
     
@@ -55,7 +55,6 @@
                 bind:value={label}
                 required
                 readonly
-                disabled={$user?.role === "instructor"}
             />
         </DropdownMenu.Trigger>
 
@@ -73,7 +72,7 @@
                         <Search className="size-4" strokeWidth="2.5" />
 
                         <input
-                            id="user-search-input"
+                            id="model-search-input"
                             bind:value={searchValue}
                             class="w-full text-sm bg-transparent outline-none"
                             placeholder={searchPlaceholder}
@@ -87,7 +86,7 @@
                 <div class="px-3 my-2 max-h-64 overflow-y-auto scrollbar-hidden">
                     {#each filteredItems as item}
                         <button
-                            aria-label="user-item"
+                            aria-label="role-item"
                             type="button"
                             class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-none transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-[highlighted]:bg-muted"
                             on:click={() => {
@@ -104,20 +103,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more users under Admin Panel > 
-                            <span class="inline-flex">
-                                Add Users
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 16 16"
-                                    fill="currentColor"
-                                    class="ml-1 w-4 h-4 items-baseline"
-                                >
-                                <path
-                                    d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"
-                                />
-                                </svg>
-                            </span>.
+                            No results found, add more models under Workspace > Models.
                         </div>
                     {/each}
                 </div>

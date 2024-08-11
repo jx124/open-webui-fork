@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { classes, prompts, user } from '$lib/stores';
+	import { classes, models, prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -14,6 +14,8 @@
 	import DatePicker from '$lib/components/common/DatePicker.svelte';
 	import ItemMultiSelector from '$lib/components/admin/ItemMultiSelector.svelte';
 	import { getClassList } from '$lib/apis/classes';
+	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
+	import { getModels } from '$lib/apis';
 
 	let loading = false;
 
@@ -27,7 +29,7 @@
 		image_url: "/user.png",
 		deadline: null,
 		evaluation_id: null,
-		selected_model_id: null,
+		selected_model_id: "",
 
 		assigned_classes: []
 	};
@@ -45,8 +47,19 @@
 
 	let promptAuthorId: string;
 
+	let modelItems: {
+		label: string,
+		value: string
+	}[];
+
 	const updateHandler = async () => {
 		loading = true;
+
+		if (form_data.selected_model_id === "" || form_data.selected_model_id === null) {
+			toast.error("Please select a model.");
+			loading = false;
+			return null;
+		}
 
 		if (validateCommandString(form_data.command)) {
 			const prompt = await updatePromptByCommand(
@@ -113,14 +126,25 @@
 
 		$classes = await getClassList(localStorage.token).catch((error) => {
 			toast.error(error);
-		})
+		});
 
 		classItems = $classes.map((c) => {
 			return {
 				label: c.name,
 				value: c.id,
 			};
-		})
+		});
+
+		$models = await getModels(localStorage.token).catch((error) => {
+			toast.error(error);
+		});
+
+		modelItems = $models.map((p) => {
+			return {
+				label: p.name,
+				value: p.id,
+			};
+		});
 	});
 </script>
 
@@ -402,7 +426,7 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Model</div>
-			TODO
+			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} externalLabel={form_data.selected_model_id}/>
 		</div>
 
 		<div class="my-2">

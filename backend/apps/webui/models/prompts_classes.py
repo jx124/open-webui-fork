@@ -31,7 +31,7 @@ class Prompt(pw.Model):
     image_url = pw.TextField(default="")
     deadline = pw.DateTimeField(null=True)
     evaluation = pw.ForeignKeyField(Evaluation, null=True)
-    model = pw.ForeignKeyField(Model, null=True)
+    model_id = pw.TextField(default="")
 
     class Meta:
         database = DB
@@ -50,7 +50,7 @@ class PromptModel(BaseModel):
     image_url: str = ""
     deadline: Optional[str]
     evaluation_id: Optional[int]
-    selected_model_id: Optional[str]  # prevent namespace collision
+    selected_model_id: str = ""  # prevent namespace collision
 
     assigned_classes: List[int]
 
@@ -59,7 +59,7 @@ def prompt_to_promptmodel(prompt: Model, classes: List[int] = []) -> PromptModel
     # flattens the prompt dict so "evaluation_id" and "model_id" is visible to PromptModel
     prompt_dict = model_to_dict(prompt)
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
-    model_id = None if prompt_dict.get("model") is None else prompt_dict.get("model", {}).get("id")
+    model_id = prompt_dict.get("model_id")
     
     return PromptModel(**prompt_dict,
                         evaluation_id=evaluation_id,
