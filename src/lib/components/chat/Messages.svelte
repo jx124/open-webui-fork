@@ -11,6 +11,9 @@
 	import Placeholder from './Messages/Placeholder.svelte';
 	import { copyToClipboard, findWordIndices } from '$lib/utils';
 	import CompareMessages from './Messages/CompareMessages.svelte';
+	import sanitizeHtml from 'sanitize-html';
+	import ChevronUp from '../icons/ChevronUp.svelte';
+	import ChevronDown from '../icons/ChevronDown.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -28,9 +31,11 @@
 	export let messages = [];
 
 	export let selectedModels;
+	export let selectedProfile;
+	export let showClientInfo = false;
 
 	export let evaluatedChat: null | string;
-
+	
 	$: if (autoScroll && bottomPadding) {
 		(async () => {
 			await tick();
@@ -239,9 +244,53 @@
 	};
 </script>
 
-<div class="h-full flex">
+<div class="h-full flex flex-col">
+	{#if selectedProfile}
+		<div class="mx-auto w-full max-w-6xl px-6 lg:px-8 py-4 mb-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+			<div class=" text-2xl font-semibold mb-2">Client Profile</div>
+
+			<div class="flex justify-start mb-4">
+				<img
+					src={selectedProfile.image_url ? selectedProfile.image_url : '/user.png'}
+					alt="profile"
+					class="rounded-full h-24 w-24 object-cover"
+				/>
+				<div class=" flex-1 self-center pl-3">
+					<div class="text-xl font-bold">
+						{selectedProfile.title}
+					</div>
+				</div>
+			</div>
+	
+			<button type="button" class="flex hover:underline text-sm" on:click={() => {showClientInfo = !showClientInfo}}>
+				{showClientInfo ? "Hide Client Information" : "Show Client Information"}
+				{#if showClientInfo}
+					<ChevronUp className="self-center ml-2 size-3" strokeWidth={"2"} />
+				{:else}
+					<ChevronDown className="self-center ml-2 size-3" strokeWidth={"2"} />
+				{/if}
+			</button>
+
+			{#if showClientInfo}
+				<div class="w-full prose !max-w-none pt-4 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
+					dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 
+					prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-li:py-0.5 
+					prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
+					{#if selectedProfile.additional_info}
+						{@html sanitizeHtml(selectedProfile.additional_info)}
+					{:else}
+						No additional information provided.
+					{/if}
+				</div>
+			{/if}
+		</div>
+	{/if}
 	{#if chatId === ""}
-		<Placeholder
+		<div class="mx-auto text:gray-500 dark:text-gray-400">
+			Send a message to start a conversation with the client.
+		</div>
+
+		<!-- <Placeholder
 			modelIds={selectedModels}
 			submitPrompt={async (p) => {
 				let text = p;
@@ -277,7 +326,7 @@
 
 				await tick();
 			}}
-		/>
+		/> -->
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}

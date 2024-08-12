@@ -6,7 +6,6 @@
 		prompts,
 		settings,
 		showArchivedChats,
-		showRightSidebar,
 		showSidebar,
 		user
 	} from '$lib/stores';
@@ -15,6 +14,7 @@
 	import PromptSelector from '../chat/PromptSelector.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
+	import DownloadChatDropdown from '../chat/DownloadChatDropdown.svelte';
 
 	export let shareEnabled: boolean = false;
 
@@ -45,6 +45,9 @@
 <nav id="nav" class=" sticky py-2.5 top-0 flex flex-row justify-center z-30">
 	<div class=" flex max-w-full w-full mx-auto px-3 pt-0.5 md:px-[1rem]">
 		<div class="flex items-center justify-between w-full max-w-full">
+			{#if $showSidebar}
+				<div></div>
+			{/if}
 			<div
 				class="{$showSidebar
 					? 'md:hidden'
@@ -62,61 +65,37 @@
 					</div>
 				</button>
 			</div>
+			
+			{#if ["admin", "instructor"].includes($user?.role ?? "")}
+				<div class="flex items-top w-full min-w-52">
+					<div class="overflow-hidden max-w-full">
+						{#if showModelSelector}
+							<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
+						{/if}
+					</div>
 
-			<div class="flex items-top w-full min-w-52">
-				<div class="overflow-hidden max-w-full">
-					{#if showModelSelector}
-						<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
-					{/if}
+					<div class="overflow-hidden max-w-full">
+						{#if evaluatedChat === null}
+							<PromptSelector 
+								bind:selectedPromptCommand
+								bind:disabled={inChatInstance}
+							/>
+						{:else}
+							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
+								<div>{"Evaluation for"}</div>
+								<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
+							</div>
+						{/if}
+					</div>
 				</div>
-
-				<div class="overflow-hidden max-w-full">
-					{#if evaluatedChat === null}
-						<PromptSelector 
-							bind:selectedPromptCommand
-							bind:disabled={inChatInstance}
-						/>
-					{:else}
-						<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
-							<div>{"Evaluation for"}</div>
-							<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
-						</div>
-					{/if}
-				</div>
-			</div>
+			{/if}
 
 			<div class="self-start flex flex-none items-center text-gray-600 dark:text-gray-400">
 				<div
-					class="{$showRightSidebar
-						? 'md:hidden'
-						: ''} self-start flex flex-none items-center space-x-0.5 md:space-x-1 text-gray-500 dark:text-gray-500"
+					class="self-start flex flex-none items-center space-x-0.5 md:space-x-1 text-gray-500 dark:text-gray-500"
 				>
 					{#if inChatInstance}
-						<button
-							class=" cursor-pointer px-2 py-2 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-							on:click={() => {
-								showRightSidebar.set(!$showRightSidebar);
-							}}
-						>
-							<div class=" m-auto self-center">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="2"
-									stroke="currentColor"
-									class="size-5"
-								>
-									<path
-										transform="scale(-1, 1)"
-										transform-origin="center"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-									/>
-								</svg>
-							</div>
-						</button>
+						<DownloadChatDropdown {chat} />
 					{/if}
 					{#if $user !== undefined}
 						<UserMenu

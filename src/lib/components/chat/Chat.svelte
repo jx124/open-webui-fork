@@ -75,7 +75,7 @@
 
 	let showModelSelector = true;
 
-	let selectedModels = [''];
+	let selectedModels: string[] = [''];
 	let atSelectedModel: Model | undefined;
 
 	let webSearchEnabled = false;
@@ -105,6 +105,9 @@
 		total_tokens: 0,
 	};
 
+	let selectedProfile;
+	let showClientInfo = false;
+
 	$: if (history.currentId !== null) {
 		let _messages = [];
 
@@ -129,21 +132,22 @@
 				const chatInput = document.getElementById('chat-textarea');
 				chatInput?.focus();
 			} else {
-				await goto('/');
+				await goto("/c/");
 			}
 		})();
 	}
 
 	// When creating a new chat, this is set by the PromptSelector menu. Otherwise, when accessing an existing chat,
 	// this is set by the loadChat command. Note that this field is undefined when in an evaluation chat.
-	let selectedPromptCommand: string;
+	let selectedPromptCommand: string = "";
 
 	onMount(async () => {
+		console.log("chat onmount", $chatId);
 		if (!$chatId) {
 			await initNewChat();
 		} else {
 			if (!($settings.saveChatHistory ?? true)) {
-				await goto('/');
+				await goto('/c/');
 			}
 		}
 	});
@@ -153,7 +157,7 @@
 	//////////////////////////
 
 	const initNewChat = async () => {
-		goto("/", { replaceState: true });
+		// goto("/c/", { replaceState: true });
 		await chatId.set('');
 
 		autoScroll = true;
@@ -170,8 +174,8 @@
 			total_tokens: 0,
 		};
 
-		if ($page.url.searchParams.get('models')) {
-			selectedModels = $page.url.searchParams.get('models')?.split(',');
+		if ($page.url.searchParams.get('model')) {
+			selectedModels = [$page.url.searchParams.get('model')?.split(',')[0] ?? ""];
 		} else if ($settings?.models) {
 			selectedModels = $settings?.models;
 		} else if ($config?.default_models) {
@@ -190,15 +194,23 @@
 			}
 		}
 
-		const preselectedPrompt = "/" + localStorage.getItem("preselectedPrompt") ?? "";
-		const isValidCommand = $prompts.find((prompt) => { return prompt.command === preselectedPrompt; }) !== undefined;
-		if (preselectedPrompt && isValidCommand) {
-			selectedPromptCommand = preselectedPrompt;
+		const profile = $page.url.searchParams.get("profile") ?? "";
+		selectedProfile = $prompts.find((prompt) => { return prompt.command === profile; });
+
+		if (profile && selectedProfile !== undefined) {
+			selectedPromptCommand = profile;
 		}
 
 		selectedModels = selectedModels.map((modelId) =>
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
+
+		if ((selectedPromptCommand === "" || selectedModels[0] === "") 
+			&& !["admin", "instructor"].includes($user?.role ?? "")) {
+			
+			toast.error("Invalid profile or model");
+			await goto("/classes");
+		}
 
 		const userSettings = await getUserSettings(localStorage.token);
 
@@ -215,7 +227,7 @@
 	const loadChat = async () => {
 		chatId.set(chatIdProp);
 		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
-			await goto('/');
+			await goto('/c/');
 			return null;
 		});
 
@@ -244,6 +256,8 @@
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
 				if (selectedPromptCommand) {
 					let newPrompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
+					selectedProfile = $prompts.find((prompt) => { return prompt.command === selectedPromptCommand; });
+
 					if (newPrompt !== chatContent.system) {
 						chatContent.system = newPrompt;
 					}
@@ -1413,6 +1427,8 @@
 					<Messages
 						chatId={$chatId}
 						{selectedModels}
+						bind:selectedProfile
+						bind:showClientInfo
 						{processing}
 						bind:history
 						bind:messages

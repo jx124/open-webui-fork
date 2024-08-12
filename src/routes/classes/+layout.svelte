@@ -33,7 +33,7 @@
 				>
 					<div class="flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
 						<a
-							id="sidebar-new-chat-button"
+							id="home-button"
 							class="flex flex-1 justify-between rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 							href="/"
 							draggable="false"

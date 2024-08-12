@@ -1,11 +1,8 @@
 <script lang="ts">
 	import Chat from '$lib/components/chat/Chat.svelte';
 	import { page } from '$app/stores';
-	import RightSidebar from '$lib/components/layout/RightSidebar.svelte';
 	import { onMount } from 'svelte';
 	import { updateChatSessionTimes } from '$lib/apis/chats';
-
-	let chat = null;
 
 	let start = 0;
 	let currentPage: string = $page.params.id;
@@ -70,5 +67,4 @@
 	on:pagehide={updateAndSendRequest} />
 
 
-<Chat chatIdProp={$page.params.id} bind:chat />
-<RightSidebar bind:chat />
+<Chat chatIdProp={$page.params.id} />
