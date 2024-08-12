@@ -22,12 +22,7 @@
 	const BREAKPOINT = 768;
 
 	onMount(async () => {
-		// Save query param "?prompt=command" to allow links with preselected prompts
-		// Used localStorage to persist choice since user may close browser while waiting for account confirmation
-		if ($page.url.searchParams.has("prompt")) {
-			localStorage.setItem("preselectedPrompt", $page.url.searchParams.get("prompt") ?? "");
-		}
-
+		console.log("/ layout", $page);
 		theme.set(localStorage.theme);
 
 		mobile.set(window.innerWidth < BREAKPOINT);
@@ -76,6 +71,10 @@
 					if (sessionUser) {
 						// Save Session User to Store
 						await user.set(sessionUser);
+
+						if (!['admin', 'instructor'].includes($user?.role ?? '') && !$page.url.pathname.startsWith("/c/")) {
+							await goto('/classes');
+						}
 					} else {
 						// Redirect Invalid Session User to /auth Page
 						localStorage.removeItem('token');

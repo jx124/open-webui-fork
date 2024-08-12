@@ -15,6 +15,7 @@
     let assignedPrompts;
 
 	onMount(async () => {
+		console.log("/classes/[id] page");
 		if ($classes.length === 0) {
 			$classes = await getClassList(localStorage.token).catch((error) => toast.error(error));
 		}
@@ -75,7 +76,7 @@
 						<div class="flex flex-1 space-x-4 cursor-pointer w-full">
 							<a
 								class="flex items-center"
-								href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}
+								href={`/c/?profile=${encodeURIComponent(prompt.command)}&model=${encodeURIComponent(prompt.selected_model_id)}`}
 							>
 								<img
 									src={prompt.image_url ? prompt.image_url : '/user.png'}
@@ -84,7 +85,7 @@
 								/>
 								<div class=" flex-1 self-center pl-3">
 									<div class=" font-bold">
-										{(prompt.is_visible ? '' : '[Draft] ') + prompt.title}
+										{prompt.title}
 									</div>
 									{#if prompt.deadline}
 										<div class="text-xs text-gray-400 dark:text-gray-500">

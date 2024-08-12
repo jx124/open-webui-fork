@@ -36,6 +36,7 @@
 	import { getBanners } from '$lib/apis/configs';
 	import { getUserSettings } from '$lib/apis/users';
 	import { getClassList } from '$lib/apis/classes';
+	import { page } from '$app/stores';
 
 	const i18n = getContext('i18n');
 
@@ -52,6 +53,7 @@
 	};
 
 	onMount(async () => {
+		console.log("/(app) layout", $page);
 		if ($user === undefined) {
 			await goto('/auth');
 		} else if (!["pending"].includes($user.role)) {
@@ -173,7 +175,7 @@
 
 			await tick();
 
-			if (!['admin', 'instructor'].includes($user?.role ?? '')) {
+			if (!['admin', 'instructor'].includes($user?.role ?? '') && !$page.url.pathname.startsWith("/c/")) {
 				await goto('/classes');
 			}
 		}
