@@ -76,7 +76,9 @@
 						<div class="flex flex-1 space-x-4 cursor-pointer w-full">
 							<a
 								class="flex items-center"
-								href={`/c/?profile=${encodeURIComponent(prompt.command)}&model=${encodeURIComponent(prompt.selected_model_id)}`}
+								href={`/c/?profile=${encodeURIComponent(prompt.command)}`
+										+ `&model=${encodeURIComponent(prompt.selected_model_id)}`
+										+ `&class=${currentClassId}`}
 							>
 								<img
 									src={prompt.image_url ? prompt.image_url : '/user.png'}

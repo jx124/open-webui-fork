@@ -29,6 +29,9 @@ class Chat(Model):
     session_time = BigIntegerField(default=0) # Chat session length in seconds
     visits = BigIntegerField(default=0) # Number of visits to this chat session
 
+    class_id = DeferredForeignKey("class", null=True)   # To tell which class & prompt the chat belongs to
+    prompt_id = DeferredForeignKey("prompt", null=True) # deferred due to circular import error
+
     class Meta:
         database = DB
 
@@ -47,6 +50,9 @@ class ChatModel(BaseModel):
 
     session_time: int = 0
     visits: int = 0
+
+    class_id: Optional[int] = None
+    prompt_id: Optional[int] = None
 
 
 ####################
@@ -74,6 +80,8 @@ class ChatResponse(BaseModel):
     created_at: int  # timestamp in epoch
     share_id: Optional[str] = None  # id of the chat to be shared
     archived: bool
+    class_id: Optional[int] = None
+    prompt_id: Optional[int] = None
 
 
 class ChatTitleIdResponse(BaseModel):
@@ -90,7 +98,8 @@ class ChatInfoResponse(BaseModel):
     visits: int
     updated_at: int
     created_at: int
-
+    class_id: Optional[int] = None
+    prompt_id: Optional[int] = None
 
 class ChatTable:
     def __init__(self, db):
@@ -109,6 +118,8 @@ class ChatTable:
                 "chat": json.dumps(form_data.chat),
                 "created_at": int(time.time()),
                 "updated_at": int(time.time()),
+                "class_id": form_data.chat.get("class_id", None),
+                "prompt_id": form_data.chat.get("prompt_id", None),
             }
         )
 
@@ -125,7 +136,7 @@ class ChatTable:
             query.execute()
 
             chat = Chat.get(Chat.id == id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
         
@@ -159,6 +170,8 @@ class ChatTable:
                 "chat": chat.chat,
                 "created_at": chat.created_at,
                 "updated_at": int(time.time()),
+                "class_id": chat.get("class_id", None),
+                "prompt_id": chat.get("prompt_id", None),
             }
         )
         shared_result = Chat.create(**shared_chat.model_dump())
@@ -183,7 +196,7 @@ class ChatTable:
             query.execute()
 
             chat = Chat.get(Chat.id == chat.share_id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
 
@@ -206,7 +219,7 @@ class ChatTable:
             query.execute()
 
             chat = Chat.get(Chat.id == id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
 
@@ -220,7 +233,7 @@ class ChatTable:
             query.execute()
 
             chat = Chat.get(Chat.id == id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
 
@@ -242,7 +255,7 @@ class ChatTable:
         self, user_id: str, skip: int = 0, limit: int = 50
     ) -> List[ChatModel]:
         return [
-            ChatModel(**model_to_dict(chat))
+            ChatModel(**model_to_dict(chat, recurse=False))
             for chat in Chat.select()
             .where(Chat.archived == True)
             .where(Chat.user_id == user_id)
@@ -260,7 +273,7 @@ class ChatTable:
     ) -> List[ChatModel]:
         if include_archived:
             return [
-                ChatModel(**model_to_dict(chat))
+                ChatModel(**model_to_dict(chat, recurse=False))
                 for chat in Chat.select()
                 .where(Chat.user_id == user_id)
                 .order_by(Chat.updated_at.desc())
@@ -269,7 +282,7 @@ class ChatTable:
             ]
         else:
             return [
-                ChatModel(**model_to_dict(chat))
+                ChatModel(**model_to_dict(chat, recurse=False))
                 for chat in Chat.select()
                 .where(Chat.archived == False)
                 .where(Chat.user_id == user_id)
@@ -282,7 +295,7 @@ class ChatTable:
         self, chat_ids: List[str], skip: int = 0, limit: int = 50
     ) -> List[ChatModel]:
         return [
-            ChatModel(**model_to_dict(chat))
+            ChatModel(**model_to_dict(chat, recurse=False))
             for chat in Chat.select()
             .where(Chat.archived == False)
             .where(Chat.id.in_(chat_ids))
@@ -292,7 +305,7 @@ class ChatTable:
     def get_chat_by_id(self, id: str) -> Optional[ChatModel]:
         try:
             chat = Chat.get(Chat.id == id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
 
@@ -302,7 +315,7 @@ class ChatTable:
 
             if chat:
                 chat = Chat.get(Chat.id == id)
-                return ChatModel(**model_to_dict(chat))
+                return ChatModel(**model_to_dict(chat, recurse=False))
             else:
                 return None
         except:
@@ -311,7 +324,7 @@ class ChatTable:
     def get_chat_by_id_and_user_id(self, id: str, user_id: str) -> Optional[ChatModel]:
         try:
             chat = Chat.get(Chat.id == id, Chat.user_id == user_id)
-            return ChatModel(**model_to_dict(chat))
+            return ChatModel(**model_to_dict(chat, recurse=False))
         except:
             return None
 
@@ -325,14 +338,14 @@ class ChatTable:
 
     def get_chats(self, skip: int = 0, limit: int = 50) -> List[ChatModel]:
         return [
-            ChatModel(**model_to_dict(chat))
+            ChatModel(**model_to_dict(chat, recurse=False))
             for chat in Chat.select().order_by(Chat.updated_at.desc())
             # .limit(limit).offset(skip)
         ]
 
     def get_chats_by_user_id(self, user_id: str) -> List[ChatModel]:
         return [
-            ChatModel(**model_to_dict(chat))
+            ChatModel(**model_to_dict(chat, recurse=False))
             for chat in Chat.select()
             .where(Chat.user_id == user_id)
             .order_by(Chat.updated_at.desc())
@@ -341,7 +354,7 @@ class ChatTable:
 
     def get_archived_chats_by_user_id(self, user_id: str) -> List[ChatModel]:
         return [
-            ChatModel(**model_to_dict(chat))
+            ChatModel(**model_to_dict(chat, recurse=False))
             for chat in Chat.select()
             .where(Chat.archived == True)
             .where(Chat.user_id == user_id)

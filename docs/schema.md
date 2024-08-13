@@ -30,6 +30,9 @@ Table chat {
 
   session_time bigint [default: 0]
   visits bigint [default: 0]
+
+  class_id integer [ref: > class.id]
+  prompt_id integer [ref: > prompt.id]
 }
 
 Table document {
