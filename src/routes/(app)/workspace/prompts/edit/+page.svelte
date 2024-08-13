@@ -12,10 +12,10 @@
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
 	import DatePicker from '$lib/components/common/DatePicker.svelte';
-	import ItemMultiSelector from '$lib/components/admin/ItemMultiSelector.svelte';
 	import { getClassList } from '$lib/apis/classes';
 	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
 	import { getModels } from '$lib/apis';
+	import ClassMultiSelector from '$lib/components/workspace/ClassMultiSelector.svelte';
 
 	let loading = false;
 
@@ -390,11 +390,10 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
-			<ItemMultiSelector 
-				addItemLabel={"Add Class"}
-				searchPlaceholder={"Search clases"} 
+			<ClassMultiSelector 
 				bind:items={classItems}
-				bind:selectedItems={form_data.assigned_classes} />
+				bind:selectedItems={form_data.assigned_classes}
+			/>
 		</div>
 
 		<div class="my-2">

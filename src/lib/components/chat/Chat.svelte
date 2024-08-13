@@ -70,7 +70,6 @@
 
 	let stopResponseFlag = false;
 	let autoScroll = true;
-	let processing = '';
 	let messagesContainerElement: HTMLDivElement;
 
 	let showModelSelector = true;
@@ -1376,13 +1375,11 @@
 			: ''} w-full max-w-full flex flex-col"
 	>
 		<Navbar
-			{title}
 			bind:selectedModels
 			bind:showModelSelector
 			bind:selectedPromptCommand
 			shareEnabled={messages.length > 0}
 			{chat}
-			{initNewChat}
 		/>
 
 		{#if $banners.length > 0 && messages.length === 0 && !$chatId && selectedModels.length <= 1}
@@ -1429,7 +1426,6 @@
 						{selectedModels}
 						bind:selectedProfile
 						bind:showClientInfo
-						{processing}
 						bind:history
 						bind:messages
 						bind:autoScroll

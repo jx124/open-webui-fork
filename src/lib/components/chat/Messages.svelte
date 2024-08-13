@@ -282,9 +282,9 @@
 						No additional information provided.
 					{/if}
 				</div>
-				<button type="button" class="flex hover:underline text-sm" on:click={() => {showClientInfo = false}}>
-					Hide Client Information
-					<ChevronUp className="self-center ml-2 size-3" strokeWidth={"2"} />
+				<button type="button" class="flex hover:underline text-xs mt-2" on:click={() => {showClientInfo = false}}>
+					Hide
+					<ChevronUp className="self-center ml-1 size-2" strokeWidth={"2"} />
 				</button>
 			{/if}
 		</div>

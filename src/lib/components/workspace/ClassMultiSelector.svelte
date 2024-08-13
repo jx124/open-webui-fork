@@ -4,12 +4,12 @@
 
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { mobile, prompts } from '$lib/stores';
+	import { classes, mobile, prompts } from '$lib/stores';
 	import XMark from '../icons/XMark.svelte';
 
-	export let addItemLabel = "Add Item";
+	export let addItemLabel = "Add Class";
 	export let searchEnabled = true;
-	export let searchPlaceholder = "Search Items";
+	export let searchPlaceholder = "Search Classes";
 
     type ItemType = {
 		label: string,
@@ -50,27 +50,22 @@
         
         <div class="flex flex-col items-start w-full">
             <div class="mb-3 w-full">
-                {#each $prompts.filter((p) => selectedItems.includes(p.id)) as prompt}
+                {#each $classes.filter((c) => selectedItems.includes(c.id)) as class_}
                     <div
                         class=" flex space-x-4 w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
                     >
                         <div class="flex flex-1 space-x-4 w-full">
                             <div class="flex items-center ">
                                 <img
-                                    src={prompt.image_url ? prompt.image_url : "/user.png"}
+                                    src={class_.image_url ? class_.image_url : "/user.png"}
                                     alt="profile"
                                     class="rounded-full h-12 w-12 object-cover"
                                 />
                                 <div class=" flex-1 self-center pl-3">
-                                    <div class=" font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
-                                    <div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-                                        {prompt.command}
+                                    <div class=" font-bold">{class_.name}</div>
+                                    <div class="text-xs text-gray-400 dark:text-gray-500">
+                                        Instructor: {class_.instructor_name}
                                     </div>
-                                    {#if prompt.deadline}
-                                        <div class="text-xs text-gray-400 dark:text-gray-500">
-                                            Due: {new Date(prompt.deadline).toString()}
-                                        </div>
-                                    {/if}
                                 </div>
                             </div>
                         </div>
@@ -80,7 +75,7 @@
                                 type="button"
                                 on:click={() => {
                                     selectedItems = selectedItems.filter(
-                                        (selected) => selected !== prompt.id
+                                        (selected) => selected !== class_.id
                                     );
                                 }}
                             >
@@ -142,7 +137,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more prompts under Workspace > Prompts. 
+                            No results found, add more classes under Workspace > Classes. 
                         </div>
                     {/each}
                 </div>
