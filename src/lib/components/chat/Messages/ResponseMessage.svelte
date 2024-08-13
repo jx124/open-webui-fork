@@ -54,6 +54,10 @@
 	export let continueGeneration: Function;
 	export let regenerateResponse: Function;
 
+	export let clientName;
+	export let clientImage;
+	export let isEvaluation = false;
+
 	let model = null;
 	$: model = $models.find((m) => m.id === message.model);
 
@@ -371,13 +375,12 @@
 		dir={$settings.chatDirection}
 	>
 		<ProfileImage
-			src={model?.info?.meta?.profile_image_url ??
-				($i18n.language === 'dg-DG' ? `/doge.png` : `${WEBUI_BASE_URL}/static/favicon.png`)}
+			src={isEvaluation ? `${WEBUI_BASE_URL}/static/favicon.png` : clientImage ?? `${WEBUI_BASE_URL}/static/favicon.png`}
 		/>
 
 		<div class="w-full overflow-hidden pl-1">
 			<Name>
-				Client
+				{isEvaluation ? "Evaluation" : clientName ?? "Client"}
 
 				{#if message.timestamp}
 					<span

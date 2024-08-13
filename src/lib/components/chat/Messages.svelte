@@ -282,51 +282,57 @@
 						No additional information provided.
 					{/if}
 				</div>
+				<button type="button" class="flex hover:underline text-sm" on:click={() => {showClientInfo = false}}>
+					Hide Client Information
+					<ChevronUp className="self-center ml-2 size-3" strokeWidth={"2"} />
+				</button>
 			{/if}
 		</div>
 	{/if}
 	{#if chatId === ""}
-		<div class="mx-auto text:gray-500 dark:text-gray-400">
-			Send a message to start a conversation with the client.
-		</div>
+		{#if !["admin", "instructor"].includes($_user?.role ?? "")}
+			<div class="mx-auto text:gray-500 dark:text-gray-400">
+				Send a message to start a conversation with the client.
+			</div>
+		{:else}
+			<Placeholder
+				modelIds={selectedModels}
+				submitPrompt={async (p) => {
+					let text = p;
 
-		<!-- <Placeholder
-			modelIds={selectedModels}
-			submitPrompt={async (p) => {
-				let text = p;
+					if (p.includes('{{CLIPBOARD}}')) {
+						const clipboardText = await navigator.clipboard.readText().catch((err) => {
+							toast.error($i18n.t('Failed to read clipboard contents'));
+							return '{{CLIPBOARD}}';
+						});
 
-				if (p.includes('{{CLIPBOARD}}')) {
-					const clipboardText = await navigator.clipboard.readText().catch((err) => {
-						toast.error($i18n.t('Failed to read clipboard contents'));
-						return '{{CLIPBOARD}}';
-					});
-
-					text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
-				}
-
-				prompt = text;
-
-				await tick();
-
-				const chatInputElement = document.getElementById('chat-textarea');
-				if (chatInputElement) {
-					prompt = p;
-
-					chatInputElement.style.height = '';
-					chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
-					chatInputElement.focus();
-
-					const words = findWordIndices(prompt);
-
-					if (words.length > 0) {
-						const word = words.at(0);
-						chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
+						text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
 					}
-				}
 
-				await tick();
-			}}
-		/> -->
+					prompt = text;
+
+					await tick();
+
+					const chatInputElement = document.getElementById('chat-textarea');
+					if (chatInputElement) {
+						prompt = p;
+
+						chatInputElement.style.height = '';
+						chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
+						chatInputElement.focus();
+
+						const words = findWordIndices(prompt);
+
+						if (words.length > 0) {
+							const word = words.at(0);
+							chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
+						}
+					}
+
+					await tick();
+				}}
+			/>
+		{/if}
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}
@@ -372,6 +378,9 @@
 											copyToClipboard={copyToClipboardWithToast}
 											{continueGeneration}
 											{regenerateResponse}
+											clientName={selectedProfile?.title}
+											clientImage={selectedProfile?.image_url}
+											isEvaluation={evaluatedChat !== null}
 											on:save={async (e) => {
 												console.log('save', e);
 
