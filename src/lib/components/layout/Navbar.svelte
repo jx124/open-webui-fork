@@ -23,6 +23,8 @@
 
 	export let selectedPromptCommand: string;
 
+	export let className: string = "";
+
 	let evaluatedChat: null | string = null;
 	let evaluatedChatTitle: string;
 
@@ -95,6 +97,14 @@
 							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
 								<div>{"Evaluation for"}</div>
 								<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
+							</div>
+						</div>
+					</div>
+				{:else}
+					<div class="flex items-top w-full min-w-52">
+						<div class="overflow-hidden max-w-full">
+							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
+								{className}
 							</div>
 						</div>
 					</div>

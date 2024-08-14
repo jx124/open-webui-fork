@@ -118,13 +118,13 @@
 						/>
 						<div class=" flex-1 self-center pl-5">
                         <div class=" font-bold">{class_.name}</div>
-                        <div class="text-xs text-gray-400 dark:text-gray-500">
+                        <div class="text-xs text-gray-600 dark:text-gray-400">
                             Instructor: {class_.instructor_name}
                         </div>
-						<div class="text-xs text-gray-400 dark:text-gray-500">
+						<div class="text-xs text-gray-600 dark:text-gray-400">
                             Students: {class_.assigned_students.length}
                         </div>
-						<div class="text-xs text-gray-400 dark:text-gray-500">
+						<div class="text-xs text-gray-600 dark:text-gray-400">
                             {assignedPromptLabel(class_.assigned_prompts)}
                         </div>
 					</div>

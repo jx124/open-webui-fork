@@ -8,11 +8,11 @@
 	export let selectedPromptCommand: string;
 	export let disabled = false;
 
-	$: promptTitle = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.title ?? $i18n.t('Prompt');
+	$: promptTitle = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.title ?? 'Profile';
 </script>
 
 <Selector
-	searchPlaceholder={$i18n.t('Search Prompts')}
+	searchPlaceholder={$i18n.t('Search Profiles')}
 	items={$prompts
 		.map((prompt) => ({
 			value: prompt.command, // command is validated to be unique

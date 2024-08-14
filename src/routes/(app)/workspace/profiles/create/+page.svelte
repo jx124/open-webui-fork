@@ -13,6 +13,7 @@
 	import { getModels } from '$lib/apis';
 	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
 	import ClassMultiSelector from '$lib/components/workspace/ClassMultiSelector.svelte';
+	import NUSModerator from 'nusmoderator';
 
 	const i18n = getContext('i18n');
 
@@ -51,6 +52,28 @@
 		value: string
 	}[];
 
+	let weekDisplay = "";
+
+	$: weekDisplay = getNUSWeekName(form_data.deadline ?? "");
+	$: console.log(form_data.deadline, weekDisplay);
+	
+	const getNUSWeekName = (date: string) => {
+		if (date === "") {
+			return "";
+		}
+		const week = NUSModerator.academicCalendar.getAcadWeekInfo(new Date(date ?? ""));
+
+        if (week === null) {
+            return "Others";
+        }
+
+        if (week.type === "Instructional") {
+            return "Week " + (week.num ?? 0);
+        } else {
+            return week.type + " Week " + (week.num ?? "");
+        }
+    }
+
 	const submitHandler = async () => {
 		loading = true;
 
@@ -73,7 +96,7 @@
 
 			if (prompt) {
 				await prompts.set(await getPrompts(localStorage.token));
-				await goto('/workspace/prompts');
+				await goto('/workspace/profiles');
 			}
 		} else {
 			toast.error(
@@ -416,6 +439,9 @@
 			</label>
 			{#if hasDeadline}
 				<DatePicker bind:selectedDateTime={form_data.deadline} placeholder={selectedDateTime} />
+				<div class="text-sm pl-1 pt-1">
+					{getNUSWeekName(form_data.deadline ?? "")}
+				</div>
 			{/if}
 		</div>
 
@@ -425,7 +451,7 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Model</div>
+			<div class=" text-sm font-semibold mb-1">Model*</div>
 			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} />
 		</div>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { canvasPixelTest, generateInitialsImage } from "$lib/utils";
 	import { getContext } from "svelte";
+	import { toast } from "svelte-sonner";
 
 	let profileImageInputElement: HTMLInputElement;
 	const i18n = getContext('i18n');

@@ -298,7 +298,7 @@
 							/>
 						</div>
 						<div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
-							{$WEBUI_NAME}
+							View Classes
 						</div>
 					</a>
 				</div>

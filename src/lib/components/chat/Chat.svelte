@@ -111,6 +111,11 @@
 	let showClientInfo = false;
 
 	let classId: number;
+	let className: string = "";
+
+	$: if (classId) {
+		className = $classes.find((c) => c.id === classId)?.name ?? "";
+	}
 
 	$: if (history.currentId !== null) {
 		let _messages = [];
@@ -572,7 +577,6 @@
 		);
 
 		chats.set(await getChatList(localStorage.token));
-		localStorage.setItem("preselectedPrompt", "");
 	};
 
 	const getWebSearchResults = async (model: string, parentId: string, responseId: string) => {
@@ -888,7 +892,7 @@
 		}
 
 		if (messages.length == 2 && messages.at(1).content !== '') {
-			goto(`/c/${_chatId}`, { replaceState: true });
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
 				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
@@ -1090,7 +1094,7 @@
 		}
 
 		if (messages.length == 2) {
-			goto(`/c/${_chatId}`, { replaceState: true });
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
 				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
@@ -1396,6 +1400,7 @@
 			bind:selectedModels
 			bind:showModelSelector
 			bind:selectedPromptCommand
+			bind:className
 			shareEnabled={messages.length > 0}
 			{chat}
 		/>
@@ -1438,11 +1443,12 @@
 						messagesContainerElement.clientHeight + 5;
 				}}
 			>
-				<div class=" h-full w-full flex flex-col {chatIdProp ? 'py-4' : 'pt-2 pb-4'}">
+				<div class=" h-full w-full flex flex-col py-4">
 					<Messages
-						chatId={$chatId}
+						bind:chatId={$chatId}
 						{selectedModels}
 						bind:selectedProfile
+						bind:classId
 						bind:showClientInfo
 						bind:history
 						bind:messages

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
-	import { chats, settings, user as _user, mobile } from '$lib/stores';
-	import { tick, getContext } from 'svelte';
+	import { chats, settings, user as _user, mobile, prompts, classes } from '$lib/stores';
+	import { tick, getContext, onMount } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
 	import { getChatList, updateChatById } from '$lib/apis/chats';
@@ -14,6 +14,8 @@
 	import sanitizeHtml from 'sanitize-html';
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
+	import ChangeProfileDropdown from './Messages/ChangeProfileDropdown.svelte';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -32,10 +34,14 @@
 
 	export let selectedModels;
 	export let selectedProfile;
+	export let classId;
 	export let showClientInfo = false;
 
+	$: console.log("selectedProfile", selectedProfile);
+	$: console.log("assignedPrompts", assignedPrompts);
+
 	export let evaluatedChat: null | string;
-	
+
 	$: if (autoScroll && bottomPadding) {
 		(async () => {
 			await tick();
@@ -242,12 +248,49 @@
 			history: history
 		});
 	};
+
+	let assignedPrompts;
+
+	$: {
+		if (['admin', 'instructor'].includes($_user?.role ?? '')) {
+			assignedPrompts = $prompts;
+		} else {
+			const currentClass = $classes.find((c) => c.id === classId);
+			const assignedPromptIds = new Set<number>(currentClass?.assigned_prompts ?? []);
+			assignedPrompts = $prompts.filter((p) => assignedPromptIds.has(p.id));
+		}
+	}
 </script>
 
 <div class="h-full flex flex-col">
 	{#if selectedProfile}
-		<div class="mx-auto w-full max-w-6xl px-6 lg:px-8 py-4 mb-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-			<div class=" text-2xl font-semibold mb-2">Client Profile</div>
+		<div
+			class="mx-auto w-full max-w-6xl px-6 lg:px-8 py-4 mb-4 border border-gray-200 dark:border-gray-600 rounded-lg"
+		>
+			<div class="flex flex-row items-center justify-between mb-2">
+				<div class="flex text-2xl font-semibold items-center">
+					Client Profile
+					{#if assignedPrompts?.length > 0}
+						<ChangeProfileDropdown profiles={assignedPrompts} currentClassId={classId} bind:selectedProfile/>
+					{/if}
+				</div>
+				{#if chatId !== ''}
+					<button
+						class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+						type="button"
+						on:click={() => {
+							goto(
+								`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
+									`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
+									`&class=${classId}`
+							);
+							chatId = '';
+						}}
+					>
+						<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
+					</button>
+				{/if}
+			</div>
 
 			<div class="flex justify-start mb-4">
 				<img
@@ -261,80 +304,95 @@
 					</div>
 				</div>
 			</div>
-	
-			<button type="button" class="flex hover:underline text-sm" on:click={() => {showClientInfo = !showClientInfo}}>
-				{showClientInfo ? "Hide Client Information" : "Show Client Information"}
+
+			<button
+				type="button"
+				class="flex hover:underline text-sm"
+				on:click={() => {
+					showClientInfo = !showClientInfo;
+				}}
+			>
+				{showClientInfo ? 'Hide Client Information' : 'Show Client Information'}
 				{#if showClientInfo}
-					<ChevronUp className="self-center ml-2 size-3" strokeWidth={"2"} />
+					<ChevronUp className="self-center ml-2 size-3" strokeWidth={'2'} />
 				{:else}
-					<ChevronDown className="self-center ml-2 size-3" strokeWidth={"2"} />
+					<ChevronDown className="self-center ml-2 size-3" strokeWidth={'2'} />
 				{/if}
 			</button>
 
 			{#if showClientInfo}
-				<div class="w-full prose !max-w-none pt-4 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
-					dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 
-					prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-li:py-0.5 
-					prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">
+				<div
+					class="w-full prose !max-w-none pt-4 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
+					dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0
+					prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-li:py-0.5
+					prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1"
+				>
 					{#if selectedProfile.additional_info}
 						{@html sanitizeHtml(selectedProfile.additional_info)}
 					{:else}
 						No additional information provided.
 					{/if}
 				</div>
-				<button type="button" class="flex hover:underline text-xs mt-2" on:click={() => {showClientInfo = false}}>
+				<button
+					type="button"
+					class="flex hover:underline text-xs mt-2"
+					on:click={() => {
+						showClientInfo = false;
+					}}
+				>
 					Hide
-					<ChevronUp className="self-center ml-1 size-2" strokeWidth={"2"} />
+					<ChevronUp className="self-center ml-1 size-2" strokeWidth={'2'} />
 				</button>
 			{/if}
 		</div>
-	{/if}
-	{#if chatId === ""}
-		{#if !["admin", "instructor"].includes($_user?.role ?? "")}
+
+		{#if chatId === ""}
 			<div class="mx-auto text:gray-500 dark:text-gray-400">
 				Send a message to start a conversation with the client.
 			</div>
-		{:else}
-			<Placeholder
-				modelIds={selectedModels}
-				submitPrompt={async (p) => {
-					let text = p;
-
-					if (p.includes('{{CLIPBOARD}}')) {
-						const clipboardText = await navigator.clipboard.readText().catch((err) => {
-							toast.error($i18n.t('Failed to read clipboard contents'));
-							return '{{CLIPBOARD}}';
-						});
-
-						text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
-					}
-
-					prompt = text;
-
-					await tick();
-
-					const chatInputElement = document.getElementById('chat-textarea');
-					if (chatInputElement) {
-						prompt = p;
-
-						chatInputElement.style.height = '';
-						chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
-						chatInputElement.focus();
-
-						const words = findWordIndices(prompt);
-
-						if (words.length > 0) {
-							const word = words.at(0);
-							chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
-						}
-					}
-
-					await tick();
-				}}
-			/>
 		{/if}
+	{/if}
+
+	{#if chatId === '' && !selectedProfile}
+		<Placeholder
+			modelIds={selectedModels}
+			submitPrompt={async (p) => {
+				let text = p;
+
+				if (p.includes('{{CLIPBOARD}}')) {
+					const clipboardText = await navigator.clipboard.readText().catch((err) => {
+						toast.error($i18n.t('Failed to read clipboard contents'));
+						return '{{CLIPBOARD}}';
+					});
+
+					text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
+				}
+
+				prompt = text;
+
+				await tick();
+
+				const chatInputElement = document.getElementById('chat-textarea');
+				if (chatInputElement) {
+					prompt = p;
+
+					chatInputElement.style.height = '';
+					chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
+					chatInputElement.focus();
+
+					const words = findWordIndices(prompt);
+
+					if (words.length > 0) {
+						const word = words.at(0);
+						chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
+					}
+				}
+
+				await tick();
+			}}
+		/>
 	{:else}
-		<div class="w-full pt-2">
+		<div class="w-full pt-4">
 			{#key chatId}
 				{#each messages as message, messageIdx}
 					<div class=" w-full {messageIdx === messages.length - 1 ? ' pb-12' : ''}">

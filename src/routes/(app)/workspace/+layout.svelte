@@ -46,17 +46,17 @@
 			>
 
 			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/profiles')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/workspace/profiles">{$i18n.t('Profiles')}</a
+			>
+
+			<a
 				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/models')
 					? 'bg-gray-50 dark:bg-gray-850'
 					: ''} transition"
 				href="/workspace/models">{$i18n.t('Models')}</a
-			>
-
-			<a
-				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/prompts')
-					? 'bg-gray-50 dark:bg-gray-850'
-					: ''} transition"
-				href="/workspace/prompts">{$i18n.t('Prompts')}</a
 			>
 
 			<a

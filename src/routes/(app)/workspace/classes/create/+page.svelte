@@ -178,10 +178,10 @@
 			</div>
 
 			<div class="my-2">
-				<div class=" text-sm font-semibold mb-2">Prompts</div>
+				<div class=" text-sm font-semibold mb-2">Profiles</div>
 				<PromptMultiSelector 
-					addItemLabel={"Add Prompt"}
-					searchPlaceholder={"Search Prompts"} 
+					addItemLabel={"Add Profiles"}
+					searchPlaceholder={"Search Profiles"} 
 					bind:items={promptItems}
 					bind:selectedItems={form_data.assigned_prompts}
 				/>

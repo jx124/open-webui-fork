@@ -124,7 +124,7 @@ type TitleSettings = {
 	prompt?: string;
 };
 
-type Prompt = {
+export type Prompt = {
 	id: number,
 	command: string;
 	user_id: string;
@@ -142,7 +142,7 @@ type Prompt = {
 	assigned_classes: number[];
 };
 
-type Class = {
+export type Class = {
 	id: number,
     name: string,
     instructor_id: string,

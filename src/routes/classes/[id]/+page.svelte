@@ -5,6 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { page } from '$app/stores';
+	import AcademicWeekDisplay from '$lib/components/classes/AcademicWeekDisplay.svelte';
 
 	let searchValue = '';
 	let loading = true;
@@ -15,7 +16,6 @@
     let assignedPrompts;
 
 	onMount(async () => {
-		console.log("/classes/[id] page");
 		if ($classes.length === 0) {
 			$classes = await getClassList(localStorage.token).catch((error) => toast.error(error));
 		}
@@ -38,69 +38,12 @@
 </svelte:head>
 
 <div class="flex flex-col w-full min-h-screen max-h-screen items-center justify-center">
-	<div class=" h-1/2 w-1/2 overflow-y-auto">
-		<div class=" text-3xl font-semibold mb-3">{currentClass?.name} Profiles</div>
-
-		<div class="flex w-full space-x-2 mb-2">
-			<div class="flex flex-1 px-3 py-1.5 border dark:border-gray-600 outline-none rounded-lg">
-				<div class=" self-center ml-1 mr-3">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-						class="w-4 h-4"
-					>
-						<path
-							fill-rule="evenodd"
-							d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-							clip-rule="evenodd"
-						/>
-					</svg>
-				</div>
-				<input
-					class=" w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
-					bind:value={searchValue}
-					placeholder={'Search Profiles'}
-				/>
-			</div>
-		</div>
+	<div class="w-1/2 h-3/4">
+		<div class=" text-3xl font-semibold mb-3">{currentClass?.name} Assignments</div>
 
 		{#if !loading}
 			<div class=" my-2 mb-5" id="class-list">
-				{#each assignedPrompts.filter((p) => searchValue === '' || p.title
-							.toLowerCase()
-							.includes(searchValue) || p.command.toLowerCase().includes(searchValue)) as prompt}
-					<div
-						class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
-					>
-						<div class="flex flex-1 space-x-4 cursor-pointer w-full">
-							<a
-								class="flex items-center"
-								href={`/c/?profile=${encodeURIComponent(prompt.command)}`
-										+ `&model=${encodeURIComponent(prompt.selected_model_id)}`
-										+ `&class=${currentClassId}`}
-							>
-								<img
-									src={prompt.image_url ? prompt.image_url : '/user.png'}
-									alt="profile"
-									class="rounded-full h-16 w-16 object-cover"
-								/>
-								<div class=" flex-1 self-center pl-3">
-									<div class=" font-bold">
-										{prompt.title}
-									</div>
-									{#if prompt.deadline}
-										<div class="text-xs text-gray-400 dark:text-gray-500">
-											Due: {new Date(prompt.deadline).toString()}
-										</div>
-									{/if}
-								</div>
-							</a>
-						</div>
-					</div>
-				{:else}
-					<div class="px-2">No profiles found.</div>
-				{/each}
+				<AcademicWeekDisplay bind:profiles={assignedPrompts} bind:currentClassId />
 			</div>
 		{:else}
 			<div class="px-2 flex items-center space-x-1">

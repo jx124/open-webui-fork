@@ -62,14 +62,14 @@
 		<input
 			class=" w-full text-sm pr-4 py-1 rounded-r-xl outline-none bg-transparent"
 			bind:value={query}
-			placeholder={$i18n.t('Search Prompts')}
+			placeholder={$i18n.t('Search Profiles')}
 		/>
 	</div>
 
 	<div>
 		<a
 			class=" px-2 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:border-0 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition font-medium text-sm flex items-center space-x-1"
-			href="/workspace/prompts/create"
+			href="/workspace/profiles/create"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +92,7 @@
 			class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
 		>
 			<div class="flex flex-1 space-x-4 cursor-pointer w-full">
-				<a class="flex items-center " href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}>
+				<a class="flex items-center " href={`/workspace/profiles/edit?command=${encodeURIComponent(prompt.command)}`}>
 					<img
 						src={prompt.image_url ? prompt.image_url : "/user.png"}
 						alt="profile"
@@ -100,11 +100,8 @@
 					/>
 					<div class=" flex-1 self-center pl-3">
 						<div class=" font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
-						<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1">
-							{prompt.command}
-						</div>
 						{#if prompt.deadline}
-							<div class="text-xs text-gray-400 dark:text-gray-500">
+							<div class="text-xs text-gray-600 dark:text-gray-400">
 								Due: {new Date(prompt.deadline).toString()}
 							</div>
 						{/if}
@@ -115,7 +112,7 @@
 				<a
 					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 					type="button"
-					href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}
+					href={`/workspace/profiles/edit?command=${encodeURIComponent(prompt.command)}`}
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

@@ -16,6 +16,7 @@
 	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
 	import { getModels } from '$lib/apis';
 	import ClassMultiSelector from '$lib/components/workspace/ClassMultiSelector.svelte';
+	import NUSModerator from 'nusmoderator';
 
 	let loading = false;
 
@@ -52,6 +53,23 @@
 		value: string
 	}[];
 
+	const getNUSWeekName = (date: string) => {
+		if (date === "") {
+			return "";
+		}
+		const week = NUSModerator.academicCalendar.getAcadWeekInfo(new Date(date ?? ""));
+
+        if (week === null) {
+            return "Others";
+        }
+
+        if (week.type === "Instructional") {
+            return "Week " + (week.num ?? 0);
+        } else {
+            return week.type + " Week " + (week.num ?? "");
+        }
+    }
+
 	const updateHandler = async () => {
 		loading = true;
 
@@ -73,7 +91,7 @@
 
 			if (prompt) {
 				await prompts.set(await getPrompts(localStorage.token));
-				await goto('/workspace/prompts');
+				await goto('/workspace/profiles');
 			}
 		} else {
 			toast.error(
@@ -118,10 +136,10 @@
 
 				promptAuthorId = prompt.user_id
 			} else {
-				goto('/workspace/prompts');
+				goto('/workspace/profiles');
 			}
 		} else {
-			goto('/workspace/prompts');
+			goto('/workspace/profiles');
 		}
 
 		$classes = await getClassList(localStorage.token).catch((error) => {
@@ -415,6 +433,9 @@
 			</label>
 			{#if hasDeadline}
 				<DatePicker bind:selectedDateTime={form_data.deadline} placeholder={selectedDateTime} />
+				<div class="text-sm pl-1 pt-1">
+					{getNUSWeekName(form_data.deadline ?? "")}
+				</div>
 			{/if}
 		</div>
 
@@ -424,7 +445,7 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Model</div>
+			<div class=" text-sm font-semibold mb-1">Model*</div>
 			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} externalLabel={form_data.selected_model_id}/>
 		</div>
 

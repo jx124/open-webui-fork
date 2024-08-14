@@ -5,6 +5,7 @@
 	import ChevronRight from '../icons/ChevronRight.svelte';
 	import CalendarBlank from '../icons/CalendarBlank.svelte';
 	import { CalendarDateTime, parseDate } from '@internationalized/date';
+	import { mobile } from '$lib/stores';
 	
     export let header = "";
 	
@@ -52,9 +53,10 @@
 			</DatePicker.Trigger>
 		</DatePicker.Input>
 		<DatePicker.Content
-			sideOffset={6}
+			sideOffset={12}
 			transition={flyAndScale}
 			transitionConfig={{ duration: 150, y: -8 }}
+			side={$mobile ? 'bottom' : 'right'}
 			class="z-50"
 		>
 			<DatePicker.Calendar

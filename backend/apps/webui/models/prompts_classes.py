@@ -82,7 +82,7 @@ class PromptForm(BaseModel):
     image_url: str = ""
     deadline: Optional[str]
     evaluation_id: Optional[int]
-    selected_model_id: Optional[str]
+    selected_model_id: str
 
     assigned_classes: List[int]
 
@@ -115,7 +115,7 @@ class PromptsTable:
             )
 
             with self.db.atomic():
-                result = Prompt.create(**prompt.model_dump(exclude={'id'}))
+                result = Prompt.create(**prompt.model_dump(exclude={'id'}), model_id=prompt.selected_model_id)
                 if result:
                     ClassPrompts.insert_new_class_prompts_by_prompt(result.id, form_data.assigned_classes)
 
