@@ -37,8 +37,11 @@ with suppress(ImportError):
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
 
-    migrator.add_fields("chat", class_id=pw.DeferredForeignKey("class", null=True))
-    migrator.add_fields("chat", prompt_id=pw.DeferredForeignKey("prompt", null=True))
+    Class = migrator.orm["class"]
+    Prompt = migrator.orm["prompt"]
+
+    migrator.add_fields("chat", class_id=pw.ForeignKeyField(Class, null=True))
+    migrator.add_fields("chat", prompt_id=pw.ForeignKeyField(Prompt, null=True))
 
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):

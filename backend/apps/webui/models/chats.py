@@ -29,8 +29,8 @@ class Chat(Model):
     session_time = BigIntegerField(default=0) # Chat session length in seconds
     visits = BigIntegerField(default=0) # Number of visits to this chat session
 
-    class_id = DeferredForeignKey("class", null=True)   # To tell which class & prompt the chat belongs to
-    prompt_id = DeferredForeignKey("prompt", null=True) # deferred due to circular import error
+    class_id = IntegerField(null=True)  # Not using foreign key field since that leads to an error with postgres
+    prompt_id = IntegerField(null=True) # Not using foreign key field since that leads to an error with postgres
 
     class Meta:
         database = DB

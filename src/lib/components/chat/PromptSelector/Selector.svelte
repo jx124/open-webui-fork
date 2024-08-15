@@ -117,7 +117,7 @@
 						{:else}
 							<div>
 								<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-									{'No prompts available, add prompts under "Workspace" > "Prompts"'}
+									No results found, add profiles under "Workspace" > "Profiles"
 								</div>
 							</div>
 						{/if}

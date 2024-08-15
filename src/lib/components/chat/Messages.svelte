@@ -37,9 +37,6 @@
 	export let classId;
 	export let showClientInfo = false;
 
-	$: console.log("selectedProfile", selectedProfile);
-	$: console.log("assignedPrompts", assignedPrompts);
-
 	export let evaluatedChat: null | string;
 
 	$: if (autoScroll && bottomPadding) {

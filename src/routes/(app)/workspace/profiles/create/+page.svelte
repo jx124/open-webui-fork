@@ -52,11 +52,6 @@
 		value: string
 	}[];
 
-	let weekDisplay = "";
-
-	$: weekDisplay = getNUSWeekName(form_data.deadline ?? "");
-	$: console.log(form_data.deadline, weekDisplay);
-	
 	const getNUSWeekName = (date: string) => {
 		if (date === "") {
 			return "";

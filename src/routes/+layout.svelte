@@ -22,7 +22,6 @@
 	const BREAKPOINT = 768;
 
 	onMount(async () => {
-		console.log("/ layout", $page);
 		theme.set(localStorage.theme);
 
 		mobile.set(window.innerWidth < BREAKPOINT);

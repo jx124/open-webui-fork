@@ -56,15 +56,21 @@ class PromptModel(BaseModel):
 
 
 def prompt_to_promptmodel(prompt: Model, classes: List[int] = []) -> PromptModel:
-    # flattens the prompt dict so "evaluation_id" and "model_id" is visible to PromptModel
-    prompt_dict = model_to_dict(prompt)
+    prompt_dict = model_to_dict(prompt, exclude=[Prompt.deadline])
+    date_str = prompt.deadline
+
+    # postgres has a datetime type, but sqlite stores it as a string
+    if date_str is not None and type(date_str) is not str:
+        date_str = prompt.deadline.isoformat() if prompt.deadline is not None else None
+        
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
     model_id = prompt_dict.get("model_id")
     
     return PromptModel(**prompt_dict,
-                        evaluation_id=evaluation_id,
-                        selected_model_id=model_id,
-                        assigned_classes=classes)
+                       deadline=date_str,
+                       evaluation_id=evaluation_id,
+                       selected_model_id=model_id,
+                       assigned_classes=classes)
 
 
 ####################

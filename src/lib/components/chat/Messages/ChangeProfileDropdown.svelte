@@ -12,8 +12,6 @@
 
 	export let className = 'w-[16rem]';
 
-    $: console.log("profiles", profiles);
-
     onMount(() => {
         
     })

@@ -142,7 +142,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more prompts under Workspace > Prompts. 
+                            No results found, add more profiles under Workspace > Profiles. 
                         </div>
                     {/each}
                 </div>
