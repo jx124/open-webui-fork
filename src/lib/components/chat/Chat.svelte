@@ -20,9 +20,8 @@
 		banners,
 		user,
 		prompts,
-
-		classes
-
+		classes,
+		type Prompt
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -107,7 +106,7 @@
 		total_tokens: 0,
 	};
 
-	let selectedProfile;
+	let selectedProfile: Prompt | undefined;
 	let showClientInfo = false;
 
 	let classId: number;
@@ -149,6 +148,12 @@
 	// When creating a new chat, this is set by the PromptSelector menu. Otherwise, when accessing an existing chat,
 	// this is set by the loadChat command. Note that this field is undefined when in an evaluation chat.
 	let selectedPromptCommand: string = "";
+	
+	$: if (selectedPromptCommand) {
+		selectedProfile = $prompts.find((prompt) => {
+			return prompt.command === selectedPromptCommand;
+		});
+	}
 
 	onMount(async () => {
 		if (!$chatId) {
@@ -202,11 +207,11 @@
 		}
 
 		const profile = $page.url.searchParams.get("profile") ?? "";
-		selectedProfile = $prompts.find((prompt) => { return prompt.command === profile; });
+		selectedProfile = $prompts.find((prompt) => {
+			return prompt.command === profile;
+		});
 
-		if (profile && selectedProfile !== undefined) {
-			selectedPromptCommand = profile;
-		}
+		selectedPromptCommand = selectedProfile?.command ?? "";
 
 		selectedModels = selectedModels.map((modelId) =>
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
@@ -273,11 +278,8 @@
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
 				if (selectedPromptCommand) {
-					let newPrompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
-					selectedProfile = $prompts.find((prompt) => { return prompt.command === selectedPromptCommand; });
-
-					if (newPrompt !== chatContent.system) {
-						chatContent.system = newPrompt;
+					if (selectedProfile?.content !== chatContent.system) {
+						chatContent.system = selectedProfile?.content;
 					}
 				}
 
@@ -460,7 +462,7 @@
 							total_tokens: 0,
 						},
 						class_id: classId,
-						prompt_id: selectedProfile.id,
+						prompt_id: selectedProfile?.id,
 					});
 					await chats.set(await getChatList(localStorage.token));
 					await chatId.set(chat.id);
