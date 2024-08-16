@@ -1,6 +1,7 @@
+from collections import defaultdict
 from fastapi import Depends, Request, HTTPException, status
 from typing import List, Optional
-from utils.utils import get_current_user, get_admin_user
+from utils.utils import get_current_user, get_admin_or_instructor
 from fastapi import APIRouter
 from pydantic import BaseModel
 import json
@@ -8,6 +9,7 @@ import logging
 
 from apps.webui.models.users import Users
 from apps.webui.models.chats import (
+    ChatNamedResponse,
     ChatResponse,
     ChatTimingForm,
     ChatForm,
@@ -74,7 +76,7 @@ async def delete_all_user_chats(request: Request, user=Depends(get_current_user)
 
 @router.get("/list/user/{user_id}", response_model=List[ChatInfoResponse])
 async def get_user_chat_list_by_user_id(
-    user_id: str, user=Depends(get_admin_user), skip: int = 0, limit: int = 50
+    user_id: str, user=Depends(get_admin_or_instructor), skip: int = 0, limit: int = 50
 ):
     chats = Chats.get_chat_list_by_user_id(
         user_id, include_archived=True, skip=skip, limit=limit
@@ -143,17 +145,31 @@ async def get_user_chats(user=Depends(get_current_user)):
 ############################
 
 
-@router.get("/all/db", response_model=List[ChatResponse])
-async def get_all_user_chats_in_db(user=Depends(get_admin_user)):
+@router.get("/all/db", response_model=List[ChatNamedResponse])
+async def get_all_user_chats_in_db(user=Depends(get_admin_or_instructor)):
     if not ENABLE_ADMIN_EXPORT:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-    return [
-        ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
-        for chat in Chats.get_chats()
+    
+    chats_without_name = [
+        {**chat.model_dump(), "chat": json.loads(chat.chat)} for chat in Chats.get_chats()
     ]
+
+    users = Users.get_users()
+    user_id_name_dict = defaultdict(lambda: "Invalid User")
+
+    for user in users:
+        user_id_name_dict[user.id] = user.name
+
+    result = []
+    for chat in chats_without_name:
+        user_id = chat.get("user_id", "")
+        result.append(ChatNamedResponse(**{**chat, "user_name": user_id_name_dict[user_id]}))
+
+    return result
+    
 
 
 ############################

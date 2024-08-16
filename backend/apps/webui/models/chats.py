@@ -75,6 +75,16 @@ class ChatResponse(BaseModel):
     share_id: Optional[str] = None  # id of the chat to be shared
     archived: bool
 
+class ChatNamedResponse(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    title: str
+    chat: dict
+    updated_at: int  # timestamp in epoch
+    created_at: int  # timestamp in epoch
+    share_id: Optional[str] = None  # id of the chat to be shared
+    archived: bool
 
 class ChatTitleIdResponse(BaseModel):
     id: str
