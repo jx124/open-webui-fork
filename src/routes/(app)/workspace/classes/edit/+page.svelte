@@ -7,100 +7,154 @@
 	import { type ClassForm, getClassById, updateClass } from '$lib/apis/classes';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { prompts } from '$lib/stores';
+	import { models, prompts } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
+	import DefaultPromptSelector from '$lib/components/workspace/DefaultPromptSelector.svelte';
+	import DefaultModelSelector from '$lib/components/workspace/DefaultModelSelector.svelte';
 
 	const i18n = getContext('i18n');
 
-    let form_data: ClassForm = {
+	let form_data: ClassForm = {
 		id: 0,
-		name: "",
-		instructor_id: "",
-        image_url: "",
+		name: '',
+		instructor_id: '',
+		image_url: '',
 
-        assigned_prompts: [],
-        assigned_students: [],
+		assigned_prompts: [],
+		assigned_students: [],
+
+		default_model_id: null,
+		default_prompt_command: null
 	};
 
-    let instructorName = "";
+	let instructorName = '';
 
-    let pageLoading = false;
-    let loading = false;
+	let pageLoading = false;
+	let loading = false;
 
 	const submitHandler = async () => {
 		loading = true;
 
-        const class_ = await updateClass(localStorage.token, form_data).catch((error) => {
+		if (hasDefaultModel && form_data.default_model_id === null) {
+			toast.error("Please select a default model");
+			loading = false;
+			return null
+		}
+
+		if (hasDefaultPrompt && form_data.default_prompt_command === null) {
+			toast.error("Please select a default prompt");
+			loading = false;
+			return null
+		}
+
+		const class_ = await updateClass(localStorage.token, form_data).catch((error) => {
 			toast.error(error);
 		});
 
 		loading = false;
 
-        if (class_) {
+		if (class_) {
 			toast.success('Class updated successfully');
-            await goto('/workspace/classes');
+			await goto('/workspace/classes');
 		}
 	};
 
-    let items: {
-        value: string,
-        label: string
-    }[];
+	let userItems: {
+		value: string;
+		label: string;
+	}[];
 
-    let promptItems: {
-        value: number,
-        label: string
-    }[];
+	let promptItems: {
+		value: number;
+		label: string;
+	}[];
 
-    onMount(async () => {
-        pageLoading = true;
+    let defaultPromptLabel = "";
 
-        form_data.id = parseInt($page.url.searchParams.get("id") ?? "0");
+    let defaultPromptItems: {
+		value: string;
+		label: string;
+	}[];
 
-        const class_ = await getClassById(localStorage.token, form_data.id).catch((error) => {
-            loading = false;
-            toast.error(error);
-            goto('/workspace/classes');
-        });
+    let defaultModelItems: {
+		value: string;
+		label: string;
+	}[];
 
-        form_data.name = class_.name;
-        form_data.instructor_id = class_.instructor_id;
-        instructorName = class_.instructor_name;
-        form_data.image_url = class_.image_url;
+	let hasDefaultPrompt = false;
+	let hasDefaultModel = false;
 
-        form_data.assigned_prompts = class_.assigned_prompts;
-        form_data.assigned_students = class_.assigned_students;
+	onMount(async () => {
+		pageLoading = true;
 
-        const users = await getUsers(localStorage.token).catch((error) => {
+		form_data.id = parseInt($page.url.searchParams.get('id') ?? '0');
+
+		const class_ = await getClassById(localStorage.token, form_data.id).catch((error) => {
+			loading = false;
+			toast.error(error);
+			goto('/workspace/classes');
+		});
+
+		form_data.name = class_.name;
+		form_data.instructor_id = class_.instructor_id;
+		instructorName = class_.instructor_name;
+		form_data.image_url = class_.image_url;
+
+		form_data.assigned_prompts = class_.assigned_prompts;
+		form_data.assigned_students = class_.assigned_students;
+
+        form_data.default_model_id = class_.default_model_id;
+        form_data.default_prompt_command = class_.default_prompt_command;
+
+        defaultPromptLabel = $prompts.find(p => p.command === form_data.default_prompt_command)?.title ?? "";
+        hasDefaultPrompt = defaultPromptLabel === "" ? false : true;
+
+        hasDefaultModel = form_data.default_model_id === null ? false : true;
+
+		const users = await getUsers(localStorage.token).catch((error) => {
 			pageLoading = false;
 			toast.error(error);
 		});
 
-        const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers?.map(user => { 
-            return {
-                value: user.id,
-                label: user.name
-            };
-        })
+		const validUsers = users?.filter((user) => ['admin', 'instructor'].includes(user.role));
+		userItems = validUsers?.map((user) => {
+			return {
+				value: user.id,
+				label: user.name
+			};
+		});
 
 		$prompts = await getPrompts(localStorage.token).catch((error) => {
 			pageLoading = false;
 			toast.error(error);
 		});
 
-		promptItems = $prompts?.map(prompt => { 
-            return {
-                value: prompt.id,
-                label: prompt.title
-            };
-        })
+		promptItems = $prompts?.map((prompt) => {
+			return {
+				value: prompt.id,
+				label: prompt.title
+			};
+		});
 
-        pageLoading = false;
-    });
+        defaultPromptItems = $prompts?.map((prompt) => {
+			return {
+				value: prompt.command,
+				label: prompt.title
+			};
+		});
+
+        defaultModelItems = $models?.map((model) => {
+			return {
+				value: model.id,
+				label: model.id
+			};
+		});
+
+		pageLoading = false;
+	});
 </script>
 
 <div class="w-full max-h-full">
@@ -127,124 +181,182 @@
 		<div class=" self-center font-medium text-sm">{$i18n.t('Back')}</div>
 	</button>
 
-    {#if pageLoading}
-        <div class="flex h-full">
-            <div class="flex mx-auto items-center self-center">
-                <svg
-                    class=" w-8 h-8"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
-                    ><style>
-                        .spinner_ajPY {
-                            transform-origin: center;
-                            animation: spinner_AtaB 0.75s infinite linear;
-                        }
-                        @keyframes spinner_AtaB {
-                            100% {
-                                transform: rotate(360deg);
-                            }
-                        }
-                    </style><path
-                        d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
-                        opacity=".25"
-                    /><path
-                        d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
-                        class="spinner_ajPY"
-                    /></svg
-                >
-                <span class="ml-2">
-                    Loading...
-                </span>
-            </div>
-        </div>
-    {:else}
-        <form
-            class="flex flex-col max-w-2xl mx-auto mt-4 mb-10"
-            on:submit|preventDefault={() => {
-                submitHandler();
-            }}
-        >
-            <ProfileImageEditor bind:image_url={form_data.image_url} bind:initialsSource={form_data.name}/>
-            <div class="my-2">
-                <div class=" text-sm font-semibold mb-2">{$i18n.t('Name')}*</div>
+	{#if pageLoading}
+		<div class="flex h-full">
+			<div class="flex mx-auto items-center self-center">
+				<svg
+					class=" w-8 h-8"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					xmlns="http://www.w3.org/2000/svg"
+					><style>
+						.spinner_ajPY {
+							transform-origin: center;
+							animation: spinner_AtaB 0.75s infinite linear;
+						}
+						@keyframes spinner_AtaB {
+							100% {
+								transform: rotate(360deg);
+							}
+						}
+					</style><path
+						d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+						opacity=".25"
+					/><path
+						d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
+						class="spinner_ajPY"
+					/></svg
+				>
+				<span class="ml-2"> Loading... </span>
+			</div>
+		</div>
+	{:else}
+		<form
+			class="flex flex-col max-w-2xl mx-auto mt-4 mb-10"
+			on:submit|preventDefault={() => {
+				submitHandler();
+			}}
+		>
+			<ProfileImageEditor
+				bind:image_url={form_data.image_url}
+				bind:initialsSource={form_data.name}
+			/>
+			<div class="my-2">
+				<div class=" text-sm font-semibold mb-2">{$i18n.t('Name')}*</div>
 
-                <div>
-                    <input
-                        class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
-                        placeholder={"Add a name for this class"}
-                        bind:value={form_data.name}
-                        required
-                    />
-                </div>
-            </div>
+				<div>
+					<input
+						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+						placeholder={'Add a name for this class'}
+						bind:value={form_data.name}
+						required
+					/>
+				</div>
+			</div>
 
-            <div class="my-2">
-                <div class=" text-sm font-semibold mb-2">Instructor*</div>
+			<div class="my-2">
+				<div class=" text-sm font-semibold mb-2">Instructor*</div>
 
-                <UserSelector 
-                    bind:value={form_data.instructor_id}
-                    externalLabel={instructorName}
-                    {items}
-                    placeholder={"Select an instructor"}
-                    searchPlaceholder={"Search for an instructor"}
-                />
-            </div>
+				<UserSelector
+					bind:value={form_data.instructor_id}
+					externalLabel={instructorName}
+					items={userItems}
+					placeholder={'Select an instructor'}
+					searchPlaceholder={'Search for an instructor'}
+				/>
+			</div>
 
-            <div class="my-2">
-                <div class=" text-sm font-semibold mb-2">Students</div>
+			<div class="my-2">
+				<div class=" text-sm font-semibold mb-2">Students</div>
 				<UserTableSelector bind:selectedUsers={form_data.assigned_students} />
-            </div>
+			</div>
 
-            <div class="my-2">
-                <div class=" text-sm font-semibold mb-2">Prompts</div>
-                <PromptMultiSelector 
-					addItemLabel={"Add Prompt"}
-					searchPlaceholder={"Search Prompts"} 
+			<div class="my-2">
+				<div class=" text-sm font-semibold mb-2">Prompts</div>
+				<PromptMultiSelector
+					addItemLabel={'Add Prompt'}
+					searchPlaceholder={'Search Prompts'}
 					bind:items={promptItems}
 					bind:selectedItems={form_data.assigned_prompts}
 				/>
-            </div>
+			</div>
 
-            <div class="my-2 flex justify-end">
-                <button
-                    class=" text-sm px-3 py-2 transition rounded-xl {loading
-                        ? ' cursor-not-allowed bg-gray-100 dark:bg-gray-800'
-                        : ' bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800'} flex"
-                    type="submit"
-                    disabled={loading}
-                >
-                    <div class=" self-center font-medium">{$i18n.t('Save & Update')}</div>
+			<div class="my-2">
+				<div class=" text-sm font-semibold">Default Prompt</div>
+				<label
+					class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right"
+				>
+					<input
+						type="checkbox"
+						on:change={() => {
+							hasDefaultPrompt = !hasDefaultPrompt;
+							if (!hasDefaultPrompt) {
+								form_data.default_prompt_command = null;
+                                defaultPromptLabel = "";
+							}
+						}}
+						checked={hasDefaultPrompt}
+					/>
+					Set default prompt
+					{#if hasDefaultPrompt}
+						<div class="text-sm">
+							<DefaultPromptSelector
+                                bind:items={defaultPromptItems}
+                                bind:value={form_data.default_prompt_command}
+								externalLabel={defaultPromptLabel}
+                            />
+						</div>
+					{/if}
+				</label>
+			</div>
 
-                    {#if loading}
-                        <div class="ml-1.5 self-center">
-                            <svg
-                                class=" w-4 h-4"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                xmlns="http://www.w3.org/2000/svg"
-                                ><style>
-                                    .spinner_ajPY {
-                                        transform-origin: center;
-                                        animation: spinner_AtaB 0.75s infinite linear;
-                                    }
-                                    @keyframes spinner_AtaB {
-                                        100% {
-                                            transform: rotate(360deg);
-                                        }
-                                    }
-                                </style><path
-                                    d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
-                                    opacity=".25"
-                                /><path
-                                    d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
-                                    class="spinner_ajPY"
-                                /></svg
-                            >
-                        </div>
-                    {/if}
-                </button>
-            </div>
-        </form>
-    {/if}
+            <div class="my-2">
+				<div class=" text-sm font-semibold">Default Model</div>
+				<label
+					class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right"
+				>
+					<input
+						type="checkbox"
+						on:change={() => {
+							hasDefaultModel = !hasDefaultModel;
+							if (!hasDefaultModel) {
+								form_data.default_model_id = null;
+							}
+						}}
+						checked={hasDefaultModel}
+					/>
+					Set default model
+					{#if hasDefaultModel}
+						<div class="text-sm">
+							<DefaultModelSelector
+                                bind:items={defaultModelItems}
+                                bind:value={form_data.default_model_id}
+                                externalLabel={form_data.default_model_id ?? ""}
+                            />
+						</div>
+					{/if}
+				</label>
+			</div>
+
+			<div class="my-2 flex justify-end">
+				<button
+					class=" text-sm px-3 py-2 transition rounded-xl {loading
+						? ' cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+						: ' bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800'} flex"
+					type="submit"
+					disabled={loading}
+				>
+					<div class=" self-center font-medium">{$i18n.t('Save & Update')}</div>
+
+					{#if loading}
+						<div class="ml-1.5 self-center">
+							<svg
+								class=" w-4 h-4"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+								xmlns="http://www.w3.org/2000/svg"
+								><style>
+									.spinner_ajPY {
+										transform-origin: center;
+										animation: spinner_AtaB 0.75s infinite linear;
+									}
+									@keyframes spinner_AtaB {
+										100% {
+											transform: rotate(360deg);
+										}
+									}
+								</style><path
+									d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+									opacity=".25"
+								/><path
+									d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
+									class="spinner_ajPY"
+								/></svg
+							>
+						</div>
+					{/if}
+				</button>
+			</div>
+		</form>
+	{/if}
 </div>

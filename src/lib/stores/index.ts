@@ -151,6 +151,9 @@ type Class = {
 
     assigned_prompts: number[],
 	assigned_students: string[]
+
+    default_model_id: string | null;
+    default_prompt_command: string | null;
 };
 
 

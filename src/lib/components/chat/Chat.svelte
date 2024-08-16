@@ -19,7 +19,10 @@
 		WEBUI_NAME,
 		banners,
 		user,
-		prompts
+		prompts,
+
+		classes
+
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -194,6 +197,15 @@
 		const isValidCommand = $prompts.find((prompt) => { return prompt.command === preselectedPrompt; }) !== undefined;
 		if (preselectedPrompt && isValidCommand) {
 			selectedPromptCommand = preselectedPrompt;
+		}
+		
+		if ($classes.length > 0) {
+			if ($classes[0].default_model_id) {
+				selectedModels = [$classes[0].default_model_id];
+			}
+			if ($classes[0].default_prompt_command) {
+				selectedPromptCommand = $classes[0].default_prompt_command;
+			}
 		}
 
 		selectedModels = selectedModels.map((modelId) =>

@@ -64,6 +64,7 @@ class ERROR_MESSAGES(str, Enum):
     INVALID_IMPORT_FILE = "The file cannot be opened."
     MISSING_COLUMNS_IMPORT = lambda cols: f"Missing columns: {', '.join(cols)}"
     MISSING_ROLES = lambda roles: f"These roles do not exist: {', '.join(roles)}. Please create the roles before importing new users."
+    MISSING_EMAILS = lambda emails: f"These emails do not exist: {', '.join(emails)}. Please import these users first via Admin Panel > Add Users."
     EXISTING_EMAIL_IMPORT = lambda emails: f"These emails are already in use: {', '.join(emails)}"
 
     NOT_FOUND = "We could not find what you're looking for :/"

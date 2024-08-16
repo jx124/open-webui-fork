@@ -6,11 +6,13 @@
 	import { getUsers } from '$lib/apis/users';
 	import { type ClassForm, createNewClass } from '$lib/apis/classes';
 	import { goto } from '$app/navigation';
-	import { prompts, user } from '$lib/stores';
+	import { models, prompts, user } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
 	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
+	import DefaultPromptSelector from '$lib/components/workspace/DefaultPromptSelector.svelte';
+	import DefaultModelSelector from '$lib/components/workspace/DefaultModelSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -22,6 +24,9 @@
 
 		assigned_prompts: [],
         assigned_students: [],
+
+		default_model_id: null,
+		default_prompt_command: null
 	};
 
     let pageLoading = false;
@@ -29,6 +34,18 @@
 
 	const submitHandler = async () => {
 		loading = true;
+
+		if (hasDefaultModel && form_data.default_model_id === null) {
+			toast.error("Please select a default model");
+			loading = false;
+			return null
+		}
+
+		if (hasDefaultPrompt && form_data.default_prompt_command === null) {
+			toast.error("Please select a default prompt");
+			loading = false;
+			return null
+		}
 
         const class_ = await createNewClass(localStorage.token, form_data).catch((error) => {
 			toast.error(error);
@@ -42,7 +59,7 @@
 		}
 	};
 
-    let items: {
+    let userItems: {
         value: string,
         label: string
     }[];
@@ -51,6 +68,19 @@
         value: number,
         label: string
     }[];
+
+    let defaultPromptItems: {
+		value: string;
+		label: string;
+	}[];
+
+    let defaultModelItems: {
+		value: string;
+		label: string;
+	}[];
+
+	let hasDefaultPrompt = false;
+	let hasDefaultModel = false;
 
     onMount(async () => {
 		pageLoading = true;
@@ -61,7 +91,7 @@
 		});
 
         const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers?.map(user => { 
+        userItems = validUsers?.map(user => { 
             return {
                 value: user.id,
                 label: user.name
@@ -79,6 +109,20 @@
                 label: prompt.title
             };
         })
+
+		defaultPromptItems = $prompts?.map((prompt) => {
+			return {
+				value: prompt.command,
+				label: prompt.title
+			};
+		});
+
+        defaultModelItems = $models?.map((model) => {
+			return {
+				value: model.id,
+				label: model.id
+			};
+		});
 
 		pageLoading = false;
     })
@@ -166,7 +210,7 @@
 				<UserSelector 
 					bind:value={form_data.instructor_id}
 					externalLabel={$user?.role === "instructor" ? $user?.name : ""}
-					{items}
+					items={userItems}
 					placeholder={"Select an instructor"}
 					searchPlaceholder={"Search for an instructor"}
 				/>
@@ -185,6 +229,57 @@
 					bind:items={promptItems}
 					bind:selectedItems={form_data.assigned_prompts}
 				/>
+			</div>
+
+			<div class="my-2">
+				<div class=" text-sm font-semibold">Default Prompt</div>
+				<label
+					class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right"
+				>
+					<input
+						type="checkbox"
+						on:change={() => {
+							hasDefaultPrompt = !hasDefaultPrompt;
+							if (!hasDefaultPrompt) {
+								form_data.default_prompt_command = null;
+							}
+						}}
+						checked={hasDefaultPrompt}
+					/>
+					Set default prompt
+					{#if hasDefaultPrompt}
+						<div class="text-sm">
+							<DefaultPromptSelector
+								bind:items={defaultPromptItems}
+								bind:value={form_data.default_prompt_command} 
+							/>
+						</div>
+					{/if}
+				</label>
+			</div>
+
+            <div class="my-2">
+				<div class=" text-sm font-semibold">Default Model</div>
+				<label
+					class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right"
+				>
+					<input
+						type="checkbox"
+						on:change={() => {
+							hasDefaultModel = !hasDefaultModel;
+							if (!hasDefaultModel) {
+								form_data.default_model_id = null;
+							}
+						}}
+						checked={hasDefaultModel}
+					/>
+					Set default model
+					{#if hasDefaultModel}
+						<div class="text-sm">
+							<DefaultModelSelector bind:items={defaultModelItems} bind:value={form_data.default_model_id} />
+						</div>
+					{/if}
+				</label>
 			</div>
 
 			<div class="my-2 flex justify-end">

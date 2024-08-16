@@ -24,7 +24,10 @@
 		tags,
 		banners,
 		showChangelog,
-		config
+		config,
+
+		classes
+
 	} from '$lib/stores';
 	import { REQUIRED_OLLAMA_VERSION, WEBUI_API_BASE_URL } from '$lib/constants';
 	import { compareVersion } from '$lib/utils';
@@ -36,6 +39,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { getBanners } from '$lib/apis/configs';
 	import { getUserSettings } from '$lib/apis/users';
+	import { getClassList } from '$lib/apis/classes';
 
 	const i18n = getContext('i18n');
 
@@ -87,6 +91,9 @@
 				})(),
 				(async () => {
 					prompts.set(await getPrompts(localStorage.token));
+				})(),
+				(async () => {
+					classes.set(await getClassList(localStorage.token));
 				})(),
 				(async () => {
 					documents.set(await getDocs(localStorage.token));

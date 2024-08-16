@@ -320,3 +320,45 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
 async def email_user_account_details(user):
     # TODO: implement after getting gmail API credentials
     pass
+
+
+############################
+# GetUserIdssByExcel
+############################
+
+
+@router.post("/ids/import", response_model=List[str])
+async def get_user_ids_by_excel(request: Request, user=Depends(get_admin_or_instructor)):
+    users = None
+
+    try:
+        recv_bytes = await request.body()
+        users = pd.read_excel(io.BytesIO(recv_bytes))
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.INVALID_IMPORT_FILE
+        )
+    
+    if "Email" not in users.columns:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.MISSING_COLUMNS_IMPORT("Email")
+        )
+    
+    existing_emails = set(Auths.get_emails())
+    user_emails = set([email.lower() for email in users["Email"]])
+
+    if not user_emails.issubset(existing_emails):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.MISSING_EMAILS(user_emails.difference(existing_emails))
+        )
+    
+    email_ids = Auths.get_user_ids_by_email()
+    result = []
+
+    for email in users["Email"]:
+        result.append(email_ids[email])
+
+    return result

@@ -7,6 +7,8 @@ export type ClassForm = {
 	image_url: "",
 	assigned_prompts: number[],
 	assigned_students: string[],
+	default_model_id: string | null,
+	default_prompt_command: string | null,
 }
 
 export const getClassList = async (token: string = '') => {

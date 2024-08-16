@@ -358,6 +358,9 @@ class Class(pw.Model):
     instructor = pw.ForeignKeyField(User)
     image_url = pw.TextField(default="")
 
+    default_model_id = pw.TextField(null=True)
+    default_prompt_command = pw.CharField(null=True)
+
     class Meta:
         database = DB
 
@@ -371,6 +374,9 @@ class ClassModel(BaseModel):
 
     assigned_prompts: List[int]
     assigned_students: List[str]
+
+    default_model_id: Optional[str] = None
+    default_prompt_command: Optional[str] = None
 
 
 ####################
@@ -386,6 +392,10 @@ class ClassForm(BaseModel):
     
     assigned_prompts: List[int]
     assigned_students: List[str]
+
+    default_model_id: Optional[str] = None
+    default_prompt_command: Optional[str] = None
+
 
 def class_to_classmodel(class_: Class, prompts: List[int] = [], students: List[str] = []) -> ClassModel:
     class_dict = model_to_dict(class_)
