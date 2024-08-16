@@ -66,7 +66,7 @@
 			<div class="flex items-top w-full min-w-52">
 				<div class="overflow-hidden max-w-full">
 					{#if showModelSelector}
-						<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
+						<ModelSelector bind:selectedModels />
 					{/if}
 				</div>
 

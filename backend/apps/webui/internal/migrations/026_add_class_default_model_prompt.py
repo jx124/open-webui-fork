@@ -37,10 +37,10 @@ with suppress(ImportError):
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
 
-    Model = migrator.orm["model"]
     Prompt = migrator.orm["prompt"]
 
-    migrator.add_fields("class", default_model_id=pw.ForeignKeyField(Model, null=True))
+    # not a foreign key since model table only stores custom models
+    migrator.add_fields("class", default_model_id=pw.TextField(null=True))
     migrator.add_fields("class", default_prompt_command=pw.ForeignKeyField(
         Prompt, field=Prompt.command, null=True, db_column="default_prompt_command"
     ))

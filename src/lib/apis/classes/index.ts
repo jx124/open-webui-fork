@@ -4,7 +4,7 @@ export type ClassForm = {
 	id: number,
 	name: string,
 	instructor_id: string,
-	image_url: "",
+	image_url: string,
 	assigned_prompts: number[],
 	assigned_students: string[],
 	default_model_id: string | null,

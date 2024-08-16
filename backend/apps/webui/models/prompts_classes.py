@@ -469,7 +469,8 @@ class ClassesTable:
                     StudentClasses.insert_new_student_classes_by_class(result.id, form_data.assigned_students)
 
             return class_to_classmodel(result, form_data.assigned_prompts, form_data.assigned_students)
-        except:
+        except Exception as e:
+            print("\n\ninsert exception", e, "\n\n")
             return None
 
     def update_class_by_id(self, user_id: str, user_role: str, form_data: ClassForm) -> bool:
