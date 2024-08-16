@@ -208,13 +208,13 @@
 							}}>Form</button
 						>
 
-						<button
+						<!-- <button
 							class="w-full rounded-lg p-1 {tab === 'excel_import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"
 							type="button"
 							on:click={() => {
 								tab = 'excel_import';
 							}}>Excel Import</button
-						>
+						> -->
 
 						<button
 							class="w-full rounded-lg p-1 {tab === 'import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"

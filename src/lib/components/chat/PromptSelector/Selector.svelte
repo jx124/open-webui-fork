@@ -8,7 +8,7 @@
 	import Check from '$lib/components/icons/Check.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { mobile } from '$lib/stores';
+	import { mobile, user } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -117,7 +117,9 @@
 						{:else}
 							<div>
 								<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-									{'No prompts available, add prompts under "Workspace" > "Prompts"'}
+									{["admin", "instructor"].includes($user?.role ?? "")
+										? 'No prompts available, add prompts under "Workspace" > "Prompts"'
+										: "No prompts available"}
 								</div>
 							</div>
 						{/if}

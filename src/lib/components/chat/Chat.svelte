@@ -153,7 +153,7 @@
 	//////////////////////////
 
 	const initNewChat = async () => {
-		goto("/", { replaceState: true });
+		window.history.replaceState(history.state, '', "/");
 		await chatId.set('');
 
 		autoScroll = true;
@@ -859,7 +859,7 @@
 		}
 
 		if (messages.length == 2 && messages.at(1).content !== '') {
-			goto(`/c/${_chatId}`, { replaceState: true });
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
 				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
@@ -1061,7 +1061,7 @@
 		}
 
 		if (messages.length == 2) {
-			goto(`/c/${_chatId}`, { replaceState: true });
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
 				const _title = generateUniqueTitle(selectedPromptCommand);
 				await setChatTitle(_chatId, _title);

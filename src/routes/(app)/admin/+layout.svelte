@@ -30,7 +30,7 @@
 					</div>
 				</button>
 			</div>
-			<div class="flex items-center text-xl font-semibold">{$i18n.t('Workspace')}</div>
+			<div class="flex items-center text-xl font-semibold">Admin Panel</div>
 		</div>
 	</div>
 

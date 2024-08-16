@@ -377,7 +377,7 @@
 
 		<div class="w-full overflow-hidden pl-1">
 			<Name>
-				Client
+				{model?.name ?? message.model}
 
 				{#if message.timestamp}
 					<span

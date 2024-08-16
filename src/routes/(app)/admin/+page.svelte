@@ -97,7 +97,7 @@
 	let ascending = true;
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
+		if ($user?.role !== 'admin' && $user?.role !== 'instructor') {
 			await goto('/');
 		} else {
 			users = await getUsers(localStorage.token);
@@ -317,7 +317,7 @@
 						<td class="px-3 py-2 text-right w-32">
 							<div class="flex justify-end w-full">
 								<div class="flex justify-start min-w-24">
-									<Tooltip content={$i18n.t('Chats')}>
+									<Tooltip content={$i18n.t('View Chats')}>
 										<button
 										class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 										on:click={async () => {

@@ -61,20 +61,7 @@
 
 				<div class="flex flex-col" in:fade={{ duration: 200, delay: 200 }}>
 					<div class="text-lg md:text-xl font-normal text-gray-600 dark:text-gray-500 pb-2">
-						Select a model and service user profile under "Prompt" to begin chatting with the simulated 
-						service user through text.
-					</div>
-
-					<div class="text-lg md:text-xl font-normal text-gray-600 dark:text-gray-500 pb-2">
-						Our tool, based on Egan's Skilled Helper Model, is designed to help you practice your skills 
-						through role-playing with a simulated client. Egan's model comprises three stages: understanding 
-						the current situation (Stage 1), envisioning a better future (Stage 2), and developing an action 
-						plan (Stage 3).
-					</div>
-
-					<div class="text-lg md:text-xl font-bold text-gray-600 dark:text-gray-500">
-						This tool focuses on Stage 1, where the goal is to understand the client's current situation 
-						through active listening and exploration. The central question here is, "What's going on?"
+						Please select a model and prompt. Then, send a message to start a conversation with the LLM.
 					</div>
 				</div>
 			</div>

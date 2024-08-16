@@ -8,9 +8,8 @@
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
-	import DatePicker from '$lib/components/common/DatePicker.svelte';
 	import { getClassList } from '$lib/apis/classes';
-	import ItemMultiSelector from '$lib/components/admin/ItemMultiSelector.svelte';
+	import ClassMultiSelector from '$lib/components/workspace/ClassMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -367,15 +366,13 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
-			<ItemMultiSelector 
-				addItemLabel={"Add Class"}
-				searchPlaceholder={"Search clases"} 
+			<ClassMultiSelector 
 				bind:items={classItems}
 				bind:selectedItems={form_data.assigned_classes}
 			/>
 		</div>
 
-		<div class="my-2">
+		<!-- <div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Deadline</div>
 			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
 				<input
@@ -429,7 +426,7 @@
 					<div class="self-center text-sm font-medium">Preview HTML</div>
 				</button>
 			</div>
-		</div>
+		</div> -->
 
 		<div class="my-2 flex justify-end">
 			<button

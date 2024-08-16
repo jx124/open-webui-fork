@@ -2,11 +2,10 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { createEventDispatcher, getContext } from 'svelte';
 
-	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
-	import { showSettings } from '$lib/stores';
-	import { fade, slide } from 'svelte/transition';
+	import { chatId, showSettings } from '$lib/stores';
+	import { fade } from 'svelte/transition';
 
 	const i18n = getContext('i18n');
 
@@ -79,11 +78,12 @@
 				<div class=" self-center font-medium">{$i18n.t('Archived Chats')}</div>
 			</button>
 
-			{#if role === 'admin'}
+			{#if role === 'admin' || role === 'instructor'}
 				<button
 					class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
 					on:click={() => {
 						goto('/admin');
+						$chatId = '';
 						show = false;
 					}}
 				>
@@ -104,6 +104,34 @@
 						</svg>
 					</div>
 					<div class=" self-center font-medium">{$i18n.t('Admin Panel')}</div>
+				</button>
+
+				<button
+					class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+					on:click={() => {
+						goto("/workspace")
+						show = false;
+					}}
+					draggable="false"
+				>
+					<div class="self-center mr-3">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-[1.1rem]"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
+							/>
+						</svg>
+					</div>
+
+					<div class=" self-center font-medium">{$i18n.t('Workspace')}</div>
 				</button>
 			{/if}
 
