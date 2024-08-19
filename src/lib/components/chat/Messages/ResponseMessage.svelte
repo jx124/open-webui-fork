@@ -7,7 +7,6 @@
 	import 'katex/dist/katex.min.css';
 	import mermaid from 'mermaid';
 
-	import { fade } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, tick, getContext } from 'svelte';
 
@@ -375,7 +374,7 @@
 		dir={$settings.chatDirection}
 	>
 		<ProfileImage
-			src={isEvaluation ? `${WEBUI_BASE_URL}/static/favicon.png` : clientImage ?? `${WEBUI_BASE_URL}/static/favicon.png`}
+			src={isEvaluation ? `${WEBUI_BASE_URL}/static/favicon.png` : clientImage ? clientImage : `/user.png`}
 		/>
 
 		<div class="w-full overflow-hidden pl-1">
