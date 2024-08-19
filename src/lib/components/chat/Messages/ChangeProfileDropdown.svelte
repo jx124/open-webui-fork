@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { chatId, mobile } from "$lib/stores";
+	import { chatId, classId, mobile } from "$lib/stores";
 	import { flyAndScale } from "$lib/utils/transitions";
 	import { DropdownMenu } from "bits-ui";
 	import { onMount } from "svelte";
 
     export let show = false;
     export let profiles;
-    export let currentClassId;
     export let selectedProfile;
 
 	export let className = 'w-[16rem]';
@@ -45,7 +44,7 @@
                         class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-none transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-[highlighted]:bg-muted"
                         href={`/c/?profile=${encodeURIComponent(profile.command)}`
 										+ `&model=${profile.selected_model_id ? encodeURIComponent(profile.selected_model_id) : "gpt-4o"}`
-										+ `&class=${currentClassId}`
+										+ `&class=${$classId}`
                         }
                         on:click={() => {
                             $chatId = "";

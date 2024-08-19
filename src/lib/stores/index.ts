@@ -25,6 +25,7 @@ export const modelfiles = writable([]);
 export const prompts: Writable<Prompt[]> = writable([]);
 export const userRoles: Writable<RoleForm[]> = writable([]);
 export const classes: Writable<Class[]> = writable([]);
+export const classId: Writable<number | null> = writable(null);
 export const documents = writable([
 	{
 		collection_name: 'collection_name',

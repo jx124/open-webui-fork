@@ -21,7 +21,10 @@
 		user,
 		prompts,
 		classes,
-		type Prompt
+		type Prompt,
+
+		classId
+
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -109,11 +112,11 @@
 	let selectedProfile: Prompt | undefined;
 	let showClientInfo = false;
 
-	let classId: number;
+	// let classId: number;
 	let className: string = "";
 
-	$: if (classId) {
-		className = $classes.find((c) => c.id === classId)?.name ?? "";
+	$: if ($classId) {
+		className = $classes.find((c) => c.id === $classId)?.name ?? "";
 	}
 
 	$: if (history.currentId !== null) {
@@ -217,20 +220,21 @@
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
 
-		const classIdParam = $page.url.searchParams.get('class')
-		if (classIdParam && !isNaN(parseInt(classIdParam))) {
-			classId = parseInt(classIdParam);
+		const classIdParam = parseInt($page.url.searchParams.get('class') ?? "")
 
-			if ($classes.find((c) => c.id === classId) === undefined) {
+		if (!isNaN(classIdParam)) {
+			if ($classes.find((c) => c.id === classIdParam) === undefined) {
 				toast.error("Invalid class");
 				await goto("/classes");
 			}
+			
+			$classId = classIdParam;
 		}
 
-		if ((selectedPromptCommand === "" || selectedModels[0] === "") 
+		if ((selectedPromptCommand === "" || selectedModels[0] === "" || $classId === null) 
 			&& !["admin", "instructor"].includes($user?.role ?? "")) {
 			
-			toast.error("Invalid profile or model");
+			toast.error("Invalid profile, model, or class");
 			await goto("/classes");
 		}
 
@@ -256,6 +260,7 @@
 		if (chat) {
 			tags = await getTags();
 			const chatContent = chat.chat;
+			$classId = chat.class_id;
 
 			if (chatContent) {
 				console.log(chatContent);
@@ -273,7 +278,6 @@
 				selectedPromptCommand = chatContent.systemCommand;
 
 				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
-				classId = chatContent?.class_id;
 
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
@@ -461,7 +465,7 @@
 							completion_tokens: 0,
 							total_tokens: 0,
 						},
-						class_id: classId,
+						class_id: $classId,
 						prompt_id: selectedProfile?.id,
 					});
 					await chats.set(await getChatList(localStorage.token));
@@ -1354,8 +1358,8 @@
 					completion_tokens: 0,
 					total_tokens: 0,
 				},
-				class_id: classId,
-				prompt_id: selectedProfile.id,
+				class_id: $classId,
+				prompt_id: selectedProfile?.id,
 			});
 			
 			await chats.set(await getChatList(localStorage.token));
@@ -1450,7 +1454,6 @@
 						bind:chatId={$chatId}
 						{selectedModels}
 						bind:selectedProfile
-						bind:classId
 						bind:showClientInfo
 						bind:history
 						bind:messages

@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { classes, prompts, WEBUI_NAME } from '$lib/stores';
+	import { classes, classId, prompts, WEBUI_NAME } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { getClassList } from '$lib/apis/classes';
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
 
-	let searchValue = '';
 	let loading = true;
 
 	const assignedPromptLabel = (prompt_ids: number[]) => {
@@ -17,7 +16,7 @@
 			$prompts
 				.filter((p) => prompt_ids.includes(p.id))
 				.map((p) => p.title)
-				.join(', ')
+                .length
 		);
 	};
 
@@ -49,7 +48,10 @@
                         class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
                     >
                         <div class=" flex flex-1 space-x-4 cursor-pointer w-full">
-                            <a href={`/classes/${encodeURIComponent(class_.id)}`}>
+                            <a href={`/classes/${encodeURIComponent(class_.id)}`}
+                                on:click={() => {
+                                    $classId = class_.id;
+                                }}>
                                 <div class="flex items-center">
                                     <img
                                         src={class_.image_url ? class_.image_url : '/user.png'}

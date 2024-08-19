@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
-	import { chats, settings, user as _user, mobile, prompts, classes } from '$lib/stores';
-	import { tick, getContext, onMount } from 'svelte';
+	import { chats, settings, user as _user, mobile, prompts, classes, type Prompt, classId } from '$lib/stores';
+	import { tick, getContext } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
 	import { getChatList, updateChatById } from '$lib/apis/chats';
@@ -33,8 +33,7 @@
 	export let messages = [];
 
 	export let selectedModels;
-	export let selectedProfile;
-	export let classId;
+	export let selectedProfile: Prompt | undefined;
 	export let showClientInfo = false;
 
 	export let evaluatedChat: null | string;
@@ -246,13 +245,13 @@
 		});
 	};
 
-	let assignedPrompts;
+	let assignedPrompts: Prompt[] = [];
 
 	$: {
 		if (['admin', 'instructor'].includes($_user?.role ?? '')) {
 			assignedPrompts = $prompts;
 		} else {
-			const currentClass = $classes.find((c) => c.id === classId);
+			const currentClass = $classes.find((c) => c.id === $classId);
 			const assignedPromptIds = new Set<number>(currentClass?.assigned_prompts ?? []);
 			assignedPrompts = $prompts.filter((p) => assignedPromptIds.has(p.id));
 		}
@@ -268,7 +267,7 @@
 				<div class="flex text-2xl font-semibold items-center">
 					Client Profile
 					{#if assignedPrompts?.length > 0}
-						<ChangeProfileDropdown profiles={assignedPrompts} currentClassId={classId} bind:selectedProfile/>
+						<ChangeProfileDropdown profiles={assignedPrompts} bind:selectedProfile/>
 					{/if}
 				</div>
 				{#if chatId !== ''}
