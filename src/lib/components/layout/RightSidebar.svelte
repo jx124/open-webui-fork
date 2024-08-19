@@ -146,7 +146,7 @@
 
         <div class="flex flex-col m-2 overflow-hidden overscroll-contain">
             <div class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium">
-                Additional Client Information
+                Additional Information
             </div>
             <div class="prose px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
                 dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 

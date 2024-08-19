@@ -1,16 +1,15 @@
 services:
-  open-webui:
-    build:
-      context: .
-      args:
-        OLLAMA_BASE_URL: '/ollama'
-      dockerfile: Dockerfile
-    image: open-webui-fork:latest
-    container_name: open-webui-fork
+  aicetgpt:
+    image: public.ecr.aws/s2l0n1t2/aicetgpt-repo:aug-18
+    container_name: aicetgpt-repo
     ports:
-      - ${OPEN_WEBUI_PORT-3000}:8080
+      - "80:8080"
+      - "5432:5432"
     environment:
-      - 'OLLAMA_BASE_URL=http://ollama:11434'
-      - 'WEBUI_SECRET_KEY='
-    network_mode: "host"
+      - "ENABLE_OLLAMA_API=false"
+      - "SCARF_NO_ANALYTICS=true"
+      - "DO_NOT_TRACK=true"
+      - "ANONYMIZED_TELEMETRY=false"
+      - "OPENAI_API_KEY=${OPENAI_API_KEY}"
+      - "DATABASE_URL=${DATABASE_URL}"
     restart: unless-stopped
