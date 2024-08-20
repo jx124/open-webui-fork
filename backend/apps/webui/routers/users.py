@@ -1,3 +1,6 @@
+import asyncio
+from email.mime.text import MIMEText
+import time
 from fastapi import Request
 from fastapi import Depends, HTTPException, status
 from typing import List, Optional, Dict
@@ -9,6 +12,7 @@ import logging
 import pandas as pd
 import secrets
 import io
+import smtplib
 
 from apps.webui.models.users import (
     UserModel,
@@ -26,7 +30,7 @@ from utils.misc import validate_email_format
 from utils.utils import get_admin_or_instructor, get_verified_user, get_password_hash, get_admin_user
 from constants import ERROR_MESSAGES
 
-from config import SRC_LOG_LEVELS
+from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, SITE_LINK, SRC_LOG_LEVELS
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
@@ -243,6 +247,7 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
 # ImportUsersByExcel
 ############################
 
+background_tasks = set()
 
 @router.post("/import", response_model=List[UserModel])
 async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
@@ -282,6 +287,7 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
     existing_emails = set(Auths.get_emails())
     user_emails = set([email.lower() for email in users["Email"]])
 
+    # TODO: skip emails but still add users
     if existing_emails.intersection(user_emails):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -298,12 +304,16 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
     users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
     print(users)
 
+    task = asyncio.create_task(email_user_account_details(users))
+    
+    # save reference to prevent garbage collection
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
+
     new_users = []
 
     for user in users.itertuples():
         _, name, email, password, role = user
-
-        email_user_account_details(user)
 
         hashed = get_password_hash(password)
         result = Auths.insert_new_auth(
@@ -317,9 +327,42 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
 
     return new_users
 
-async def email_user_account_details(user):
-    # TODO: implement after getting gmail API credentials
-    pass
+
+# TODO: set daily limits
+async def email_user_account_details(users):
+    smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    smtp_server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+
+    start = time.time()
+
+    for user in users.itertuples():
+        id, name, email, password, role = user
+
+        text = (
+            f"Dear {name},\n\n"
+            f"Your account has been registered for the SWAT:RolePlay tool, an AI-powered "
+            f"tool designed to help social worker and students practice their skills through "
+            f"role-playing scenarios. Your login details are:\n\n"
+            f"Email: {email}\n"
+            f"Password: {password}\n\n"
+            f"The site can be accessed from {SITE_LINK} > Login Here."
+        )
+
+        msg = MIMEText(text)
+        msg["Subject"] = "SWAT:RolePlay Registration"
+        msg["To"] = email
+        msg["From"] = GMAIL_ADDRESS
+
+        try:
+            smtp_server.sendmail(msg["From"], email, msg.as_string())
+            print(f"[{time.time() - start:.4f}] Sent email to {email}")
+        except Exception as e:
+            print(f"[{time.time() - start:.4f}] SMTP error {e}")
+
+        await asyncio.sleep(1)
+
+    smtp_server.quit()
+
 
 
 ############################

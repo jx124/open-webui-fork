@@ -912,3 +912,12 @@ AUDIO_OPENAI_API_VOICE = PersistentConfig(
 ####################################
 
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DATA_DIR}/webui.db")
+
+
+####################################
+# Email
+####################################
+
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+SITE_LINK = os.environ.get("SITE_LINK", "https://swatroleplaynus.wixsite.com/swat")
