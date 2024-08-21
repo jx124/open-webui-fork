@@ -1,3 +1,8 @@
+import asyncio
+from email.mime.text import MIMEText
+import secrets
+import smtplib
+import time
 from fastapi import Request
 from fastapi import Depends, HTTPException, status
 
@@ -8,6 +13,9 @@ import uuid
 
 
 from apps.webui.models.auths import (
+    ResetOTPForm,
+    ResetPasswordForm,
+    ResetPasswordOTPForm,
     SigninForm,
     SignupForm,
     AddUserForm,
@@ -18,7 +26,7 @@ from apps.webui.models.auths import (
     Auths,
     ApiKey,
 )
-from apps.webui.models.users import Users
+from apps.webui.models.users import UserModel, Users
 from apps.webui.models.roles import Roles
 
 from utils.utils import (
@@ -31,7 +39,7 @@ from utils.utils import (
 from utils.misc import parse_duration, validate_email_format
 from utils.webhook import post_webhook
 from constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
-from config import WEBUI_AUTH, WEBUI_AUTH_TRUSTED_EMAIL_HEADER
+from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, SITE_LINK, WEBUI_AUTH, WEBUI_AUTH_TRUSTED_EMAIL_HEADER
 
 router = APIRouter()
 
@@ -265,6 +273,116 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
     except Exception as err:
         raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
+
+
+############################
+# ResetUserPassword
+############################
+
+background_tasks = set()
+
+@router.post("/reset", response_model=bool)
+async def send_user_otp(form_data: ResetPasswordForm):
+
+    user = Users.get_user_by_email(form_data.email.lower())
+
+    if user is None:
+        await asyncio.sleep(2)
+        return True
+
+    try:
+        otp = secrets.randbelow(1000000)
+        expiry = int(time.time()) + 60 * 15
+
+        result = Auths.update_user_otp_by_id(user.id, otp, expiry)
+        
+        if result:
+            task = asyncio.create_task(email_user_otp(user, str(otp).zfill(6)))
+        
+            # save reference to prevent garbage collection
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
+
+        return True
+    except Exception:
+        return True
+
+
+# TODO: set daily limits
+async def email_user_otp(user: UserModel, otp: str):
+    smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    smtp_server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+
+    text = (
+        f"Dear {user.name},\n\n"
+        f"You have clicked on \"Forgot Password\" for your SWAT:RolePlay account.\n\n"
+        f"Your OTP is {otp}, please do not share it with anyone else."
+    )
+
+    msg = MIMEText(text)
+    msg["Subject"] = "SWAT:RolePlay Reset Password OTP"
+    msg["To"] = user.email
+    msg["From"] = GMAIL_ADDRESS
+
+    try:
+        smtp_server.sendmail(msg["From"], user.email, msg.as_string())
+        print(f"Sent reset password OTP email to {user.email}")
+    except Exception as e:
+        print(f"SMTP error {e}")
+
+
+    smtp_server.quit()
+
+
+@router.post("/reset/verify", response_model=bool)
+async def verify_user_otp(form_data: ResetOTPForm):
+
+    user = Users.get_user_by_email(form_data.email.lower())
+
+    if user is None:
+        await asyncio.sleep(1)
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+
+    try:
+        authorized = Auths.authenticate_user_otp(user.id, form_data.OTP)
+
+        if authorized:
+            return True
+
+        await asyncio.sleep(1)
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+
+    except Exception:
+        await asyncio.sleep(1)
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+
+
+@router.post("/reset/password", response_model=bool)
+async def reset_user_password(form_data: ResetPasswordOTPForm):
+
+    user = Users.get_user_by_email(form_data.email.lower())
+
+    if user is None:
+        await asyncio.sleep(1)
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+
+    try:
+        authorized = Auths.authenticate_user_otp(user.id, form_data.OTP)
+
+        if not authorized:
+            await asyncio.sleep(1)
+            raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+
+        hashed = get_password_hash(form_data.password)
+        result = Auths.update_user_password_by_id(user.id, hashed)
+
+        if result:
+            return True
+        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT)
+
+    except Exception:
+        await asyncio.sleep(1)
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
 
 
 ############################

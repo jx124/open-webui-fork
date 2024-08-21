@@ -95,3 +95,5 @@ class ERROR_MESSAGES(str, Enum):
     WEB_SEARCH_ERROR = (
         lambda err="": f"{err if err else 'Oops! Something went wrong while searching the web.'}"
     )
+
+    INVALID_OTP = "The OTP entered is invalid."

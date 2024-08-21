@@ -1,3 +1,4 @@
+import datetime
 from pydantic import BaseModel
 from typing import Dict, List, Union, Optional
 import time
@@ -25,6 +26,8 @@ class Auth(Model):
     email = CharField()
     password = TextField()
     active = BooleanField()
+    otp_value = IntegerField()
+    otp_expiry = TimestampField()
 
     class Meta:
         database = DB
@@ -67,6 +70,17 @@ class SigninForm(BaseModel):
     email: str
     password: str
 
+class ResetPasswordForm(BaseModel):
+    email: str
+
+class ResetOTPForm(BaseModel):
+    OTP: str
+    email: str
+
+class ResetPasswordOTPForm(BaseModel):
+    OTP: str
+    email: str
+    password: str
 
 class ProfileImageUrlForm(BaseModel):
     profile_image_url: str
@@ -159,9 +173,35 @@ class AuthsTable:
         except:
             return None
 
+    def authenticate_user_otp(self, id: str, otp: str):
+        try:
+            auth = Auth.get(Auth.id == id)
+            if auth:
+                if auth.otp_value is None:
+                    return False
+
+                now = datetime.datetime.now()
+
+                if (str(auth.otp_value).zfill(6) != otp) or (auth.otp_expiry <= now):
+                    return False
+                return True
+
+            return False
+        except:
+            return False
+
     def update_user_password_by_id(self, id: str, new_password: str) -> bool:
         try:
             query = Auth.update(password=new_password).where(Auth.id == id)
+            result = query.execute()
+
+            return True if result == 1 else False
+        except:
+            return False
+
+    def update_user_otp_by_id(self, id: str, otp: int, expiry: int) -> bool:
+        try:
+            query = Auth.update(otp_value=otp, otp_expiry=expiry).where(Auth.id == id)
             result = query.execute()
 
             return True if result == 1 else False
