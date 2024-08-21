@@ -206,6 +206,10 @@
 									</button>
 								</div>
 							{/if}
+
+							<div class=" mt-1 text-sm font-medium text-center">
+								<a class="underline" type="button" href="/auth/forgot"> Forgot password </a>
+							</div>
 						</div>
 					</form>
 				</div>
