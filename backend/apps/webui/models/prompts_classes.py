@@ -407,8 +407,6 @@ class ClassesTable:
         self.db = db
         self.db.create_tables([Class])
 
-    # peewee inserts wrong columns into the SQL for some reason, so we need to select the column for every query in
-    # this class.
     def get_classes(self, user_id: str, user_role: str) -> List[ClassModel]:
         try:
             query = None
@@ -473,45 +471,24 @@ class ClassesTable:
         
         try:
             with self.db.atomic():
-                query = None
-                if user_role == "admin":
-                    query = Class.update(**form_data.model_dump(exclude=excluded_columns))\
-                        .where(Class.id == form_data.id)
-                    
-                if user_role == "instructor":
-                    query = Class.update(**form_data.model_dump(exclude=excluded_columns))\
-                        .where((Class.id == form_data.id) & (Class.instructor == user_id))
-
-                result = query.execute()
-
-                if result:
-                    ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assigned_prompts)
-                    StudentClasses.update_student_classes_by_class(form_data.id, form_data.assigned_students)
+                ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assigned_prompts)
+                StudentClasses.update_student_classes_by_class(form_data.id, form_data.assigned_students)
+                Class.update(**form_data.model_dump(exclude=excluded_columns)).where(Class.id == form_data.id)
 
             return True
         except:
-            return None
+            return False
         
-    def delete_class_by_id(self, user_id: str, user_role: str, class_id: int) -> bool:
+    def delete_class_by_id(self, class_id: int) -> bool:
         try:
             with self.db.atomic():
-                query = None
-
-                if user_role == "admin":
-                    query = Class.delete().where(Class.id == class_id)
-
-                elif user_role == "instructor":
-                    query = Prompt.delete()\
-                        .where((Class.id == class_id) & (Class.instructor == user_id))
-
-                result = query.execute()
-                if result:
-                    ClassPrompts.delete_class_prompts_by_class(class_id)
-                    StudentClasses.delete_student_classes_by_class(class_id)
+                ClassPrompts.delete_class_prompts_by_class(class_id)
+                StudentClasses.delete_student_classes_by_class(class_id)
+                Class.delete().where(Class.id == class_id).execute()
 
             return True
         except:
-            return None
+            return False
 
 
 Classes = ClassesTable(DB)

@@ -110,5 +110,5 @@ async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
     
-    result = Classes.delete_class_by_id(user.id, user.role, class_id)
+    result = Classes.delete_class_by_id(class_id)
     return result

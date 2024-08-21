@@ -14,6 +14,9 @@ Table auth {
   email varchar
   password text
   active boolean
+
+  otp_value integer [null]
+  otp_expiry bigint [null]
 }
 
 Table chat {
