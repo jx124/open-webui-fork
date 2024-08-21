@@ -8,11 +8,11 @@
 	import { mobile } from '$lib/stores';
 
 	let selectedDate;
-	let selectedTime = "23:59";
-
+	
 	export let selectedDateTime;
 	export let placeholder: string | null;
 	let parsedPlaceholder = placeholder ? parseDate(placeholder.split('T')[0]) : undefined;
+	let selectedTime = placeholder ? placeholder.split('T')[1].slice(0, 5) : "23:59";
 
 	$: if (selectedDate && selectedTime) {
 		selectedDateTime = new CalendarDateTime(
@@ -27,12 +27,12 @@
 </script>
 
 <DatePicker.Root weekdayFormat="short" fixedWeeks={true} value={parsedPlaceholder}>
-	<div class="flex flex-row gap-1.5">
-		<div class="flex w-full max-w-[232px] flex-col gap-1.5">
-			<DatePicker.Label class="block select-none text-sm font-medium">Select Date:</DatePicker.Label>
+	<div class="flex flex-row gap-1.5 mt-2">
+		<div class="flex w-full max-w-[180px] flex-col gap-1.5">
+			<DatePicker.Label class="block select-none text-xs font-medium">Select Date:</DatePicker.Label>
 			<DatePicker.Input
 				let:segments
-				class="flex h-input w-full max-w-[232px] bg-transparent border dark:border-gray-600 outline-none rounded-lg 
+				class="flex h-input w-full max-w-[180px] bg-transparent border dark:border-gray-600 outline-none rounded-lg 
                 select-none items-center px-2 py-2 text-sm tracking-[0.01em] text-gray-700 dark:text-gray-100"
 			>
 				{#each segments as { part, value }}
@@ -130,7 +130,7 @@
 			</DatePicker.Content>
 		</div>
 		<div class="flex w-full h-full max-w-[100px] min-h-[75px] flex-col gap-1.5">
-			<div class="block select-none text-sm font-medium">Select Time:</div>
+			<div class="block select-none text-xs font-medium">Select Time:</div>
 			<input
 				class="flex h-full min-h-[50px] w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg
                 select-none items-center px-2 py-2 text-sm tracking-[0.01em] text-gray-700 dark:text-gray-100 focus-visible:ring-0 focus-visible:ring-offset-0"
