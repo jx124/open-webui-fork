@@ -434,7 +434,7 @@
 			</label>
 			{#if hasDeadline}
 				<DatePicker bind:selectedDateTime={form_data.deadline} placeholder={selectedDateTime} />
-				<div class="text-sm pl-1 pt-1">
+				<div class="text-xs pl-1 pt-1">
 					{getNUSWeekName(form_data.deadline ?? "")}
 				</div>
 			{/if}
