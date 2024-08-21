@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
 
-	import { WEBUI_NAME, showSidebar } from '$lib/stores';
+	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
 
@@ -59,21 +59,23 @@
 				href="/workspace/models">{$i18n.t('Models')}</a
 			>
 
-			<a
-				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/documents')
-					? 'bg-gray-50 dark:bg-gray-850'
-					: ''} transition"
-				href="/workspace/documents"
-			>
-				{$i18n.t('Documents')}
-			</a>
+			{#if $user?.role === "admin"}
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/documents')
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/workspace/documents"
+				>
+					{$i18n.t('Documents')}
+				</a>
 
-			<a
-				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/playground')
-					? 'bg-gray-50 dark:bg-gray-850'
-					: ''} transition"
-				href="/workspace/playground">{$i18n.t('Playground')}</a
-			>
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/workspace/playground')
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/workspace/playground">{$i18n.t('Playground')}</a
+				>
+			{/if}
 		</div>
 	</div>
 

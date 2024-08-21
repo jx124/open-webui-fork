@@ -361,6 +361,9 @@ class ChatTable:
             .order_by(Chat.updated_at.desc())
         ]
 
+    def count_chats_by_prompt_id(self, prompt_id: int) -> int:
+        return len(Chat.select(Chat.id).where(Chat.prompt_id == prompt_id))
+
     def delete_chat_by_id(self, id: str) -> bool:
         try:
             query = Chat.delete().where((Chat.id == id))

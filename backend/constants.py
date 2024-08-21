@@ -97,3 +97,4 @@ class ERROR_MESSAGES(str, Enum):
     )
 
     INVALID_OTP = "The OTP entered is invalid."
+    PROFILE_EXISTING_CHATS = "There are existing chats using this profile."

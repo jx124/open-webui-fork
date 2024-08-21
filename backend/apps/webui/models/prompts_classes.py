@@ -243,32 +243,29 @@ class PromptsTable:
         except:
             return False
 
-    def delete_prompt_by_command(self, user_id: str, user_role: str, command: str) -> bool:
+    def delete_prompt_by_command(self, command: str) -> bool:
         try:
-            prompt = Prompts.get_prompt_by_command(user_id, user_role, command)
+            prompt = Prompts.get_prompt_by_command(command)
             if not prompt:
                 return False
 
-            result = None
             with self.db.atomic():
                 ClassPrompts.delete_class_prompts_by_prompt(prompt.id)
+                Prompt.delete().where(Prompt.command == command).execute()
 
-                if user_role == "admin":
-                    query = Prompt.delete().where(Prompt.command == command)
-                    result = query.execute()
-
-                elif user_role == "instructor":
-                    query = Prompt.delete()\
-                        .where((Prompt.command == command) & 
-                            ((Prompt.user_id == user_id) | Prompt.is_visible == True))
-                    result = query.execute()
-
-            if result:
-                return True
-            return False
+            return True
         except:
             return False
 
+    def delete_prompt_by_id(self, prompt_id: int) -> bool:
+        try:
+            with self.db.atomic():
+                ClassPrompts.delete_class_prompts_by_prompt(prompt_id)
+                Prompt.delete().where(Prompt.id == prompt_id).execute()
+
+            return True
+        except:
+            return False
 
 Prompts = PromptsTable(DB)
 
