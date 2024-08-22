@@ -5,8 +5,17 @@ export type ClassForm = {
 	name: string,
 	instructor_id: string,
 	image_url: "",
-	assigned_prompts: number[],
+	assignments: Assignment[],
 	assigned_students: string[],
+}
+
+export type Assignment = {
+	class_id: number,
+	prompt_id: number,
+	deadline: string | null,
+
+	allow_multiple_attempts: boolean,
+	allow_submit_after_deadline: boolean
 }
 
 export const getClassList = async (token: string = '') => {

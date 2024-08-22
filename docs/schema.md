@@ -79,7 +79,6 @@ Table prompt {
   additional_info text [default: ""]
 
   image_url text [default: ""]
-  deadline timestamp [null]
   evaluation_id integer [null, ref: > evaluation.id]
   model_id text [null, ref: > model.id]
 }
@@ -143,5 +142,8 @@ Table classprompt {
   id integer [primary key]
   class_id varchar [ref: > class.id]
   prompt_id integer [ref: > prompt.id]
+  deadline timestamp [null]
+  allow_multiple_attempts bool [default: true]
+  allow_submit_after_deadline bool [default: true]
 }
 ```

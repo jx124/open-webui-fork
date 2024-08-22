@@ -8,86 +8,52 @@
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
 	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
-	import DatePicker from '$lib/components/common/DatePicker.svelte';
-	import { getClassList } from '$lib/apis/classes';
 	import { getModels } from '$lib/apis';
 	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
-	import ClassMultiSelector from '$lib/components/workspace/ClassMultiSelector.svelte';
-	import NUSModerator from 'nusmoderator';
 
 	const i18n = getContext('i18n');
 
 	let loading = false;
 
 	let form_data: PromptForm = {
-		command: "",
-		title: "",
-		content: "",
+		command: '',
+		title: '',
+		content: '',
 		is_visible: false,
-		additional_info: "",
+		additional_info: '',
 
-		image_url: "/user.png",
-		deadline: null,
+		image_url: '/user.png',
 		evaluation_id: null,
-		selected_model_id: "",
-
-		assigned_classes: []
+		selected_model_id: '',
 	};
 
 	let showPreviewModal = false;
 
-	$: form_data.command = form_data.title !== '' ? `${form_data.title.replace(/\s+/g, '-').toLowerCase()}` : '';
+	$: form_data.command =
+		form_data.title !== '' ? `${form_data.title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
 	let profileImageInputElement: HTMLInputElement;
-	let hasDeadline = false;
-	let selectedDateTime: string | null;
-
-	let classItems: {
-		label: string,
-		value: number
-	}[];
 
 	let modelItems: {
-		label: string,
-		value: string
+		label: string;
+		value: string;
 	}[];
-
-	const getNUSWeekName = (date: string) => {
-		if (date === "") {
-			return "";
-		}
-		const week = NUSModerator.academicCalendar.getAcadWeekInfo(new Date(date ?? ""));
-
-        if (week === null) {
-            return "Others";
-        }
-
-        if (week.type === "Instructional") {
-            return "Week " + (week.num ?? 0);
-        } else {
-            return week.type + " Week " + (week.num ?? "");
-        }
-    }
 
 	const submitHandler = async () => {
 		loading = true;
 
-		if (form_data.selected_model_id === "" || form_data.selected_model_id === null) {
-			toast.error("Please select a model.");
+		if (form_data.selected_model_id === '' || form_data.selected_model_id === null) {
+			toast.error('Please select a model.');
 			loading = false;
 			return null;
 		}
 
 		if (validateCommandString(form_data.command)) {
-			const prompt = await createNewPrompt(
-				localStorage.token, form_data
-			).catch(
-				(error) => {
-					toast.error(error);
+			const prompt = await createNewPrompt(localStorage.token, form_data).catch((error) => {
+				toast.error(error);
 
-					return null;
-				}
-			);
+				return null;
+			});
 
 			if (prompt) {
 				await prompts.set(await getPrompts(localStorage.token));
@@ -145,17 +111,6 @@
 			sessionStorage.removeItem('prompt');
 		}
 
-		$classes = await getClassList(localStorage.token).catch((error) => {
-			toast.error(error);
-		});
-
-		classItems = $classes.map((c) => {
-			return {
-				label: c.name,
-				value: c.id,
-			};
-		});
-
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);
 		});
@@ -163,13 +118,13 @@
 		modelItems = $models.map((p) => {
 			return {
 				label: p.name,
-				value: p.id,
+				value: p.id
 			};
 		});
 	});
 </script>
 
-<PreviewModal bind:show={showPreviewModal} bind:previewContent={form_data.additional_info}/>
+<PreviewModal bind:show={showPreviewModal} bind:previewContent={form_data.additional_info} />
 
 <div class="w-full max-h-full">
 	<button
@@ -274,7 +229,7 @@
 						}}
 					>
 						<img
-							src={form_data.image_url !== '' ? form_data.image_url : "/user.png"}
+							src={form_data.image_url !== '' ? form_data.image_url : '/user.png'}
 							alt="profile"
 							class="rounded-full h-24 w-24 object-cover"
 						/>
@@ -368,7 +323,8 @@
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
 				>
-				are allowed. This will be part of the hyperlink to this prompt and cannot be modified in the future.
+				are allowed. This will be part of the hyperlink to this prompt and cannot be modified in the
+				future.
 			</div>
 		</div>
 
@@ -381,7 +337,7 @@
 				<div>
 					<textarea
 						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
-						placeholder={"Write your prompt here."}
+						placeholder={'Write your prompt here.'}
 						rows="6"
 						bind:value={form_data.content}
 						required
@@ -408,39 +364,6 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Assigned Classes</div>
-			<ClassMultiSelector 
-				bind:items={classItems}
-				bind:selectedItems={form_data.assigned_classes}
-			/>
-		</div>
-
-		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Deadline</div>
-			<label class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right">
-				<input
-					type="checkbox"
-					on:change={() => {
-						hasDeadline = !hasDeadline;
-						if (!hasDeadline) {
-							form_data.deadline = null;
-						} else {
-							form_data.deadline = selectedDateTime;
-						}
-					}}
-					checked={hasDeadline}
-				>
-				Set deadline for completion.
-			</label>
-			{#if hasDeadline}
-				<DatePicker bind:selectedDateTime={form_data.deadline} placeholder={selectedDateTime} />
-				<div class="text-xs pl-1 pt-1">
-					{getNUSWeekName(form_data.deadline ?? "")}
-				</div>
-			{/if}
-		</div>
-
-		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Evaluation Prompt</div>
 			TODO
 		</div>
@@ -459,16 +382,18 @@
 				<div>
 					<textarea
 						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
-						placeholder="Include additional information for the user to refer to in the right sidebar. This supports HTML."
+						placeholder="Include additional information for the user to refer to in the client information card. This supports HTML."
 						rows="6"
 						bind:value={form_data.additional_info}
 					/>
 				</div>
-				<button class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+				<button
+					class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
 					type="button"
 					on:click={() => {
 						showPreviewModal = !showPreviewModal;
-				}}>
+					}}
+				>
 					<div class="self-center text-sm font-medium">Preview HTML</div>
 				</button>
 			</div>
@@ -479,7 +404,7 @@
 				class=" text-sm px-3 py-2 mr-2 transition rounded-xl {loading
 					? ' cursor-not-allowed bg-gray-100 dark:bg-gray-800'
 					: ' bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800'} flex"
-				on:click={() => form_data.is_visible = false}
+				on:click={() => (form_data.is_visible = false)}
 				type="submit"
 				disabled={loading}
 			>
@@ -518,7 +443,7 @@
 				class=" text-sm px-3 py-2 transition rounded-xl {loading
 					? ' cursor-not-allowed bg-emerald-800'
 					: ' bg-emerald-700 hover:bg-emerald-800 text-gray-100'} flex"
-				on:click={() => form_data.is_visible = true}
+				on:click={() => (form_data.is_visible = true)}
 				type="submit"
 				disabled={loading}
 			>
