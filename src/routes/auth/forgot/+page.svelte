@@ -18,6 +18,7 @@
 
 	$: passwordsMatch = newPassword === confirmPassword;
 	$: validPassword = checkPassword(newPassword);
+	$: resetButtonDisabled = !passwordsMatch || (validPassword !== '');
 
 	let tab: 'email' | 'OTP' | 'password' = 'email';
 
@@ -183,7 +184,7 @@
 							<div class=" text-sm font-semibold text-left mb-1">OTP</div>
 							<input
 								bind:value={OTP}
-								type="text"
+								type="one-time-code"
 								class=" px-5 py-3 rounded-2xl w-full text-sm outline-none border dark:border-none dark:bg-gray-900"
 								placeholder={$i18n.t('Enter Your 6-Digit OTP')}
 								required
@@ -271,6 +272,7 @@
 									: 'border-rose-500') +
 									' px-5 py-3 rounded-2xl w-full text-sm outline-none border dark:bg-gray-900'}
 								placeholder={$i18n.t('Enter Your New Password')}
+								autocomplete="new-password"
 								required
 							/>
 						</div>
@@ -289,6 +291,7 @@
 								class={(passwordsMatch ? 'border-transparent' : 'border-rose-500') +
 									' px-5 py-3 rounded-2xl w-full text-sm outline-none border dark:bg-gray-900'}
 								placeholder={$i18n.t('Confirm Your New Password')}
+								autocomplete="new-password"
 								required
 							/>
 						</div>
@@ -301,9 +304,10 @@
 
 						<div class="mt-3">
 							<button
-								class="bg-gray-900 hover:bg-gray-800 w-full rounded-2xl text-white font-semibold text-sm py-3 transition disabled"
+								class="bg-gray-900 hover:bg-gray-800 w-full rounded-2xl text-white font-semibold 
+										text-sm py-3 transition disabled:text-gray-600 disabled:pointer-events-none"
 								type="submit"
-								disabled={!passwordsMatch}
+								disabled={resetButtonDisabled}
 							>
 								{#if buttonLoading}
 									<div class="px-2 flex items-center justify-center space-x-1">
