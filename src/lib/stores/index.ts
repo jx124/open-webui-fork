@@ -3,6 +3,7 @@ import { type Writable, writable } from 'svelte/store';
 import type { GlobalModelConfig, ModelConfig } from '$lib/apis';
 import type { Banner } from '$lib/types';
 import type { RoleForm } from '$lib/apis/roles';
+import type { Assignment } from '$lib/apis/classes';
 
 // Backend
 export const WEBUI_NAME = writable(APP_NAME);
@@ -149,7 +150,7 @@ export type Class = {
     instructor_name: string,
 	image_url: string,
 
-    assigned_prompts: number[],
+    assignments: Assignment[],
 	assigned_students: string[]
 };
 

@@ -4,7 +4,7 @@
 	const { saveAs } = fileSaver;
 
 	import { onMount, getContext } from 'svelte';
-	import { WEBUI_NAME, documents } from '$lib/stores';
+	import { WEBUI_NAME, documents, user } from '$lib/stores';
 	import { createNewDoc, deleteDocByName, getDocs } from '$lib/apis/documents';
 
 	import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS } from '$lib/constants';
@@ -17,6 +17,7 @@
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 	import SettingsModal from '$lib/components/documents/SettingsModal.svelte';
 	import AddDocModal from '$lib/components/documents/AddDocModal.svelte';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 

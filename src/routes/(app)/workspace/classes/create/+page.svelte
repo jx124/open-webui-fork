@@ -8,9 +8,9 @@
 	import { goto } from '$app/navigation';
 	import { prompts, user } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
-	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
+	import AssignmentMultiSelector from '$lib/components/workspace/AssignmentMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -20,7 +20,7 @@
 		instructor_id: $user?.id ?? "",
 		image_url: "",
 
-		assigned_prompts: [],
+		assignments: [],
         assigned_students: [],
 	};
 
@@ -42,7 +42,7 @@
 		}
 	};
 
-    let items: {
+    let userItems: {
         value: string,
         label: string
     }[];
@@ -61,7 +61,7 @@
 		});
 
         const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers?.map(user => { 
+        userItems = validUsers?.map(user => { 
             return {
                 value: user.id,
                 label: user.name
@@ -166,7 +166,7 @@
 				<UserSelector 
 					bind:value={form_data.instructor_id}
 					externalLabel={$user?.role === "instructor" ? $user?.name : ""}
-					{items}
+					bind:items={userItems}
 					placeholder={"Select an instructor"}
 					searchPlaceholder={"Search for an instructor"}
 				/>
@@ -178,12 +178,13 @@
 			</div>
 
 			<div class="my-2">
-				<div class=" text-sm font-semibold mb-2">Profiles</div>
-				<PromptMultiSelector 
-					addItemLabel={"Add Profiles"}
+				<div class=" text-sm font-semibold mb-2">Assignments</div>
+                <AssignmentMultiSelector 
+					addItemLabel={"Add Assignment"}
 					searchPlaceholder={"Search Profiles"} 
-					bind:items={promptItems}
-					bind:selectedItems={form_data.assigned_prompts}
+                    classId={form_data.id}
+					bind:promptItems
+					bind:selectedAssignments={form_data.assignments}
 				/>
 			</div>
 

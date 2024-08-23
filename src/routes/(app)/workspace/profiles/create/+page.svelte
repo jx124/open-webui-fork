@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { classes, models, prompts } from '$lib/stores';
+	import { models, prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
@@ -77,6 +77,10 @@
 	};
 
 	onMount(async () => {
+		if ($user?.role !== "admin") {
+			await goto("/workspace/profiles");
+		}
+		
 		window.addEventListener('message', async (event) => {
 			if (
 				!['https://openwebui.com', 'https://www.openwebui.com', 'http://localhost:5173'].includes(

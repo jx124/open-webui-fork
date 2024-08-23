@@ -9,9 +9,9 @@
 	import { page } from '$app/stores';
 	import { prompts } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
-	import PromptMultiSelector from '$lib/components/workspace/PromptMultiSelector.svelte';
 	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
 	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
+	import AssignmentMultiSelector from '$lib/components/workspace/AssignmentMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -21,7 +21,7 @@
 		instructor_id: "",
         image_url: "",
 
-        assigned_prompts: [],
+        assignments: [],
         assigned_students: [],
 	};
 
@@ -45,7 +45,7 @@
 		}
 	};
 
-    let items: {
+    let userItems: {
         value: string,
         label: string
     }[];
@@ -71,7 +71,7 @@
         instructorName = class_.instructor_name;
         form_data.image_url = class_.image_url;
 
-        form_data.assigned_prompts = class_.assigned_prompts;
+        form_data.assignments = class_.assignments;
         form_data.assigned_students = class_.assigned_students;
 
         const users = await getUsers(localStorage.token).catch((error) => {
@@ -80,7 +80,7 @@
 		});
 
         const validUsers = users?.filter(user => ["admin", "instructor"].includes(user.role));
-        items = validUsers?.map(user => { 
+        userItems = validUsers?.map(user => { 
             return {
                 value: user.id,
                 label: user.name
@@ -185,7 +185,7 @@
                 <UserSelector 
                     bind:value={form_data.instructor_id}
                     externalLabel={instructorName}
-                    {items}
+					bind:items={userItems}
                     placeholder={"Select an instructor"}
                     searchPlaceholder={"Search for an instructor"}
                 />
@@ -197,12 +197,13 @@
             </div>
 
             <div class="my-2">
-                <div class=" text-sm font-semibold mb-2">Profiles</div>
-                <PromptMultiSelector 
-					addItemLabel={"Add Profiles"}
+                <div class=" text-sm font-semibold mb-2">Assignments</div>
+                <AssignmentMultiSelector 
+					addItemLabel={"Add Assignment"}
 					searchPlaceholder={"Search Profiles"} 
-					bind:items={promptItems}
-					bind:selectedItems={form_data.assigned_prompts}
+                    classId={form_data.id}
+					bind:promptItems
+					bind:selectedAssignments={form_data.assignments}
 				/>
             </div>
 

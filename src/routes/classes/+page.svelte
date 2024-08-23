@@ -7,19 +7,6 @@
 
 	let loading = true;
 
-	const assignedPromptLabel = (prompt_ids: number[]) => {
-		if (prompt_ids.length === 0) {
-			return 'No assigned profiles';
-		}
-		return (
-			'Assigned Profiles: ' +
-			$prompts
-				.filter((p) => prompt_ids.includes(p.id))
-				.map((p) => p.title)
-                .length
-		);
-	};
-
 	onMount(async () => {
 		if ($classes.length === 0) {
 			$classes = await getClassList(localStorage.token).catch((error) => toast.error(error));
@@ -64,7 +51,7 @@
                                             Instructor: {class_.instructor_name}
                                         </div>
                                         <div class="text-xs text-gray-400 dark:text-gray-500">
-                                            {assignedPromptLabel(class_.assigned_prompts)}
+                                            Assignments: {class_.assignments.length}
                                         </div>
                                     </div>
                                 </div></a

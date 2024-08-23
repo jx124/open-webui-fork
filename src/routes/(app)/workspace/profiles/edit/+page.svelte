@@ -77,6 +77,10 @@
 	};
 
 	onMount(async () => {
+		if ($user?.role !== "admin") {
+			await goto("/workspace/profiles");
+		}
+
 		form_data.command = $page.url.searchParams.get('command') ?? '';
 		if (form_data.command) {
 			const prompt = $prompts.filter((prompt) => prompt.command === form_data.command).at(0);

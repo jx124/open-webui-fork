@@ -7,18 +7,18 @@
 	import { CalendarDateTime, parseDate } from '@internationalized/date';
 	import { mobile } from '$lib/stores';
 
-	let selectedDate;
+	let selectedDate = null;
 	
 	export let selectedDateTime;
 	export let placeholder: string | null;
 	let parsedPlaceholder = placeholder ? parseDate(placeholder.split('T')[0]) : undefined;
 	let selectedTime = placeholder ? placeholder.split('T')[1].slice(0, 5) : "23:59";
 
-	$: if (selectedDate && selectedTime) {
+	$: if ((selectedDate || parsedPlaceholder) && selectedTime) {
 		selectedDateTime = new CalendarDateTime(
-			selectedDate?.year,
-			selectedDate?.month,
-			selectedDate?.day,
+			selectedDate?.year ?? parsedPlaceholder?.year,
+			selectedDate?.month ?? parsedPlaceholder?.month,
+			selectedDate?.day ?? parsedPlaceholder?.day,
 			parseInt(selectedTime.split(":")[0]),
 			parseInt(selectedTime.split(":")[1]),
 			59
@@ -63,10 +63,10 @@
 				transition={flyAndScale}
 				transitionConfig={{ duration: 150, y: -8 }}
 				side={$mobile ? 'bottom' : 'right'}
-				class="z-50"
+				class="z-[70]"
 			>
 				<DatePicker.Calendar
-					class="rounded-[15px] bg-white dark:bg-gray-850 dark:text-white shadow-lg border border-gray-300/30 dark:border-gray-700/50 z-50 p-[22px] shadow-popover"
+					class="rounded-[15px] bg-white dark:bg-gray-850 dark:text-white shadow-lg border border-gray-300/30 dark:border-gray-700/50 z-[70] p-[22px] shadow-popover"
 					let:months
 					let:weekdays
 				>
@@ -129,7 +129,7 @@
 				</DatePicker.Calendar>
 			</DatePicker.Content>
 		</div>
-		<div class="flex w-full h-full max-w-[100px] min-h-[75px] flex-col gap-1.5">
+		<div class="flex w-full h-full max-w-[100px] min-h-[75px] flex-col gap-1.5 ml-12">
 			<div class="block select-none text-xs font-medium">Select Time:</div>
 			<input
 				class="flex h-full min-h-[50px] w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg

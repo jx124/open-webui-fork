@@ -4,8 +4,16 @@
 	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
+
+	onMount(async () => {
+		if ($user?.role === "instructor" 
+				&& ["/(app)/workspace/documents", "/(app)/workspace/playground"].includes($page.route.id ?? "")) {
+			await goto("/workspace");
+		}
+	})
 </script>
 
 <svelte:head>

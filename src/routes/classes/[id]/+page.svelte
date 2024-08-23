@@ -1,19 +1,16 @@
 <script lang="ts">
-	import { classes, prompts, WEBUI_NAME } from '$lib/stores';
+	import { type Class, classes, prompts, WEBUI_NAME } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { getClassList } from '$lib/apis/classes';
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { page } from '$app/stores';
 	import AcademicWeekDisplay from '$lib/components/classes/AcademicWeekDisplay.svelte';
+	import { goto } from '$app/navigation';
 
-	let searchValue = '';
 	let loading = true;
 	let currentClassId: number = parseInt($page.params.id);
-	let currentClass;
-
-	let assignedPromptIds: Set<number>;
-    let assignedPrompts;
+	let currentClass: Class;
 
 	onMount(async () => {
 		if ($classes.length === 0) {
@@ -23,9 +20,12 @@
 			$prompts = await getPrompts(localStorage.token).catch((error) => toast.error(error));
 		}
 
-		currentClass = $classes.find((c) => c.id === currentClassId);
-		assignedPromptIds = new Set<number>(currentClass?.assigned_prompts ?? []);
-        assignedPrompts = $prompts.filter((p) => assignedPromptIds.has(p.id));
+		const class_ = $classes.find((c) => c.id === currentClassId);
+		if (class_ === undefined) {
+			await goto("/classes");
+		} else {
+			currentClass = class_;
+		}
 
 		loading = false;
 	});
@@ -41,9 +41,9 @@
 	<div class="w-1/2 h-3/4">
 		<div class=" text-3xl font-semibold mb-3">{currentClass?.name} Assignments</div>
 
-		{#if !loading}
+		{#if !loading && currentClass}
 			<div class=" my-2 mb-5" id="class-list">
-				<AcademicWeekDisplay bind:profiles={assignedPrompts} bind:currentClassId />
+				<AcademicWeekDisplay bind:assignments={currentClass.assignments} bind:currentClassId />
 			</div>
 		{:else}
 			<div class="px-2 flex items-center space-x-1">

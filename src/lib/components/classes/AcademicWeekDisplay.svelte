@@ -1,10 +1,15 @@
 <script lang="ts">
-	import { type Prompt } from '$lib/stores';
+	import { type Assignment } from '$lib/apis/classes';
+	import { prompts, type Prompt } from '$lib/stores';
 	import NUSModerator from 'nusmoderator';
 	import { onMount } from 'svelte';
 
-	export let profiles: Prompt[] = [];
+	export let assignments: Assignment[] = [];
 	export let currentClassId: number;
+
+	let noDeadlineIds: number[] = [];
+	let sortedDeadlineIds: number[] = [];
+	let profileDeadlineMap: Map<number, string | null> = new Map();
 
 	let noDeadlineProfiles: Prompt[] = [];
 	let sortedDeadlineProfiles: Prompt[] = [];
@@ -28,7 +33,7 @@
 		}
 	};
 
-	const dateSorter = (a: Prompt, b: Prompt) => {
+	const dateSorter = (a: Assignment, b: Assignment) => {
 		if (a.deadline === null || b.deadline === null) {
 			return 0;
 		}
@@ -36,11 +41,19 @@
 	};
 
 	onMount(() => {
-		noDeadlineProfiles = profiles.filter((p) => p.deadline === null);
-		sortedDeadlineProfiles = profiles.filter((p) => p.deadline !== null).sort(dateSorter);
+		noDeadlineIds = assignments.filter((p) => p.deadline === null).map(a => a.prompt_id);
+		sortedDeadlineIds = assignments.filter((p) => p.deadline !== null).sort(dateSorter).map(a => a.prompt_id);
+		
+		// TODO: use maps if performance not good enough
+		noDeadlineProfiles = noDeadlineIds.map(id => $prompts.find(p => p.id === id));
+		sortedDeadlineProfiles = sortedDeadlineIds.map(id => $prompts.find(p => p.id === id));
+
+		for (const assignment of assignments) {
+			profileDeadlineMap.set(assignment.prompt_id, assignment.deadline);
+		}
 
 		for (const profile of sortedDeadlineProfiles) {
-			const name = getNUSWeekName(profile.deadline ?? '');
+			const name = getNUSWeekName(profileDeadlineMap.get(profile.id) ?? '');
 
 			if (weekProfilesMap.get(name)) {
 				weekProfilesMap.get(name)?.push(profile);
@@ -77,11 +90,6 @@
 						<div class=" font-bold">
 							{profile.title}
 						</div>
-						{#if profile.deadline}
-							<div class="text-xs font-normal text-gray-600 dark:text-gray-400">
-								Due: {new Date(profile.deadline).toString()}
-							</div>
-						{/if}
 					</div>
 				</a>
 			</div>
@@ -114,9 +122,9 @@
 							<div class=" font-bold">
 								{profile.title}
 							</div>
-							{#if profile.deadline}
+							{#if profileDeadlineMap.get(profile.id)}
 								<div class="text-xs text-gray-600 dark:text-gray-400">
-									Due: {new Date(profile.deadline).toString()}
+									Due: {new Date(profileDeadlineMap.get(profile.id) ?? "").toString()}
 								</div>
 							{/if}
 						</div>

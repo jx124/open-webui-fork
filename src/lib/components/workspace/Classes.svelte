@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 
-	import { onMount, getContext, tick } from 'svelte';
+	import { onMount } from 'svelte';
     
-	import { classes, prompts, WEBUI_NAME } from '$lib/stores';
+	import { classes, WEBUI_NAME } from '$lib/stores';
 	import { deleteClassById, getClassList } from '$lib/apis/classes';
 	import DeleteModal from '../DeleteModal.svelte';
-
-	const i18n = getContext('i18n');
 
     let showDeleteModal = false;
 
@@ -28,13 +26,6 @@
 				toast.error(error);
 			});
 		}
-	}
-
-	const assignedPromptLabel = (prompt_ids: number[]) => {
-		if (prompt_ids.length === 0) {
-			return "No assigned prompts"
-		}
-		return "Assigned Prompts: " + $prompts.filter((p) =>prompt_ids.includes(p.id)).map(p => p.title).join(", ");
 	}
 
 	onMount(async () => {
@@ -125,7 +116,7 @@
                             Students: {class_.assigned_students.length}
                         </div>
 						<div class="text-xs text-gray-600 dark:text-gray-400">
-                            {assignedPromptLabel(class_.assigned_prompts)}
+                            Assignments: {class_.assignments.length}
                         </div>
 					</div>
                 </a>
