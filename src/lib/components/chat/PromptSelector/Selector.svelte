@@ -8,7 +8,7 @@
 	import Check from '$lib/components/icons/Check.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { mobile } from '$lib/stores';
+	import { mobile, selectedPromptCommand } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -87,7 +87,7 @@
 							class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-none transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-[highlighted]:bg-muted"
 							on:click={() => {
 								value = item.value;
-
+								$selectedPromptCommand = value;
 								show = false;
 							}}
 						>

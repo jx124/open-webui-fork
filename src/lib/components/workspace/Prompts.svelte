@@ -4,7 +4,7 @@
 	const { saveAs } = fileSaver;
 
 	import { getContext, onMount } from 'svelte';
-	import { WEBUI_NAME, prompts, user } from '$lib/stores';
+	import { WEBUI_NAME, prompts, selectedPromptCommand, user } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
 	import DeleteModal from '../DeleteModal.svelte';
 
@@ -15,7 +15,6 @@
 	let promptsImportInputElement: HTMLInputElement;
 
 	let showDeleteModal = false;
-	let selectedPromptCommand: string;
 
 	const deletePrompt = async (command) => {
 		showDeleteModal = false;
@@ -38,9 +37,9 @@
 
 <DeleteModal
 	bind:show={showDeleteModal}
-	deleteMessage={selectedPromptCommand}
+	deleteMessage={$selectedPromptCommand}
 	deleteHandler={deletePrompt}
-	deleteArgs={selectedPromptCommand}
+	deleteArgs={$selectedPromptCommand}
 />
 
 <div class="mb-3 flex justify-between items-center">
@@ -142,7 +141,7 @@
 						type="button"
 						on:click={() => {
 							showDeleteModal = true;
-							selectedPromptCommand = prompt.command;
+							$selectedPromptCommand = prompt.command;
 						}}
 					>
 						<svg

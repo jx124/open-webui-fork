@@ -24,6 +24,7 @@ export const models: Writable<Model[]> = writable([]);
 
 export const modelfiles = writable([]);
 export const prompts: Writable<Prompt[]> = writable([]);
+export const selectedPromptCommand: Writable<string> = writable();
 export const userRoles: Writable<RoleForm[]> = writable([]);
 export const classes: Writable<Class[]> = writable([]);
 export const classId: Writable<number | null> = writable(null);

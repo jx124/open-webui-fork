@@ -22,9 +22,8 @@
 		prompts,
 		classes,
 		type Prompt,
-
-		classId
-
+		classId,
+		selectedPromptCommand
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -148,13 +147,10 @@
 		})();
 	}
 
-	// When creating a new chat, this is set by the PromptSelector menu. Otherwise, when accessing an existing chat,
-	// this is set by the loadChat command. Note that this field is undefined when in an evaluation chat.
-	let selectedPromptCommand: string = "";
-	
-	$: if (selectedPromptCommand) {
+
+	$: if ($selectedPromptCommand) {
 		selectedProfile = $prompts.find((prompt) => {
-			return prompt.command === selectedPromptCommand;
+			return prompt.command === $selectedPromptCommand;
 		});
 	}
 
@@ -214,7 +210,7 @@
 			return prompt.command === profile;
 		});
 
-		selectedPromptCommand = selectedProfile?.command ?? "";
+		$selectedPromptCommand = selectedProfile?.command ?? "";
 
 		selectedModels = selectedModels.map((modelId) =>
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
@@ -231,7 +227,7 @@
 			$classId = classIdParam;
 		}
 
-		if ((selectedPromptCommand === "" || selectedModels[0] === "" || $classId === null) 
+		if (($selectedPromptCommand === "" || selectedModels[0] === "" || $classId === null) 
 			&& !["admin", "instructor"].includes($user?.role ?? "")) {
 			
 			toast.error("Invalid profile, model, or class");
@@ -275,13 +271,13 @@
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
 				evaluatedChat = chatContent.evaluatedChat;
-				selectedPromptCommand = chatContent.systemCommand;
+				$selectedPromptCommand = chatContent.systemCommand;
 
 				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
 
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
 				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
-				if (selectedPromptCommand) {
+				if ($selectedPromptCommand) {
 					if (selectedProfile?.content !== chatContent.system) {
 						chatContent.system = selectedProfile?.content;
 					}
@@ -398,7 +394,7 @@
 
 		if (selectedModels.includes('')) {
 			toast.error($i18n.t('Model not selected'));
-		} else if (!evaluatedChat && !selectedPromptCommand) {
+		} else if (!evaluatedChat && !$selectedPromptCommand) {
 			toast.error($i18n.t('Prompt not selected'));
 		} else if (messages.length != 0 && messages.at(-1).done != true) {
 			// Response not done
@@ -451,7 +447,7 @@
 						title: $i18n.t('New Chat'),
 						models: selectedModels,
 						system: $settings.system ?? undefined,
-						systemCommand: selectedPromptCommand,
+						systemCommand: $selectedPromptCommand,
 						options: {
 							...($settings.params ?? {})
 						},
@@ -900,7 +896,7 @@
 		if (messages.length == 2 && messages.at(1).content !== '') {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = generateUniqueTitle(selectedPromptCommand);
+				const _title = generateUniqueTitle($selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}
@@ -1102,7 +1098,7 @@
 		if (messages.length == 2) {
 			window.history.replaceState(history.state, '', `/c/${_chatId}`);
 			if (evaluatedChat === null) {
-				const _title = generateUniqueTitle(selectedPromptCommand);
+				const _title = generateUniqueTitle($selectedPromptCommand);
 				await setChatTitle(_chatId, _title);
 			}
 		}
@@ -1405,7 +1401,6 @@
 		<Navbar
 			bind:selectedModels
 			bind:showModelSelector
-			bind:selectedPromptCommand
 			bind:className
 			shareEnabled={messages.length > 0}
 			{chat}

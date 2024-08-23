@@ -4,15 +4,12 @@
 		user,
 		chats,
 		settings,
-		showSettings,
 		chatId,
 		tags,
 		showSidebar,
 		mobile,
 		showArchivedChats,
-
-		WEBUI_NAME
-
+		selectedPromptCommand
 	} from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
@@ -21,7 +18,6 @@
 	import {
 		deleteChatById,
 		getChatList,
-		getChatById,
 		getChatListByTagName,
 		updateChatById,
 		getAllChatTags,
@@ -30,19 +26,15 @@
 		getAllChats
 	} from '$lib/apis/chats';
 	import { toast } from 'svelte-sonner';
-	import { fade, slide } from 'svelte/transition';
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import Tooltip from '../common/Tooltip.svelte';
 	import ChatMenu from './Sidebar/ChatMenu.svelte';
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
-	import ArchiveBox from '../icons/ArchiveBox.svelte';
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import { updateUserSettings } from '$lib/apis/users';
 
 	const BREAKPOINT = 768;
 
-	let show = false;
 	let navElement;
 
 	let title: string = 'UI';
@@ -58,7 +50,6 @@
 
 	let showShareChatModal = false;
 	let showDropdown = false;
-	let isEditing = false;
 
 	let filteredChatList = [];
 
@@ -245,6 +236,7 @@
 					on:click={async () => {
 						selectedChatId = null;
 						chatId.set('');
+						$selectedPromptCommand = "";
 
 						setTimeout(() => {
 							if ($mobile) {
@@ -281,10 +273,10 @@
 					</div>
 				</a>
 			{:else}
-				<div class="flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
+				<div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
 					<a
 						id="home-button"
-						class="flex flex-1 justify-between rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+						class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 						href="/classes"
 						draggable="false"
 						on:click={() => $chatId = ""}
@@ -358,7 +350,7 @@
 					</div>
 
 					<div class="flex self-center">
-						<div class=" self-center font-medium text-sm">{$i18n.t('Workspace')}</div>
+						<div class=" self-center font-medium text-sm">Admin Panel</div>
 					</div>
 				</a>
 			</div>

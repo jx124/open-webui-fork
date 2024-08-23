@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
-	import { chats, settings, user as _user, mobile, prompts, classes, type Prompt, classId } from '$lib/stores';
+	import { chats, settings, user as _user, mobile, prompts, classes, type Prompt, classId, selectedPromptCommand } from '$lib/stores';
 	import { tick, getContext } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
@@ -252,7 +252,7 @@
 			assignedPrompts = $prompts;
 		} else {
 			const currentClass = $classes.find((c) => c.id === $classId);
-			const assignedPromptIds = new Set<number>(currentClass?.assigned_prompts ?? []);
+			const assignedPromptIds = new Set<number>(currentClass?.assignments.map(a => a.prompt_id) ?? []);
 			assignedPrompts = $prompts.filter((p) => assignedPromptIds.has(p.id));
 		}
 	}
@@ -267,7 +267,7 @@
 				<div class="flex text-2xl font-semibold items-center">
 					Client Profile
 					{#if assignedPrompts?.length > 0}
-						<ChangeProfileDropdown profiles={assignedPrompts} bind:selectedProfile/>
+						<ChangeProfileDropdown profiles={assignedPrompts} bind:selectedProfile />
 					{/if}
 				</div>
 				{#if chatId !== ''}
@@ -275,12 +275,13 @@
 						class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
 						type="button"
 						on:click={() => {
+							chatId = '';
+							$selectedPromptCommand = selectedProfile?.command ?? "";
 							goto(
 								`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
 									`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
 									`&class=${classId}`
 							);
-							chatId = '';
 						}}
 					>
 						<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>

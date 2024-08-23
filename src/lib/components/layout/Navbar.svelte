@@ -1,9 +1,9 @@
 <script lang="ts">
 	import {
-		WEBUI_NAME,
 		chatId,
 		chats,
 		prompts,
+		selectedPromptCommand,
 		settings,
 		showArchivedChats,
 		showSidebar,
@@ -21,8 +21,6 @@
 	export let chat;
 	export let selectedModels;
 
-	export let selectedPromptCommand: string;
-
 	export let className: string = "";
 
 	let evaluatedChat: null | string = null;
@@ -37,7 +35,7 @@
 
 	$: if (!inChatInstance) {
 		// Selecting prompt from main interface
-		let prompt = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.content;
+		let prompt = $prompts.find((prompt) => prompt.command === $selectedPromptCommand)?.content;
 		$settings = {...$settings, system: prompt};
 	} 
 
@@ -79,7 +77,6 @@
 					<div class="overflow-hidden max-w-full">
 						{#if evaluatedChat === null}
 							<PromptSelector 
-								bind:selectedPromptCommand
 								bind:disabled={inChatInstance}
 							/>
 						{:else}

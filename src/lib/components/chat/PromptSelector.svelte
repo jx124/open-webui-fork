@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { settings, prompts } from '$lib/stores';
+	import { prompts, selectedPromptCommand } from '$lib/stores';
 	import { getContext } from 'svelte';
 	import Selector from './PromptSelector/Selector.svelte';
 
 	const i18n = getContext('i18n');
 
-	export let selectedPromptCommand: string;
 	export let disabled = false;
 
-	$: promptTitle = $prompts.find((prompt) => prompt.command === selectedPromptCommand)?.title ?? 'Profile';
+	$: promptTitle = $prompts.find((prompt) => prompt.command === $selectedPromptCommand)?.title ?? 'Profile';
 </script>
 
 <Selector
@@ -20,5 +19,4 @@
 		}))}
 	disabled={disabled}
 	placeholder={promptTitle}
-	bind:value={selectedPromptCommand}
 />

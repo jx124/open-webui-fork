@@ -1,19 +1,13 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { chatId, classId, mobile } from "$lib/stores";
+	import { chatId, classId, mobile, selectedPromptCommand } from "$lib/stores";
 	import { flyAndScale } from "$lib/utils/transitions";
 	import { DropdownMenu } from "bits-ui";
-	import { onMount } from "svelte";
 
     export let show = false;
     export let profiles;
     export let selectedProfile;
 
 	export let className = 'w-[16rem]';
-
-    onMount(() => {
-        
-    })
 </script>
 
 <DropdownMenu.Root
@@ -49,6 +43,7 @@
                         on:click={() => {
                             $chatId = "";
                             selectedProfile = profile;
+                            $selectedPromptCommand = profile.command;
                             show = false;
                         }}
                     >

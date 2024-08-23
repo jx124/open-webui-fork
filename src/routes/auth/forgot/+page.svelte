@@ -184,9 +184,10 @@
 							<div class=" text-sm font-semibold text-left mb-1">OTP</div>
 							<input
 								bind:value={OTP}
-								type="one-time-code"
+								type="text"
 								class=" px-5 py-3 rounded-2xl w-full text-sm outline-none border dark:border-none dark:bg-gray-900"
 								placeholder={$i18n.t('Enter Your 6-Digit OTP')}
+								autocomplete="one-time-code"
 								required
 							/>
 						</div>
