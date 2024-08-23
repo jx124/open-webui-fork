@@ -6,6 +6,7 @@
 	import DatePicker from '../common/DatePicker.svelte';
 	import NUSModerator from 'nusmoderator';
 	import { type Assignment } from '$lib/apis/classes';
+	import { prompts } from '$lib/stores';
 
 	export let show = false;
     export let assignments: Assignment[] = [];
@@ -14,10 +15,12 @@
     $: if (show) {
         selectedDateTime = assignments[index].deadline;
         hasDeadline = assignments[index]?.deadline !== null;
+        profileName = $prompts.find((p) => p.id === assignments[index].prompt_id)?.title ?? "";
     }
 
 	let selectedDateTime: string | null = null;
     let hasDeadline = false;
+    let profileName = "";
 
     const getNUSWeekName = (date: string) => {
 		if (date === '') {
@@ -48,7 +51,7 @@
 <Modal size="sm" bind:show>
 	<div>
 		<div class="flex justify-between dark:text-gray-300 px-5 pt-4 pb-2">
-			<div class=" text-lg font-medium self-center">Edit Assignment {index}</div>
+			<div class=" text-lg font-medium self-center">Edit Assignment for "{profileName}"</div>
 			<button
 				class="self-center"
                 type="button"
