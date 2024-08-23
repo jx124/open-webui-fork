@@ -103,7 +103,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more models under Workspace > Models.
+                            No results found, add more models under Admin Panel > Models.
                         </div>
                     {/each}
                 </div>

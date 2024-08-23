@@ -73,7 +73,7 @@
 		<div>
 			<a
 				class=" px-2 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:border-0 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition font-medium text-sm flex items-center space-x-1"
-				href="/workspace/profiles/create"
+				href="/admin/profiles/create"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -102,7 +102,7 @@
 				<div class="flex flex-1 space-x-4 cursor-pointer w-full">
 					<a
 						class="flex items-center"
-						href={`/workspace/profiles/edit?command=${encodeURIComponent(prompt.command)}`}
+						href={`/admin/profiles/edit?command=${encodeURIComponent(prompt.command)}`}
 					>
 						<img
 							src={prompt.image_url ? prompt.image_url : '/user.png'}
@@ -118,7 +118,7 @@
 					<a
 						class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 						type="button"
-						href={`/workspace/profiles/edit?command=${encodeURIComponent(prompt.command)}`}
+						href={`/admin/profiles/edit?command=${encodeURIComponent(prompt.command)}`}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"

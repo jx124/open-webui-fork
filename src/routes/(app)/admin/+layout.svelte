@@ -1,15 +1,24 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 
-	import { WEBUI_NAME, showSidebar } from '$lib/stores';
+	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
+
+	onMount(async () => {
+		if ($user?.role === "instructor" 
+				&& ["/(app)/admin/documents", "/(app)/admin/playground"].includes($page.route.id ?? "")) {
+			await goto("/admin");
+		}
+	})
 </script>
 
 <svelte:head>
 	<title>
-		{$i18n.t('Admin Panel')} | {$WEBUI_NAME}
+		Admin Panel | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -29,7 +38,59 @@
 					</div>
 				</button>
 			</div>
-			<div class="flex items-center text-xl font-semibold">{$i18n.t('Workspace')}</div>
+			<div class="flex items-center text-xl font-semibold">Admin Panel</div>
+		</div>
+	</div>
+
+	<div class="px-4 my-1">
+		<div
+			class="flex scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-xl bg-transparent/10 p-1"
+		>
+			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/classes')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/admin/classes">{$i18n.t('Classes')}</a
+			>
+
+			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/profiles')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/admin/profiles">{$i18n.t('Profiles')}</a
+			>
+
+			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/models')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/admin/models">{$i18n.t('Models')}</a
+			>
+
+			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/users')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/admin/users">{$i18n.t('Users')}</a
+			>
+
+			{#if $user?.role === "admin"}
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/documents')
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/admin/documents"
+				>
+					{$i18n.t('Documents')}
+				</a>
+
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/playground')
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/admin/playground">{$i18n.t('Playground')}</a
+				>
+			{/if}
 		</div>
 	</div>
 

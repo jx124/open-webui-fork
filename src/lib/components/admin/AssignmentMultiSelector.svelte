@@ -4,40 +4,53 @@
 
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { classes, mobile, prompts } from '$lib/stores';
+	import { mobile, prompts } from '$lib/stores';
 	import XMark from '../icons/XMark.svelte';
+	import EditAssignmentModal from '../admin/EditAssignmentModal.svelte';
+	import Pencil from '../icons/Pencil.svelte';
+	import { type Assignment } from '$lib/apis/classes';
+	import { onMount } from 'svelte';
 
-	export let addItemLabel = "Add Class";
+	export let addItemLabel = "Add Item";
 	export let searchEnabled = true;
-	export let searchPlaceholder = "Search Classes";
+	export let searchPlaceholder = "Search Items";
 
-    type ItemType = {
+    type PromptItemType = {
 		label: string,
 		value: number
 	};
 
-	export let items: ItemType[] = [];
-    export let selectedItems: number[] = [];
+	export let promptItems: PromptItemType[] = [];
+    export let selectedAssignments: Assignment[] = [];
 
-    let _selectedItems: ItemType[] = [];
-    let _unselectedItems: ItemType[] = [];
+    let selectedPromptIds = new Set<number>();
+    let unselectedPromptIds = new Set<number>();
+    let unselectedPrompts: PromptItemType[] = [];
 
 	export let className = 'w-[12rem]';
 
+    export let classId = 0;
+
 	let show = false;
+	let showModal = false;
+    let selectedIndex = 0;
 
 	let searchValue = '';
 
-	$: filteredItems = searchValue
-		? _unselectedItems.filter((item) => item.label.toLowerCase().includes(searchValue.toLowerCase()))
-		: _unselectedItems;
+	$: filteredPrompts = searchValue
+		? unselectedPrompts.filter((item) => item.label.toLowerCase().includes(searchValue.toLowerCase()))
+		: unselectedPrompts;
 
-    $: if (selectedItems) {
-        _selectedItems = items.filter((item) => selectedItems.includes(item.value));
-        _unselectedItems = items.filter((item) => !selectedItems.includes(item.value));
-    };
+    onMount(() => {
+        selectedPromptIds = new Set<number>(selectedAssignments.map(a => a.prompt_id));
+        unselectedPromptIds = new Set<number>(
+            promptItems.filter((item) => !selectedPromptIds.has(item.value)).map(p => p.value)
+        );
+        unselectedPrompts = promptItems.filter(p => unselectedPromptIds.has(p.value));
+    })
 </script>
 
+<EditAssignmentModal bind:assignments={selectedAssignments} bind:index={selectedIndex} bind:show={showModal}/>
 
 <div class="flex items-center w-full">
     <DropdownMenu.Root
@@ -50,22 +63,34 @@
         
         <div class="flex flex-col items-start w-full">
             <div class="mb-3 w-full">
-                {#each $classes.filter((c) => selectedItems.includes(c.id)) as class_}
+                {#each $prompts.filter((p) => selectedPromptIds.has(p.id)) as prompt, index}
                     <div
                         class=" flex space-x-4 w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
                     >
                         <div class="flex flex-1 space-x-4 w-full">
                             <div class="flex items-center ">
                                 <img
-                                    src={class_.image_url ? class_.image_url : "/user.png"}
+                                    src={prompt.image_url ? prompt.image_url : "/user.png"}
                                     alt="profile"
                                     class="rounded-full h-12 w-12 object-cover"
                                 />
                                 <div class=" flex-1 self-center pl-3">
-                                    <div class=" font-bold">{class_.name}</div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">
-                                        Instructor: {class_.instructor_name}
-                                    </div>
+                                    <div class=" font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
+                                    {#each selectedAssignments.filter((item) => item.prompt_id === prompt.id) as assignment}
+                                        {#if assignment.deadline}
+                                            <div class="text-xs text-gray-400 dark:text-gray-500">
+                                                Due: {new Date(assignment.deadline).toString()}
+                                            </div>
+                                        {/if}
+                                        <div class="text-xs text-gray-400 dark:text-gray-500">
+                                            {assignment.allow_multiple_attempts ? "Allow multiple attempts." : "Allow single attempt."}
+                                            {assignment.deadline 
+                                                ? (assignment.allow_submit_after_deadline 
+                                                    ? "Allow submission after deadline." 
+                                                    : "No submission after deadline.")
+                                                : ""}
+                                        </div>
+                                    {/each}
                                 </div>
                             </div>
                         </div>
@@ -74,9 +99,25 @@
                                 class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
                                 type="button"
                                 on:click={() => {
-                                    selectedItems = selectedItems.filter(
-                                        (selected) => selected !== class_.id
+                                    selectedIndex = index;
+                                    showModal = true;
+                                }}
+                            >
+                                <div class="text-xs flex gap-1.5">
+                                    Edit
+                                    <Pencil />
+                                </div>
+                            </button>
+                            <button
+                                class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+                                type="button"
+                                on:click={() => {
+                                    selectedAssignments = selectedAssignments.filter(
+                                        (selected) => selected.prompt_id !== prompt.id
                                     );
+                                    selectedPromptIds.delete(prompt.id);
+                                    unselectedPromptIds.add(prompt.id);
+                                    unselectedPrompts.push({ label: prompt.title, value: prompt.id });
                                 }}
                             >
                                 <XMark />
@@ -120,13 +161,24 @@
                 {/if}
 
                 <div class="px-3 my-2 max-h-64 overflow-y-auto scrollbar-hidden">
-                    {#each filteredItems as item}
+                    {#each filteredPrompts as item}
                         <button
                             aria-label="item-item"
                             type="button"
                             class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-none transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-[highlighted]:bg-muted"
                             on:click={() => {
-                                selectedItems = [ ...selectedItems, item.value ]
+                                selectedPromptIds.add(item.value);
+                                unselectedPromptIds.delete(item.value);
+                                unselectedPrompts = unselectedPrompts.filter(
+                                    (item) => unselectedPromptIds.has(item.value)
+                                );
+                                selectedAssignments = [...selectedAssignments, {
+                                    class_id: classId,
+                                    prompt_id: item.value,
+                                    deadline: null,
+                                    allow_multiple_attempts: true,
+                                    allow_submit_after_deadline: true
+                                }];
                             }}
                         >
                             <div class="flex items-center gap-2">
@@ -137,7 +189,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more classes under Workspace > Classes. 
+                            No results found, add more profiles under Admin Panel > Profiles. 
                         </div>
                     {/each}
                 </div>

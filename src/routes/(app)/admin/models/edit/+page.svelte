@@ -79,7 +79,7 @@
 		if (res) {
 			await models.set(await getModels(localStorage.token));
 			toast.success('Model updated successfully');
-			await goto('/workspace/models');
+			await goto('/admin/models');
 		}
 
 		loading = false;
@@ -125,10 +125,10 @@
 				}
 				console.log(model);
 			} else {
-				goto('/workspace/models');
+				goto('/admin/models');
 			}
 		} else {
-			goto('/workspace/models');
+			goto('/admin/models');
 		}
 	});
 </script>

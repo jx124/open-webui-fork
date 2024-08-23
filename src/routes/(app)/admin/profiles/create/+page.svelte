@@ -2,18 +2,16 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { classes, models, prompts, user } from '$lib/stores';
+	import { models, prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
-
-	import { getPrompts, type PromptForm, updatePromptByCommand } from '$lib/apis/prompts';
-	import { page } from '$app/stores';
-	import PreviewModal from '$lib/components/workspace/PreviewModal.svelte';
+	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
+	import PreviewModal from '$lib/components/admin/PreviewModal.svelte';
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
-	import { getClassList } from '$lib/apis/classes';
-	import ModelSelector from '$lib/components/workspace/ModelSelector.svelte';
 	import { getModels } from '$lib/apis';
+	import ModelSelector from '$lib/components/admin/ModelSelector.svelte';
+
+	const i18n = getContext('i18n');
 
 	let loading = false;
 
@@ -31,16 +29,17 @@
 
 	let showPreviewModal = false;
 
-	let profileImageInputElement: HTMLInputElement;
+	$: form_data.command =
+		form_data.title !== '' ? `${form_data.title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
-	let promptAuthorId: string;
+	let profileImageInputElement: HTMLInputElement;
 
 	let modelItems: {
 		label: string;
 		value: string;
 	}[];
 
-	const updateHandler = async () => {
+	const submitHandler = async () => {
 		loading = true;
 
 		if (form_data.selected_model_id === '' || form_data.selected_model_id === null) {
@@ -50,14 +49,15 @@
 		}
 
 		if (validateCommandString(form_data.command)) {
-			const prompt = await updatePromptByCommand(localStorage.token, form_data).catch((error) => {
+			const prompt = await createNewPrompt(localStorage.token, form_data).catch((error) => {
 				toast.error(error);
+
 				return null;
 			});
 
 			if (prompt) {
 				await prompts.set(await getPrompts(localStorage.token));
-				await goto('/workspace/profiles');
+				await goto('/admin/profiles');
 			}
 		} else {
 			toast.error(
@@ -78,32 +78,41 @@
 
 	onMount(async () => {
 		if ($user?.role !== "admin") {
-			await goto("/workspace/profiles");
+			await goto("/admin/profiles");
+		}
+		
+		window.addEventListener('message', async (event) => {
+			if (
+				!['https://openwebui.com', 'https://www.openwebui.com', 'http://localhost:5173'].includes(
+					event.origin
+				)
+			)
+				return;
+			const prompt = JSON.parse(event.data);
+			console.log(prompt);
+
+			form_data.title = prompt.title;
+			await tick();
+			form_data.content = prompt.content;
+			form_data.command = prompt.command;
+			form_data.is_visible = prompt.is_visible;
+		});
+
+		if (window.opener ?? false) {
+			window.opener.postMessage('loaded', '*');
 		}
 
-		form_data.command = $page.url.searchParams.get('command') ?? '';
-		if (form_data.command) {
-			const prompt = $prompts.filter((prompt) => prompt.command === form_data.command).at(0);
+		if (sessionStorage.prompt) {
+			const prompt = JSON.parse(sessionStorage.prompt);
 
-			if (prompt) {
-				form_data.title = prompt.title;
-				await tick();
-				form_data.command = prompt.command.slice(1);
-				form_data.content = prompt.content;
-				form_data.is_visible = prompt.is_visible;
-				form_data.additional_info = prompt.additional_info;
+			console.log(prompt);
+			form_data.title = prompt.title;
+			await tick();
+			form_data.content = prompt.content;
+			form_data.command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
+			form_data.is_visible = prompt.is_visible;
 
-				form_data.image_url = prompt.image_url;
-
-				form_data.evaluation_id = prompt.evaluation_id;
-				form_data.selected_model_id = prompt.selected_model_id;
-
-				promptAuthorId = prompt.user_id;
-			} else {
-				goto('/workspace/profiles');
-			}
-		} else {
-			goto('/workspace/profiles');
+			sessionStorage.removeItem('prompt');
 		}
 
 		$models = await getModels(localStorage.token).catch((error) => {
@@ -148,7 +157,7 @@
 	<form
 		class="flex flex-col max-w-2xl mx-auto mt-4 mb-10"
 		on:submit|preventDefault={() => {
-			updateHandler();
+			submitHandler();
 		}}
 	>
 		<input
@@ -306,10 +315,9 @@
 					/
 				</div>
 				<input
-					class="px-3 py-1.5 text-sm w-full bg-transparent border disabled:text-gray-500 dark:border-gray-600 outline-none rounded-r-lg"
-					placeholder="short-summary"
+					class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-r-lg"
+					placeholder={$i18n.t('short-summary')}
 					bind:value={form_data.command}
-					disabled
 					required
 				/>
 			</div>
@@ -366,11 +374,7 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Model*</div>
-			<ModelSelector
-				items={modelItems}
-				bind:value={form_data.selected_model_id}
-				externalLabel={form_data.selected_model_id}
-			/>
+			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} />
 		</div>
 
 		<div class="my-2">
@@ -399,32 +403,55 @@
 			</div>
 		</div>
 
-		{#if promptAuthorId === $user?.id}
-			<div class="my-2">
-				<div class=" text-sm font-semibold mb-1">Draft</div>
-
-				<label
-					class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-right"
-				>
-					<input
-						type="checkbox"
-						on:change={() => (form_data.is_visible = !form_data.is_visible)}
-						checked={!form_data.is_visible}
-					/>
-					Save as draft. Instructors and students will not be able to see this prompt.
-				</label>
-			</div>
-		{/if}
-
 		<div class="my-2 flex justify-end">
 			<button
-				class=" text-sm px-3 py-2 transition rounded-xl {loading
+				class=" text-sm px-3 py-2 mr-2 transition rounded-xl {loading
 					? ' cursor-not-allowed bg-gray-100 dark:bg-gray-800'
 					: ' bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800'} flex"
+				on:click={() => (form_data.is_visible = false)}
 				type="submit"
 				disabled={loading}
 			>
-				<div class=" self-center font-medium">{$i18n.t('Save & Update')}</div>
+				<div class=" self-center font-medium">Save as Draft</div>
+
+				{#if loading}
+					<div class="ml-1.5 self-center">
+						<svg
+							class=" w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							xmlns="http://www.w3.org/2000/svg"
+							><style>
+								.spinner_ajPY {
+									transform-origin: center;
+									animation: spinner_AtaB 0.75s infinite linear;
+								}
+								@keyframes spinner_AtaB {
+									100% {
+										transform: rotate(360deg);
+									}
+								}
+							</style><path
+								d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+								opacity=".25"
+							/><path
+								d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z"
+								class="spinner_ajPY"
+							/></svg
+						>
+					</div>
+				{/if}
+			</button>
+
+			<button
+				class=" text-sm px-3 py-2 transition rounded-xl {loading
+					? ' cursor-not-allowed bg-emerald-800'
+					: ' bg-emerald-700 hover:bg-emerald-800 text-gray-100'} flex"
+				on:click={() => (form_data.is_visible = true)}
+				type="submit"
+				disabled={loading}
+			>
+				<div class=" self-center font-medium">{$i18n.t('Save & Create')}</div>
 
 				{#if loading}
 					<div class="ml-1.5 self-center">

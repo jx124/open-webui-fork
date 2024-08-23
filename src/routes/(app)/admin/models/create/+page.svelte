@@ -111,7 +111,7 @@
 			if (res) {
 				await models.set(await getModels(localStorage.token));
 				toast.success('Model created successfully!');
-				await goto('/workspace/models');
+				await goto('/admin/models');
 			}
 		}
 

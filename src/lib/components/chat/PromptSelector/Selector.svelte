@@ -117,7 +117,7 @@
 						{:else}
 							<div>
 								<div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-									No results found, add profiles under "Workspace" > "Profiles"
+									No results found, add profiles under Admin Panel > Profiles
 								</div>
 							</div>
 						{/if}

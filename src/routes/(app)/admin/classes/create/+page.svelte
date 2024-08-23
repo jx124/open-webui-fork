@@ -2,15 +2,15 @@
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext } from 'svelte';
-	import UserSelector from '$lib/components/workspace/UserSelector.svelte';
+	import UserSelector from '$lib/components/admin/UserSelector.svelte';
 	import { getUsers } from '$lib/apis/users';
 	import { type ClassForm, createNewClass } from '$lib/apis/classes';
 	import { goto } from '$app/navigation';
 	import { prompts, user } from '$lib/stores';
 	import { getPrompts } from '$lib/apis/prompts';
-	import UserTableSelector from '$lib/components/workspace/UserTableSelector.svelte';
-	import ProfileImageEditor from '$lib/components/workspace/ProfileImageEditor.svelte';
-	import AssignmentMultiSelector from '$lib/components/workspace/AssignmentMultiSelector.svelte';
+	import UserTableSelector from '$lib/components/admin/UserTableSelector.svelte';
+	import ProfileImageEditor from '$lib/components/admin/ProfileImageEditor.svelte';
+	import AssignmentMultiSelector from '$lib/components/admin/AssignmentMultiSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -38,7 +38,7 @@
 
         if (class_) {
 			toast.success('Class added successfully');
-            await goto('/workspace/classes');
+            await goto('/admin/classes');
 		}
 	};
 
