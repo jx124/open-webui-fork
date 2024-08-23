@@ -29,7 +29,6 @@ class Prompt(pw.Model):
     additional_info = pw.TextField(default="")
 
     image_url = pw.TextField(default="")
-    deadline = pw.DateTimeField(null=True)
     evaluation = pw.ForeignKeyField(Evaluation, null=True)
     model_id = pw.TextField(default="")
 
@@ -48,29 +47,20 @@ class PromptModel(BaseModel):
     additional_info: str
 
     image_url: str = ""
-    deadline: Optional[str]
     evaluation_id: Optional[int]
     selected_model_id: str = ""  # prevent namespace collision
 
-    assigned_classes: List[int]
 
-
-def prompt_to_promptmodel(prompt: Model, classes: List[int] = []) -> PromptModel:
-    prompt_dict = model_to_dict(prompt, exclude=[Prompt.deadline])
-    date_str = prompt.deadline
-
-    # postgres has a datetime type, but sqlite stores it as a string
-    if date_str is not None and type(date_str) is not str:
-        date_str = prompt.deadline.isoformat() if prompt.deadline is not None else None
+def prompt_to_promptmodel(prompt: Prompt) -> PromptModel:
+    prompt_dict = model_to_dict(prompt)
         
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
     model_id = prompt_dict.get("model_id")
     
     return PromptModel(**prompt_dict,
-                       deadline=date_str,
+                    #    deadline=date_str,
                        evaluation_id=evaluation_id,
-                       selected_model_id=model_id,
-                       assigned_classes=classes)
+                       selected_model_id=model_id)
 
 
 ####################
@@ -86,11 +76,8 @@ class PromptForm(BaseModel):
     additional_info: str
 
     image_url: str = ""
-    deadline: Optional[str]
     evaluation_id: Optional[int]
     selected_model_id: str
-
-    assigned_classes: List[int]
 
 
 class PromptsTable:
@@ -113,43 +100,29 @@ class PromptsTable:
                     "is_visible": form_data.is_visible,
                     "additional_info": form_data.additional_info,
                     "image_url": form_data.image_url,
-                    "deadline": form_data.deadline,
                     "evaluation_id": form_data.evaluation_id,
                     "selected_model_id": form_data.selected_model_id,
-                    "assigned_classes": form_data.assigned_classes,
                 }
             )
 
-            with self.db.atomic():
-                result = Prompt.create(**prompt.model_dump(exclude={'id'}), model_id=prompt.selected_model_id)
-                if result:
-                    ClassPrompts.insert_new_class_prompts_by_prompt(result.id, form_data.assigned_classes)
-
-                    return prompt_to_promptmodel(result)
-            return None
+            result = Prompt.create(**prompt.model_dump(exclude={'id'}), model_id=prompt.selected_model_id)
+            return prompt_to_promptmodel(result)
         except:
             return None
 
     def get_prompt_by_command(self, user_id: str, user_role: str, command: str) -> Optional[PromptModel]:
         try:
-            classes = []
             if user_role == "admin":
                 prompt = Prompt.get(Prompt.command == command)
 
-                if prompt:
-                    classes = ClassPrompts.get_classes_by_prompt(prompt.id)
-
-                return prompt_to_promptmodel(prompt, classes)
+                return prompt_to_promptmodel(prompt)
 
             elif user_role == "instructor":
                 prompt = Prompt.select()\
                     .where((Prompt.command == command)
                            & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get()
                 
-                if prompt:
-                    classes = ClassPrompts.get_classes_by_prompt(prompt.id)
-                
-                return prompt_to_promptmodel(prompt, classes)
+                return prompt_to_promptmodel(prompt)
 
             else:
                 return None
@@ -181,15 +154,12 @@ class PromptsTable:
                     .join(User, on=(StudentClass.student_id == User.id))\
                     .distinct()
                 
-            result = ClassPrompts.get_all_classes_by_prompts()
-
-            return [prompt_to_promptmodel(prompt, result[prompt.id]) for prompt in query]
-        except Exception as e:
-            print("get_prompts exception", e)
+            return [prompt_to_promptmodel(prompt) for prompt in query]
+        except:
             return None
 
     def update_prompt_by_command(
-        self, user_id: str, user_role: str, form_data: PromptForm
+        self, form_data: PromptForm
     ) -> bool:
         try:
             command = f"/{form_data.command}"
@@ -201,16 +171,14 @@ class PromptsTable:
                     "command": command,
                     "user_id": "",
                     "timestamp": int(time.time()),
-                    "assigned_classes": [],
 
                     "title": form_data.title,
                     "content": form_data.content,
                     "is_visible": form_data.is_visible,
                     "additional_info": form_data.additional_info,
                     "image_url": form_data.image_url,
-                    "deadline": form_data.deadline,
                     "evaluation_id": form_data.evaluation_id,
-                    "selected_model_id": form_data.selected_model_id
+                    "selected_model_id": form_data.selected_model_id,
                 }
             )
 
@@ -218,28 +186,14 @@ class PromptsTable:
             if prompt_id is None:
                 return False
 
-            excluded_columns = {"id", "user_id", "selected_model_id", "assigned_classes"}
+            excluded_columns = {"id", "user_id", "selected_model_id"}
 
-            with self.db.atomic():
-                if user_role == "admin":
-                    query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
-                                        model_id=form_data.selected_model_id)\
-                        .where(Prompt.command == command)
-                    result = query.execute()
+            query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
+                                model_id=form_data.selected_model_id)\
+                .where(Prompt.command == command)
+            result = query.execute()
 
-                elif user_role == "instructor":
-                    query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
-                                        model_id=form_data.selected_model_id)\
-                        .where((Prompt.command == command) & 
-                            ((Prompt.user_id == user_id) | Prompt.is_visible == True))
-                    result = query.execute()
-
-                if result:
-                    ClassPrompts.update_class_prompts_by_prompt(prompt_id, form_data.assigned_classes)
-
-                    return True
-
-            return False
+            return result == 1
         except:
             return False
 
@@ -365,6 +319,41 @@ class Class(pw.Model):
         database = DB
 
 
+####################
+# ClassPrompt DB Schema
+####################
+
+
+class ClassPrompt(pw.Model):
+    class_id = pw.ForeignKeyField(Class)
+    prompt_id = pw.ForeignKeyField(Prompt)
+
+    deadline = pw.DateTimeField(null=True)
+    allow_multiple_attempts = pw.BooleanField(default=True)
+    allow_submit_after_deadline = pw.BooleanField(default=True)
+
+    class Meta:
+        database = DB
+
+
+class ClassPromptModel(BaseModel):
+    class_id: int
+    prompt_id: int
+
+    deadline: Optional[str] = None
+    allow_multiple_attempts: bool = True
+    allow_submit_after_deadline: bool = True
+
+
+class ClassPromptForm(BaseModel):
+    class_id: int
+    prompt_id: int
+
+    deadline: Optional[str] = None
+    allow_multiple_attempts: bool = True
+    allow_submit_after_deadline: bool = True
+
+
 class ClassModel(BaseModel):
     id: int
     name: str
@@ -372,7 +361,7 @@ class ClassModel(BaseModel):
     instructor_name: str
     image_url: str
 
-    assigned_prompts: List[int]
+    assignments: List[ClassPromptModel]
     assigned_students: List[str]
 
 
@@ -387,15 +376,16 @@ class ClassForm(BaseModel):
     instructor_id: str
     image_url: str
     
-    assigned_prompts: List[int]
+    assignments: List[ClassPromptForm]
     assigned_students: List[str]
 
-def class_to_classmodel(class_: Class, prompts: List[int] = [], students: List[str] = []) -> ClassModel:
+
+def class_to_classmodel(class_: Class, assignments: List[ClassPromptModel] = [], students: List[str] = []) -> ClassModel:
     class_dict = model_to_dict(class_)
     return ClassModel(**class_dict,
                     instructor_id=class_dict["instructor"]["id"],
                     instructor_name=class_dict["instructor"]["name"],
-                    assigned_prompts=prompts,
+                    assignments=assignments,
                     assigned_students=students)
 
 
@@ -420,10 +410,10 @@ class ClassesTable:
                             .join(User, on=(User.id == StudentClass.student_id))\
                             .where((User.id == user_id))
                 
-            prompts = ClassPrompts.get_all_prompts_by_classes()
+            assignments = ClassPrompts.get_all_assignments_by_classes()
             students = StudentClasses.get_all_students_by_classes()
             
-            return [class_to_classmodel(class_, prompts[class_.id], students[class_.id]) for class_ in query]
+            return [class_to_classmodel(class_, assignments[class_.id], students[class_.id]) for class_ in query]
         except:
             return None
 
@@ -432,7 +422,7 @@ class ClassesTable:
             class_ = Class.select()\
                 .where(Class.name == name).get()
             
-            prompts = ClassPrompts.get_prompts_by_class(class_.id)
+            prompts = ClassPrompts.get_assignments_by_class(class_.id)
             students = StudentClasses.get_students_by_class(class_.id)
 
             return class_to_classmodel(class_, prompts, students)
@@ -444,7 +434,7 @@ class ClassesTable:
             class_ = Class.select()\
                 .where((Class.id == class_id) & ((Class.instructor == user_id) | (user_role == "admin"))).get()
 
-            prompts = ClassPrompts.get_prompts_by_class(class_.id)
+            prompts = ClassPrompts.get_assignments_by_class(class_.id)
             students = StudentClasses.get_students_by_class(class_.id)
 
             return class_to_classmodel(class_, prompts, students)
@@ -454,21 +444,20 @@ class ClassesTable:
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
             with self.db.atomic():
-                result = Class.create(**form_data.model_dump(exclude={"id", "assigned_prompts", "assigned_students"}))
-                if result:
-                    ClassPrompts.insert_new_class_prompts_by_class(result.id, form_data.assigned_prompts)
-                    StudentClasses.insert_new_student_classes_by_class(result.id, form_data.assigned_students)
+                result = Class.create(**form_data.model_dump(exclude={"id", "assignments", "assigned_students"}))
+                assignments = ClassPrompts.insert_new_assignments(result.id, form_data.assignments)
+                StudentClasses.insert_new_student_classes_by_class(result.id, form_data.assigned_students)
 
-            return class_to_classmodel(result, form_data.assigned_prompts, form_data.assigned_students)
-        except:
+                return class_to_classmodel(result, assignments, form_data.assigned_students)
+        except Exception:
             return None
 
-    def update_class_by_id(self, user_id: str, user_role: str, form_data: ClassForm) -> bool:
-        excluded_columns = {"id", "assigned_prompts", "assigned_students"}
+    def update_class_by_id(self, form_data: ClassForm) -> bool:
+        excluded_columns = {"id", "assignments", "assigned_students"}
         
         try:
             with self.db.atomic():
-                ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assigned_prompts)
+                ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assignments)
                 StudentClasses.update_student_classes_by_class(form_data.id, form_data.assigned_students)
                 Class.update(**form_data.model_dump(exclude=excluded_columns)).where(Class.id == form_data.id)
 
@@ -634,26 +623,20 @@ StudentClasses = StudentClassesTable(DB)
 
 
 ####################
-# ClassPrompt DB Schema
-####################
-
-
-class ClassPrompt(pw.Model):
-    class_id = pw.ForeignKeyField(Class)
-    prompt_id = pw.ForeignKeyField(Prompt)
-
-    class Meta:
-        database = DB
-
-
-class ClassPromptModel(BaseModel):
-    class_id: int
-    prompt_id: int
-
-
-####################
 # ClassPrompt Forms
 ####################
+
+
+def classprompt_to_classprompt_model(classprompt: ClassPrompt) -> ClassPromptModel:
+    classprompt_dict = model_to_dict(classprompt, recurse=False, exclude=[ClassPrompt.deadline])
+    date_str = classprompt.deadline
+
+    # postgres has a datetime type, but sqlite stores it as a string
+    if date_str is not None and type(date_str) is not str:
+        date_str = classprompt.deadline.isoformat() if classprompt.deadline is not None else None
+
+    result = ClassPromptModel(**classprompt_dict, deadline=date_str)
+    return result
 
 
 class ClassPromptsTable:
@@ -661,45 +644,31 @@ class ClassPromptsTable:
         self.db = db
         self.db.create_tables([ClassPrompt])
 
-    def insert_new_class_prompts_by_class(
-        self, class_id: int, prompt_ids: List[int] 
+    def insert_new_assignments(
+        self, class_id: int, assignments: List[ClassPromptForm] 
     ) -> List[ClassPromptModel]:
-        data = [{ "class_id": class_id, "prompt_id": prompt_id } for prompt_id in prompt_ids]
+        data = [
+            {
+                "class_id": class_id,
+                "prompt_id": assignment.prompt_id,
+                "deadline": assignment.deadline,
+                "allow_multiple_attempts": assignment.allow_multiple_attempts,
+                "allow_submit_after_deadline": assignment.allow_submit_after_deadline,
+            } for assignment in assignments]
 
         try:
             result = ClassPrompt.insert_many(data).execute()
             if result:
-                return ClassPrompt.select()
+                return [classprompt_to_classprompt_model(row) for row in ClassPrompt.select().where(ClassPrompt.class_id == class_id)]
             else:
                 return None
-        except:
+        except Exception as e:
             return None
-
-    def insert_new_class_prompts_by_prompt(
-        self, prompt_id: int, class_ids: List[int] 
-    ) -> List[ClassPromptModel]:
-        data = [{ "class_id": class_id, "prompt_id": prompt_id } for class_id in class_ids]
-
-        try:
-            result = ClassPrompt.insert_many(data).execute()
-            if result:
-                return ClassPrompt.select()
-            else:
-                return None
-        except:
-            return None
- 
-    def get_classes_by_prompt(self, prompt_id: int) -> List[int]:
-        try:
-            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id).where(ClassPrompt.prompt_id == prompt_id)
-            return [row.class_id.id for row in query]
-        except:
-            return []
         
-    def get_prompts_by_class(self, class_id: int) -> List[int]:
+    def get_assignments_by_class(self, class_id: int) -> List[int]:
         try:
-            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id).where(ClassPrompt.class_id == class_id)
-            return [row.prompt_id.id for row in query]
+            query = ClassPrompt.select().where(ClassPrompt.class_id == class_id)
+            return [classprompt_to_classprompt_model(row) for row in query]
         except:
             return []
     
@@ -716,38 +685,27 @@ class ClassPromptsTable:
         except:
             return defaultdict(lambda: [])
         
-    def get_all_prompts_by_classes(self):
-        # returns defaultdict of class_id -> [prompt_ids]
+    def get_all_assignments_by_classes(self):
+        # returns defaultdict of class_id -> [ClassPromptModel]
         try:
-            query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id)
+            query = ClassPrompt.select()
             result = defaultdict(lambda: [])
 
             for row in query:
-                result[row.class_id.id].append(row.prompt_id.id)
+                result[row.class_id.id].append(classprompt_to_classprompt_model(row))
 
             return result
         except:
             return defaultdict(lambda: [])
 
-    def update_class_prompts_by_prompt(
-        self, prompt_id: int, class_ids: List[int]
-    ) -> List[ClassPromptModel]:
-        try:
-            with self.db.atomic():
-                # delete everything and reinsert for now since the expected number of classes/prompts is still quite small
-                ClassPrompt.delete().where(ClassPrompt.prompt_id == prompt_id).execute()
-                return self.insert_new_class_prompts_by_prompt(prompt_id, class_ids)
-        except:
-            return []
-
     def update_class_prompts_by_class(
-        self, class_id: int, prompt_ids: List[int]
+        self, class_id: int, assignments: List[ClassPromptForm]
     ) -> List[ClassPromptModel]:
         try:
             with self.db.atomic():
                 # delete everything and reinsert for now since the expected number of classes/prompts is still quite small
                 ClassPrompt.delete().where(ClassPrompt.class_id == class_id).execute()
-                return self.insert_new_class_prompts_by_class(class_id, prompt_ids)
+                return self.insert_new_assignments(class_id, assignments)
         except:
             return []
 

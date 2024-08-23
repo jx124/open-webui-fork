@@ -74,7 +74,7 @@ async def get_prompt_by_command(command: str, user=Depends(get_current_user)):
 async def update_prompt_by_command(
     form_data: PromptForm, user=Depends(get_admin_user)
 ):
-    result = Prompts.update_prompt_by_command(user.id, user.role, form_data)
+    result = Prompts.update_prompt_by_command(form_data)
     if result:
         return result
 
