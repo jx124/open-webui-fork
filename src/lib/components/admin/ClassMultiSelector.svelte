@@ -4,7 +4,7 @@
 
 	import Search from '$lib/components/icons/Search.svelte';
 
-	import { classes, mobile, prompts } from '$lib/stores';
+	import { classes, mobile } from '$lib/stores';
 	import XMark from '../icons/XMark.svelte';
 
 	export let addItemLabel = "Add Class";

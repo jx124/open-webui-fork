@@ -42,12 +42,10 @@
 	deleteArgs={$selectedPromptCommand}
 />
 
-<div class="mb-3 flex justify-between items-center">
-	<div class=" text-lg font-semibold self-center">Profiles</div>
-</div>
+<div class=" text-lg font-semibold mb-3">Profiles</div>
 
 <div class=" flex w-full space-x-2">
-	<div class="flex flex-1">
+	<div class="flex flex-1 h-8">
 		<div class=" self-center ml-1 mr-3">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +89,7 @@
 </div>
 <hr class=" dark:border-gray-850 my-2.5" />
 
-<div class="my-3 mb-5">
+<div class="my-2 mb-5" id="profile-list">
 	{#each $prompts.filter((p) => query === '' || p.title.toLowerCase().includes(query) || p.command
 				.toLowerCase()
 				.includes(query)) as prompt}

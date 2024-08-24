@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, showSidebar, userRoles } from '$lib/stores';
+	import { user, userRoles, classes } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount, getContext } from 'svelte';
 
@@ -24,11 +24,12 @@
 	import { getRoles } from '$lib/apis/roles';
 	import { approximateToHumanReadable } from '$lib/utils';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
+	import ClassSearchbar from '$lib/components/admin/ClassSearchbar.svelte';
 
 	const i18n = getContext('i18n');
 
 	let loaded = false;
-	let tab = '';
+
 	let users = [];
 	let userStatistics: {
 		[key: string]: {
@@ -50,6 +51,12 @@
 	let showEditUserModal = false;
 
 	let showDeleteModal = false;
+
+	let classItems: {
+		label: string;
+		value: number;
+	}[] = []
+	let selectedClass = 0;
 
 	const updateRoleHandler = async (id, role) => {
 		const res = await updateUserRole(localStorage.token, id, role).catch((error) => {
@@ -96,8 +103,10 @@
 	let sortAttribute = "role";
 	let ascending = true;
 
+	let classStudentHashSet = new Map<number, Set<string>>();
+
 	onMount(async () => {
-		if (!['admin', 'instructor'].includes($user?.role)) {
+		if (!['admin', 'instructor'].includes($user?.role ?? "")) {
 			await goto('/');
 		} else {
 			users = await getUsers(localStorage.token);
@@ -108,6 +117,17 @@
 			});
 
 			$userRoles = await getRoles(localStorage.token);
+
+			classItems = [{ label: "All", value: 0 }, ...$classes.map((c) => {
+				return {
+					label: c.name,
+					value: c.id
+				}
+			})];
+
+			for (const class_ of $classes) {
+				classStudentHashSet.set(class_.id, new Set(class_.assigned_students));
+			}
 		}
 		loaded = true;
 	});
@@ -152,11 +172,39 @@
 	deleteArgs={selectedUser?.id}/>
 
 {#if loaded}
+	<div class="flex flex-col">
+		<div class="font-semibold text-sm mb-1">Class Filter</div>
+		<div class="flex gap-4">
+			<div class="flex flex-col">
+				<ClassSearchbar
+					bind:items={classItems}
+					bind:value={selectedClass}
+				/>
+			</div>
+			<div class="self-end">
+				<button
+					class=" text-sm px-3 py-1.5 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800 flex"
+					on:click={() => {
+						selectedClass = 0;
+					}}
+					type="button"
+				>
+					<div class=" self-center font-medium">Reset</div>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<hr class=" my-2 dark:border-gray-850" />
+
 	<div class="mt-0.5 mb-3 gap-1 flex flex-col md:flex-row justify-between">
+
 		<div class="flex md:self-center text-lg font-medium px-0.5">
-			{$i18n.t('All Users')}
+			{selectedClass === 0 ? $i18n.t('All Users') : classItems.find(c => c.value === selectedClass)?.label}
 			<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-200 dark:bg-gray-700" />
-			<span class="text-lg font-medium text-gray-500 dark:text-gray-300">{users.length}</span>
+			<span class="text-lg font-medium text-gray-500 dark:text-gray-300">
+				{selectedClass === 0 ? users.length : classStudentHashSet.get(selectedClass)?.size}
+			</span>
 		</div>
 
 		<div class="flex gap-1">
@@ -254,6 +302,13 @@
 			</thead>
 			<tbody>
 				{#each users
+					.filter((user) => {
+						if (selectedClass === 0) {
+							return true;
+						} else if (selectedClass !== 0) {
+							return classStudentHashSet.get(selectedClass)?.has(user.id);
+						}
+					})
 					.filter((user) => {
 						if (search === '') {
 							return true;
@@ -390,8 +445,9 @@
 	</div>
 
 	<div class=" text-gray-500 text-xs mt-2 text-left">
-		ⓘ {$i18n.t("Click on the user role button to change a user's role.")}<br>
-		ⓘ Statistics are estimates and do not include usage before tracking was enabled.
+		ⓘ Click on the user role button to change a user's role. <br />
+		ⓘ Statistics are estimates and do not include usage before tracking was enabled.  <br />
+		ⓘ To enable tracking, go to Admin Panel > Models, select the model, check "Usage" under "Capabilities", and save the configuration.
 	</div>
 
 	<Pagination bind:page count={users.length} />

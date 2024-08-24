@@ -141,13 +141,12 @@ class UsersTable:
         except:
             return None
 
-    def get_users(self, skip: int = 0, limit: int = 50) -> List[UserModel]:
+    def get_users(self) -> List[UserModel]:
         return [
             user_to_usermodel(user)
             for user in User.select().join(Role)
-            # .limit(limit).offset(skip)
         ]
-    
+
     def get_user_statistics(self) -> Dict[str, UserStatistics]:
         stats: Dict[str, UserStatistics] = {}
 

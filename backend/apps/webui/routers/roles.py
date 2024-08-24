@@ -7,7 +7,7 @@ from apps.webui.models.roles import Roles, RoleForm, RoleModel
 from apps.webui.models.users import Users
 from apps.webui.models.prompts_classes import PromptRoles
 
-from utils.utils import get_admin_user
+from utils.utils import get_admin_or_instructor, get_admin_user
 from constants import ERROR_MESSAGES
 
 router = APIRouter()
@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[RoleModel])
-async def get_roles(user=Depends(get_admin_user)):
+async def get_roles(user=Depends(get_admin_or_instructor)):
     return Roles.get_roles()
 
 

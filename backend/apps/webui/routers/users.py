@@ -25,6 +25,7 @@ from apps.webui.models.users import (
 from apps.webui.models.auths import Auths
 from apps.webui.models.chats import Chats
 from apps.webui.models.roles import Roles
+from apps.webui.models.prompts_classes import StudentClasses
 
 from utils.misc import validate_email_format
 from utils.utils import get_admin_or_instructor, get_verified_user, get_password_hash, get_admin_user
@@ -43,8 +44,8 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[UserModel])
-async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_or_instructor)):
-    return Users.get_users(skip, limit)
+async def get_users(user=Depends(get_admin_or_instructor)):
+    return Users.get_users()
 
 
 ############################
@@ -53,7 +54,7 @@ async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_or_in
 
 
 @router.get("/statistics", response_model=Dict[str, UserStatistics])
-async def get_user_statistics(user=Depends(get_admin_user)):
+async def get_user_statistics(user=Depends(get_admin_or_instructor)):
     return Users.get_user_statistics()
 
 
@@ -63,13 +64,13 @@ async def get_user_statistics(user=Depends(get_admin_user)):
 
 
 @router.get("/permissions/user")
-async def get_user_permissions(request: Request, user=Depends(get_admin_user)):
+async def get_user_permissions(request: Request, user=Depends(get_admin_or_instructor)):
     return request.app.state.config.USER_PERMISSIONS
 
 
 @router.post("/permissions/user")
 async def update_user_permissions(
-    request: Request, form_data: dict, user=Depends(get_admin_user)
+    request: Request, form_data: dict, user=Depends(get_admin_or_instructor)
 ):
     request.app.state.config.USER_PERMISSIONS = form_data
     return request.app.state.config.USER_PERMISSIONS
@@ -302,7 +303,6 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
             )
         
     users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
-    print(users)
 
     task = asyncio.create_task(email_user_account_details(users))
     
