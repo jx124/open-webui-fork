@@ -8,7 +8,7 @@ import time
 from apps.webui.models.roles import Role
 from apps.webui.models.users import User
 from apps.webui.models.evaluations import Evaluation
-from apps.webui.models.models import Model
+from apps.webui.models.chats import Chat, ChatModel
 
 from apps.webui.internal.db import DB
 
@@ -441,6 +441,56 @@ class ClassesTable:
         except:
             return None
  
+    # Chat methods placed here to prevent circular dependencies
+    def get_chat_list_by_user_id_and_instructor(
+        self,
+        user_id: str,
+        instructor_id: str,
+        include_archived: bool = False,
+    ) -> List[ChatModel]:
+        if include_archived:
+            return [
+                ChatModel(**model_to_dict(chat, recurse=False))
+                for chat in Chat.select()
+                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
+                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+                .where(Chat.user_id == user_id)
+                .order_by(Chat.updated_at.desc())
+            ]
+        else:
+            return [
+                ChatModel(**model_to_dict(chat, recurse=False))
+                for chat in Chat.select()
+                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
+                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+                .where(Chat.archived == False)
+                .where(Chat.user_id == user_id)
+                .order_by(Chat.updated_at.desc())
+            ]
+
+    def get_chats_by_instructor(
+        self,
+        instructor_id: str,
+    ) -> List[ChatModel]:
+        return [
+            ChatModel(**model_to_dict(chat, recurse=False))
+            for chat in Chat.select()
+            .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
+            .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+            .order_by(Chat.updated_at.desc())
+        ]
+
+    def get_chat_by_id_and_instructor(self, id: str, instructor_id: str) -> Optional[ChatModel]:
+        try:
+            chat = Chat.select()\
+                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))\
+                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))\
+                .where(Chat.id == id)\
+                .get()
+            return ChatModel(**model_to_dict(chat, recurse=False))
+        except:
+            return None
+
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
             with self.db.atomic():

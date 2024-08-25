@@ -178,7 +178,7 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
 
 @router.post("/{user_id}/update", response_model=Optional[UserModel])
 async def update_user_by_id(
-    user_id: str, form_data: UserUpdateForm, session_user=Depends(get_admin_user)
+    user_id: str, form_data: UserUpdateForm, session_user=Depends(get_admin_or_instructor)
 ):
     user = Users.get_user_by_id(user_id)
 
@@ -251,7 +251,7 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
 background_tasks = set()
 
 @router.post("/import", response_model=List[UserModel])
-async def import_users_by_excel(request: Request, user=Depends(get_admin_user)):
+async def import_users_by_excel(request: Request, user=Depends(get_admin_or_instructor)):
     users = None
 
     try:

@@ -268,8 +268,6 @@ class ChatTable:
         self,
         user_id: str,
         include_archived: bool = False,
-        skip: int = 0,
-        limit: int = 50,
     ) -> List[ChatModel]:
         if include_archived:
             return [
@@ -277,8 +275,6 @@ class ChatTable:
                 for chat in Chat.select()
                 .where(Chat.user_id == user_id)
                 .order_by(Chat.updated_at.desc())
-                # .limit(limit)
-                # .offset(skip)
             ]
         else:
             return [
@@ -287,8 +283,6 @@ class ChatTable:
                 .where(Chat.archived == False)
                 .where(Chat.user_id == user_id)
                 .order_by(Chat.updated_at.desc())
-                # .limit(limit)
-                # .offset(skip)
             ]
 
     def get_chat_list_by_chat_ids(

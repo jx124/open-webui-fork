@@ -1,11 +1,12 @@
 from fastapi import Depends, Request, HTTPException, status
 from typing import List, Optional
-from utils.utils import get_current_user, get_admin_user
+from utils.utils import get_admin_or_instructor, get_current_user
 from fastapi import APIRouter
 from pydantic import BaseModel
 import json
 import logging
 
+from apps.webui.models.prompts_classes import Classes
 from apps.webui.models.users import Users
 from apps.webui.models.chats import (
     ChatResponse,
@@ -41,9 +42,9 @@ router = APIRouter()
 @router.get("/", response_model=List[ChatTitleIdResponse])
 @router.get("/list", response_model=List[ChatTitleIdResponse])
 async def get_session_user_chat_list(
-    user=Depends(get_current_user), skip: int = 0, limit: int = 50
+    user=Depends(get_current_user)
 ):
-    return Chats.get_chat_list_by_user_id(user.id, skip, limit)
+    return Chats.get_chat_list_by_user_id(user.id)
 
 
 ############################
@@ -74,11 +75,17 @@ async def delete_all_user_chats(request: Request, user=Depends(get_current_user)
 
 @router.get("/list/user/{user_id}", response_model=List[ChatInfoResponse])
 async def get_user_chat_list_by_user_id(
-    user_id: str, user=Depends(get_admin_user), skip: int = 0, limit: int = 50
+    user_id: str, user=Depends(get_admin_or_instructor)
 ):
-    chats = Chats.get_chat_list_by_user_id(
-        user_id, include_archived=True, skip=skip, limit=limit
-    )
+    chats = []
+    if user.role == "admin":
+        chats = Chats.get_chat_list_by_user_id(
+            user_id, include_archived=True
+        )
+    elif user.role == "instructor":
+        chats = Classes.get_chat_list_by_user_id_and_instructor(
+            user_id, user.id, include_archived=True
+        )
 
     # TODO: create a separate field in database for token_count? 
     results = []
@@ -144,17 +151,23 @@ async def get_user_chats(user=Depends(get_current_user)):
 
 
 @router.get("/all/db", response_model=List[ChatResponse])
-async def get_all_user_chats_in_db(user=Depends(get_admin_user)):
+async def get_all_user_chats_in_db(user=Depends(get_admin_or_instructor)):
     if not ENABLE_ADMIN_EXPORT:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-    return [
-        ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
-        for chat in Chats.get_chats()
-    ]
-
+    
+    if user.role == "admin":
+        return [
+            ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
+            for chat in Chats.get_chats()
+        ]
+    else:
+        return [
+            ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
+            for chat in Classes.get_chats_by_instructor(user.id)
+        ]
 
 ############################
 # GetArchivedChats
@@ -185,13 +198,10 @@ async def archive_all_chats(user=Depends(get_current_user)):
 
 @router.get("/share/{share_id}", response_model=Optional[ChatResponse])
 async def get_shared_chat_by_id(share_id: str, user=Depends(get_current_user)):
-    if user.role == "pending":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
-        )
-
-    if user.role == "admin":
+    if user.role == "admin" or user.role == "instructor":
         chat = Chats.get_chat_by_id(share_id)
+    elif user.role == "instructor":
+        chat = Classes.get_chat_by_id_and_instructor(user.id)
     else:
         chat = Chats.get_chat_by_share_id(share_id)
 
@@ -219,7 +229,6 @@ async def get_user_chat_list_by_tag_name(
     form_data: TagNameForm, user=Depends(get_current_user)
 ):
 
-    print(form_data)
     chat_ids = [
         chat_id_tag.chat_id
         for chat_id_tag in Tags.get_chat_ids_by_tag_name_and_user_id(
