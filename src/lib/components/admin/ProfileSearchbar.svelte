@@ -9,9 +9,9 @@
 	import ChevronDown from '../icons/ChevronDown.svelte';
 
 	export let value = 0;
-	export let placeholder = "Select an assignment"
+	export let placeholder = "Select a profile"
 	export let searchEnabled = true;
-	export let searchPlaceholder = "Search assignments";
+	export let searchPlaceholder = "Search profiles";
 
 	export let items: {
 		label: string;
@@ -20,11 +20,8 @@
 
 	export let className = 'w-[24rem]';
 
-    export let externalLabel = "";
-
-    $: if (externalLabel) {
-        label = externalLabel
-    }
+    export let classAssignmentMap: Map<number, Set<number>>;
+    export let selectedClassId = 0;
 
 	let show = false;
     let label;
@@ -32,15 +29,14 @@
 	let searchValue = '';
 
     $: if (items) {
-        value = items.at(0)?.value;
-        label = items.at(0)?.label ?? "";
+        value = items.at(0)?.value ?? 0;
     }
+
+    $: label = items.find(item => item.value === value)?.label;
 
     $: filteredItems = searchValue
 		? items.filter((item) => item.label.toLowerCase().includes(searchValue.toLowerCase()))
 		: items;
-
-    export let selectedClass;
 </script>
 
 
@@ -92,7 +88,13 @@
                 {/if}
 
                 <div class="px-3 my-2 max-h-64 overflow-y-auto scrollbar-hidden">
-                    {#each filteredItems as item}
+                    {#each filteredItems.filter((item) => {
+                        if (selectedClassId === 0) {
+                            return true;
+                        } else {
+                            return item.value === 0 || classAssignmentMap.get(selectedClassId)?.has(item.value);
+                        }
+                    }) as item}
                         <button
                             aria-label="role-item"
                             type="button"
@@ -111,7 +113,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more classes under Admin Panel > Classes.
+                            No results found, assign this profile to a class under Admin Panel > Classes.
                         </div>
                     {/each}
                 </div>

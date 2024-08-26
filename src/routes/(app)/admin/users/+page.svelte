@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { user, userRoles, classes } from '$lib/stores';
-	import { goto } from '$app/navigation';
+	import { user, userRoles, classes, WEBUI_NAME } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
 	import dayjs from 'dayjs';
@@ -106,29 +105,26 @@
 	let classStudentHashSet = new Map<number, Set<string>>();
 
 	onMount(async () => {
-		if (!['admin', 'instructor'].includes($user?.role ?? "")) {
-			await goto('/');
-		} else {
-			users = await getUsers(localStorage.token);
-			userStatistics = await getUserStatistics(localStorage.token);
+		users = await getUsers(localStorage.token);
+		userStatistics = await getUserStatistics(localStorage.token);
 
-			users = users.map((user) => {
-				return { ...user, ...userStatistics[user?.id] };
-			});
+		users = users.map((user) => {
+			return { ...user, ...userStatistics[user?.id] };
+		});
 
-			$userRoles = await getRoles(localStorage.token);
+		$userRoles = await getRoles(localStorage.token);
 
-			classItems = [{ label: "All", value: 0 }, ...$classes.map((c) => {
-				return {
-					label: c.name,
-					value: c.id
-				}
-			})];
-
-			for (const class_ of $classes) {
-				classStudentHashSet.set(class_.id, new Set(class_.assigned_students));
+		classItems = [{ label: "All", value: 0 }, ...$classes.map((c) => {
+			return {
+				label: c.name,
+				value: c.id
 			}
+		})];
+
+		for (const class_ of $classes) {
+			classStudentHashSet.set(class_.id, new Set(class_.assigned_students));
 		}
+		
 		loaded = true;
 	});
 
@@ -141,6 +137,12 @@
 		});
 	}
 </script>
+
+<svelte:head>
+	<title>
+		Users | {$WEBUI_NAME}
+	</title>
+</svelte:head>
 
 {#key selectedUser}
 	<EditUserModal

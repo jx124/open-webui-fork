@@ -74,6 +74,13 @@
 				href="/admin/users">{$i18n.t('Users')}</a
 			>
 
+			<a
+				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/assignments')
+					? 'bg-gray-50 dark:bg-gray-850'
+					: ''} transition"
+				href="/admin/assignments">{$i18n.t('Assignments')}</a
+			>
+
 			{#if $user?.role === "admin"}
 				<a
 					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/documents')
