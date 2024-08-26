@@ -1,5 +1,6 @@
+from collections import defaultdict
 from fastapi import Depends, Request, HTTPException, status
-from typing import List, Optional
+from typing import Dict, List, Optional
 from utils.utils import get_admin_or_instructor, get_current_user
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -98,6 +99,34 @@ async def get_user_chat_list_by_user_id(
         results.append(ChatInfoResponse(**{**chat.model_dump(), "token_count": token_count}))
 
     return results
+
+
+############################
+# GetAssignmentChatsByUserId
+############################
+
+
+@router.get("/list/users", response_model=Dict[str, List[ChatInfoResponse]])
+async def get_assignment_chats_by_user_id(
+    user=Depends(get_admin_or_instructor)
+):
+    chats = []
+    if user.role == "admin":
+        chats = Chats.get_chats()
+    elif user.role == "instructor":
+        chats = Classes.get_chats_by_instructor(user.id)
+
+    results = defaultdict(lambda: [])
+    for chat in chats:
+        token_count = 0
+        usage = json.loads(chat.chat).get("usage")
+        if usage is not None:
+            token_count = usage.get("total_tokens", 0)
+
+        results[chat.user_id].append(ChatInfoResponse(**{**chat.model_dump(), "token_count": token_count}))
+
+    return results
+
 
 
 ############################

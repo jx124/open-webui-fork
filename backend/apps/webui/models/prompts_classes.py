@@ -156,7 +156,32 @@ class PromptsTable:
                 
             return [prompt_to_promptmodel(prompt) for prompt in query]
         except:
-            return None
+            return []
+        
+    def get_prompt_titles(self, user_id: str, user_role: str) -> Dict[int, str]:
+        try:
+            prompts = []
+            if user_role == "admin":
+                prompts = Prompt.select(Prompt.id, Prompt.title)
+
+            elif user_role == "instructor":
+                prompts = Prompt.select(Prompt.id, Prompt.title)\
+                    .where(((Prompt.user_id == user_id) | Prompt.is_visible == True))
+
+            else:
+                prompts = Prompt.select(Prompt.id, Prompt.title)\
+                    .join(ClassPrompt, on=(Prompt.id == ClassPrompt.prompt_id))\
+                    .join(Class, on=(ClassPrompt.class_id == Class.id))\
+                    .join(StudentClass, on=(Class.id == StudentClass.class_id))\
+                    .join(User, on=(StudentClass.student_id == User.id))\
+                    .distinct()
+
+            result = {}
+            for prompt in prompts:
+                result[prompt.id] = prompt.title
+            return result
+        except:
+            return {}
 
     def update_prompt_by_command(
         self, form_data: PromptForm
@@ -602,7 +627,7 @@ class StudentClassesTable:
         except:
             return []
 
-    def get_all_classes_by_students(self):
+    def get_all_classes_by_students(self) -> defaultdict[str, List[int]]:
         # returns defaultdict of student_id -> [class_ids]
         try:
             query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)
@@ -615,7 +640,7 @@ class StudentClassesTable:
         except:
             return defaultdict(lambda: [])
  
-    def get_all_students_by_classes(self):
+    def get_all_students_by_classes(self) -> defaultdict[int, List[str]]:
         # returns defaultdict of class_id -> [student_ids]
         try:
             query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)
@@ -722,7 +747,7 @@ class ClassPromptsTable:
         except:
             return []
     
-    def get_all_classes_by_prompts(self):
+    def get_all_classes_by_prompts(self) -> defaultdict[int, List[int]]:
         # returns defaultdict of prompt_id -> [class_ids]
         try:
             query = ClassPrompt.select(ClassPrompt.prompt_id, ClassPrompt.class_id)
@@ -735,10 +760,25 @@ class ClassPromptsTable:
         except:
             return defaultdict(lambda: [])
         
-    def get_all_assignments_by_classes(self):
+    def get_all_assignments_by_classes(self) -> defaultdict[int, List[ClassPromptModel]]:
         # returns defaultdict of class_id -> [ClassPromptModel]
         try:
             query = ClassPrompt.select()
+            result = defaultdict(lambda: [])
+
+            for row in query:
+                result[row.class_id.id].append(classprompt_to_classprompt_model(row))
+
+            return result
+        except:
+            return defaultdict(lambda: [])
+
+    def get_all_assignments_by_classes_and_instructor(self, instructor_id: str) -> defaultdict[int, List[ClassPromptModel]]:
+        # returns defaultdict of class_id -> [ClassPromptModel]
+        try:
+            query = ClassPrompt.select()\
+                .join(Class, on=(ClassPrompt.class_id == Class.id))\
+                .where(Class.instructor == instructor_id)
             result = defaultdict(lambda: [])
 
             for row in query:

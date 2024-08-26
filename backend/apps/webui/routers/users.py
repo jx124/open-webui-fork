@@ -16,6 +16,7 @@ import smtplib
 
 from apps.webui.models.users import (
     UserModel,
+    UserProfile,
     UserStatistics,
     UserUpdateForm,
     UserRoleUpdateForm,
@@ -25,7 +26,6 @@ from apps.webui.models.users import (
 from apps.webui.models.auths import Auths
 from apps.webui.models.chats import Chats
 from apps.webui.models.roles import Roles
-from apps.webui.models.prompts_classes import StudentClasses
 
 from utils.misc import validate_email_format
 from utils.utils import get_admin_or_instructor, get_verified_user, get_password_hash, get_admin_user
@@ -46,6 +46,16 @@ router = APIRouter()
 @router.get("/", response_model=List[UserModel])
 async def get_users(user=Depends(get_admin_or_instructor)):
     return Users.get_users()
+
+
+############################
+# GetUserNames
+############################
+
+
+@router.get("/profiles", response_model=Dict[str, UserProfile])
+async def get_user_profiles(user=Depends(get_admin_or_instructor)):
+    return Users.get_user_profiles()
 
 
 ############################

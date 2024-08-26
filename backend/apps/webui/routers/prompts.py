@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter
 
@@ -19,6 +19,16 @@ router = APIRouter()
 @router.get("/", response_model=List[PromptModel])
 async def get_prompts(user=Depends(get_current_user)):
     return Prompts.get_prompts(user.id, user.role)
+
+
+############################
+# GetPromptTitles
+############################
+
+
+@router.get("/titles", response_model=Dict[int, str])
+async def get_prompts(user=Depends(get_current_user)):
+    return Prompts.get_prompt_titles(user.id, user.role)
 
 
 ############################

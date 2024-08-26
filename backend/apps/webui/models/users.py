@@ -61,6 +61,10 @@ class UserStatistics(BaseModel):
     attempts: int
     session_time: int
 
+class UserProfile(BaseModel):
+    name: str
+    profile_image_url: str
+
 
 ####################
 # Forms
@@ -146,6 +150,14 @@ class UsersTable:
             user_to_usermodel(user)
             for user in User.select().join(Role)
         ]
+    
+    def get_user_profiles(self) -> Dict[str, UserProfile]:
+        query = User.select(User.id, User.name, User.profile_image_url)
+        result = {}
+        for user in query:
+            result[user.id] = UserProfile(name=user.name, profile_image_url=user.profile_image_url)
+
+        return result
 
     def get_user_statistics(self) -> Dict[str, UserStatistics]:
         stats: Dict[str, UserStatistics] = {}
