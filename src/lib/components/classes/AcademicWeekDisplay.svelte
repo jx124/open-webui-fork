@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getAssignmentSubmissions, type Assignment } from '$lib/apis/classes';
-	import { prompts, type Prompt } from '$lib/stores';
+	import { chats, prompts, type Prompt } from '$lib/stores';
 	import NUSModerator from 'nusmoderator';
 	import { onMount } from 'svelte';
 
@@ -19,6 +19,8 @@
 	let sortedDeadlineProfiles: Prompt[] = [];
 	let weekProfilesMap: Map<string, Prompt[]> = new Map();
 	let weeks: string[] = [];
+
+	let latestChatId: Map<number, string | null> = new Map();
 
 	const getNUSWeekName = (date: string) => {
 		if (date === '') {
@@ -46,7 +48,6 @@
 
 	onMount(async () => {
 		submitted = await getAssignmentSubmissions(localStorage.token, currentClassId).catch((error) => toast.error(error));
-		console.log("submitted", submitted);
 		
 		noDeadlineIds = assignments.filter((p) => p.deadline === null).map(a => a.prompt_id);
 		sortedDeadlineIds = assignments.filter((p) => p.deadline !== null).sort(dateSorter).map(a => a.prompt_id);
@@ -54,9 +55,17 @@
 		// TODO: use maps if performance not good enough
 		noDeadlineProfiles = noDeadlineIds.map(id => $prompts.find(p => p.id === id));
 		sortedDeadlineProfiles = sortedDeadlineIds.map(id => $prompts.find(p => p.id === id));
-
 		for (const assignment of assignments) {
 			profileDeadlineMap.set(assignment.prompt_id, assignment.deadline);
+			const latest = $chats
+				.filter(c => {
+					const title: string = c.title;
+					console.log(title, c.prompt_id === assignment.prompt_id);
+					return (c.prompt_id === assignment.prompt_id) && !title.startsWith("Eval");
+				}) // TODO: this is a hack, add is_evaluation to chat schema
+				.sort((a, b) => b.updated_at - a.updated_at)
+				.at(0)?.id
+			latestChatId.set(assignment.prompt_id, latest ?? null);
 		}
 
 		for (const profile of sortedDeadlineProfiles) {
@@ -84,9 +93,11 @@
 			<div class="flex flex-1 space-x-4 cursor-pointer w-full">
 				<a
 					class="flex items-center"
-					href={`/c/?profile=${encodeURIComponent(profile.command)}` +
-						`&model=${encodeURIComponent(profile.selected_model_id)}` +
-						`&class=${currentClassId}`}
+					href={latestChatId.get(profile.id) 
+							? `/c/${latestChatId.get(profile.id)}`
+							: `/c/?profile=${encodeURIComponent(profile.command)}` +
+							`&model=${encodeURIComponent(profile.selected_model_id)}` +
+							`&class=${currentClassId}`}
 				>
 					<img
 						src={profile.image_url ? profile.image_url : '/user.png'}
@@ -96,6 +107,9 @@
 					<div class=" flex-1 self-center pl-3">
 						<div class=" font-bold">
 							{profile.title}
+						</div>
+						<div class="text-xs">
+							{submitted[profile.id] ? "Submitted" : "Not Submitted"}
 						</div>
 					</div>
 				</a>

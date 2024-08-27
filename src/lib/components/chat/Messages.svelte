@@ -4,7 +4,7 @@
 	import { tick, getContext } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
-	import { checkChatAssignmentSubmission, getChatList, submitChatById, updateChatById } from '$lib/apis/chats';
+	import { getChatList, submitChatById, updateChatById } from '$lib/apis/chats';
 
 	import UserMessage from './Messages/UserMessage.svelte';
 	import ResponseMessage from './Messages/ResponseMessage.svelte';
@@ -312,7 +312,7 @@
 								goto(
 									`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
 										`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
-										`&class=${classId}`
+										`&class=${$classId}`
 								);
 							}}
 						>

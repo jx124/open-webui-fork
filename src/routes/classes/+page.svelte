@@ -1,19 +1,23 @@
 <script lang="ts">
-	import { classes, classId, prompts, WEBUI_NAME } from '$lib/stores';
+	import { chats, classes, classId, prompts, WEBUI_NAME } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { getClassList } from '$lib/apis/classes';
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
+	import { getChatList } from '$lib/apis/chats';
 
 	let loading = true;
 
 	onMount(async () => {
 		if ($classes.length === 0) {
-			$classes = await getClassList(localStorage.token).catch((error) => toast.error(error));
-		}
+            $classes = await getClassList(localStorage.token).catch((error) => toast.error(error));
+        }
 		if ($prompts.length === 0) {
-			$prompts = await getPrompts(localStorage.token).catch((error) => toast.error(error));
-		}
+            $prompts = await getPrompts(localStorage.token).catch((error) => toast.error(error));
+        }
+		if ($chats.length === 0) {
+            $chats = await getChatList(localStorage.token).catch((error) => toast.error(error));
+        }
 		loading = false;
 	});
 </script>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { chatId, chats } from '$lib/stores';
 	import Modal from '../common/Modal.svelte';
 
 	export let submitChatHandler: () => void;
@@ -30,12 +31,12 @@
 		</div>
 		<div class="flex flex-col px-5 pb-4 pt-2 text-sm font-normal">
 			<div class="pt-2">
-				Do you want to submit this chat transcript for the assignment "{assignmentName}"?
+				Do you want to submit this chat transcript "{$chats.find(c => c.id === $chatId)?.title}" for the assignment "{assignmentName}"?
 			</div>
 		</div>
 
 		<div class="flex flex-row-reverse px-5 pb-4">
-			<button class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
+			<button class="px-4 py-2 dark:bg-green-800 dark:hover:bg-green-900 text-gray-100 transition rounded-lg"
 				on:click={submitChatHandler}>
 				Submit
 			</button>

@@ -286,7 +286,6 @@
 				title = chatContent.title;
 				evaluatedChat = chatContent.evaluatedChat;
 				$selectedPromptCommand = chatContent.systemCommand;
-
 				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
 
 				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
@@ -378,7 +377,7 @@
 	// Checks if previous chats have the same title as prompt title, if so, disambiguate with numbers
 	const generateUniqueTitle = (promptCommand: string) => {
 		const promptTitle = $prompts.find((prompt) => prompt.command === promptCommand)?.title ?? "New Chat";
-		let updatedTitle = promptTitle;
+		let updatedTitle = promptTitle + " Attempt 1";
 		let titleSet = new Set();
 
 		for (const chat of $chats) {
@@ -389,7 +388,7 @@
 		for (let i = 0; i < 1000; i++) {
 			if (titleSet.has(updatedTitle)) {
 				sameTitleCount++
-				updatedTitle = promptTitle + " " + sameTitleCount;
+				updatedTitle = promptTitle + " Attempt " + sameTitleCount;
 			}
 		}
 		return updatedTitle;
