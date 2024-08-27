@@ -624,7 +624,7 @@
 
 									{#if message.done}
 										{#if !readOnly}
-											<Tooltip content={$i18n.t('Edit')} placement="bottom">
+											<!-- <Tooltip content={$i18n.t('Edit')} placement="bottom">
 												<button
 													class="{isLastMessage
 														? 'visible'
@@ -648,10 +648,10 @@
 														/>
 													</svg>
 												</button>
-											</Tooltip>
+											</Tooltip> -->
 										{/if}
 
-										<Tooltip content={$i18n.t('Copy')} placement="bottom">
+										<!-- <Tooltip content={$i18n.t('Copy')} placement="bottom">
 											<button
 												class="{isLastMessage
 													? 'visible'
@@ -675,9 +675,9 @@
 													/>
 												</svg>
 											</button>
-										</Tooltip>
+										</Tooltip> -->
 
-										<Tooltip content={$i18n.t('Read Aloud')} placement="bottom">
+										<!-- <Tooltip content={$i18n.t('Read Aloud')} placement="bottom">
 											<button
 												id="speak-button-{message.id}"
 												class="{isLastMessage
@@ -756,10 +756,10 @@
 													</svg>
 												{/if}
 											</button>
-										</Tooltip>
+										</Tooltip> -->
 
 										{#if $config?.features.enable_image_generation && !readOnly}
-											<Tooltip content="Generate Image" placement="bottom">
+											<!-- <Tooltip content="Generate Image" placement="bottom">
 												<button
 													class="{isLastMessage
 														? 'visible'
@@ -822,11 +822,11 @@
 														</svg>
 													{/if}
 												</button>
-											</Tooltip>
+											</Tooltip> -->
 										{/if}
 
 										{#if message.info}
-											<Tooltip content={$i18n.t('Generation Info')} placement="bottom">
+											<!-- <Tooltip content={$i18n.t('Generation Info')} placement="bottom">
 												<button
 													class=" {isLastMessage
 														? 'visible'
@@ -851,11 +851,11 @@
 														/>
 													</svg>
 												</button>
-											</Tooltip>
+											</Tooltip> -->
 										{/if}
 
 										{#if !readOnly}
-											<Tooltip content={$i18n.t('Good Response')} placement="bottom">
+											<!-- <Tooltip content={$i18n.t('Good Response')} placement="bottom">
 												<button
 													class="{isLastMessage
 														? 'visible'
@@ -922,7 +922,7 @@
 														/></svg
 													>
 												</button>
-											</Tooltip>
+											</Tooltip> -->
 										{/if}
 
 										{#if isLastMessage && !readOnly}
@@ -958,7 +958,7 @@
 												</button>
 											</Tooltip> -->
 
-											<Tooltip content={$i18n.t('Regenerate')} placement="bottom">
+											<!-- <Tooltip content={$i18n.t('Regenerate')} placement="bottom">
 												<button
 													type="button"
 													class="{isLastMessage
@@ -983,13 +983,13 @@
 														/>
 													</svg>
 												</button>
-											</Tooltip>
+											</Tooltip> -->
 										{/if}
 									{/if}
 								</div>
 							{/if}
 
-							{#if message.done && showRateComment}
+							<!-- {#if message.done && showRateComment}
 								<RateComment
 									messageId={message.id}
 									bind:show={showRateComment}
@@ -998,7 +998,7 @@
 										updateChatMessages();
 									}}
 								/>
-							{/if}
+							{/if} -->
 						</div>
 					{/if}
 				</div>

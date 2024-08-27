@@ -37,8 +37,10 @@
 	import { generateChatCompletion } from '$lib/apis/ollama';
 	import {
 		addTagById,
+		checkChatAssignmentSubmission,
 		createNewChat,
 		deleteTagById,
+		disableChatById,
 		getAllChatTags,
 		getChatById,
 		getChatList,
@@ -66,6 +68,7 @@
 	import { chatCompleted } from '$lib/apis';
 	import EvaluateChatModal from './EvaluateChatModal.svelte';
 	import FeedbackModal from './FeedbackModal.svelte';
+	import { type Assignment } from '$lib/apis/classes';
 
 	const i18n: Writable<i18nType> = getContext('i18n');
 
@@ -109,10 +112,13 @@
 	};
 
 	let selectedProfile: Prompt | undefined;
-	let showClientInfo = false;
+	let showClientInfo = true;
 
 	// let classId: number;
 	let className: string = "";
+
+	let isDisabled = false;
+	let isSubmitted = false;
 
 	$: if ($classId) {
 		className = $classes.find((c) => c.id === $classId)?.name ?? "";
@@ -152,6 +158,13 @@
 		selectedProfile = $prompts.find((prompt) => {
 			return prompt.command === $selectedPromptCommand;
 		});
+	}
+
+	let currentAssignment: Assignment | null;
+
+	$: if ($classId && $classes && selectedProfile?.id) {
+		currentAssignment = $classes.find(class_ => class_.id === $classId)?.assignments
+			.find(assignment => assignment.prompt_id === selectedProfile?.id) ?? null;
 	}
 
 	onMount(async () => {
@@ -257,9 +270,10 @@
 			tags = await getTags();
 			const chatContent = chat.chat;
 			$classId = chat.class_id;
+			isDisabled = chat.is_disabled;
+			isSubmitted = chat.is_submitted || await checkChatAssignmentSubmission(localStorage.token, $chatId);
 
 			if (chatContent) {
-				console.log(chatContent);
 
 				selectedModels =
 					(chatContent?.models ?? undefined) !== undefined
@@ -1293,6 +1307,11 @@
 	};
 
 	const evaluateChatHandler = async () => {
+		const res = await disableChatById(localStorage.token, $chatId).catch((err) => toast.error(err));
+		if (!res) {
+			return;
+		}
+
 		showEvaluationModal = false;
 		evaluatedChat = $chatId;
 		
@@ -1455,6 +1474,9 @@
 						bind:autoScroll
 						bind:prompt
 						bind:evaluatedChat
+						bind:chatDisabled={isDisabled}
+						bind:isSubmitted
+						bind:currentAssignment
 						bottomPadding={files.length > 0}
 						{sendPrompt}
 						{continueGeneration}
@@ -1472,6 +1494,7 @@
 				bind:showFeedbackModal
 				bind:evaluatedChat
 				bind:messages
+				bind:chatDisabled={isDisabled}
 				{selectedModels}
 				{submitPrompt}
 				{stopResponse}

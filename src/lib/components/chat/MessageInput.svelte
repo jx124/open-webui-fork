@@ -73,6 +73,8 @@
 		}
 	}
 	
+	export let chatDisabled = false;
+
 	let chatTerminationSeq;
 	let disableChat = false;
 	$: if (selectedModels || messages) {
@@ -844,14 +846,16 @@
 						<textarea
 							id="chat-textarea"
 							bind:this={chatTextAreaElement}
-							disabled={disableChat}
+							disabled={chatDisabled || disableChat}
 							class="scrollbar-hidden bg-gray-50 dark:bg-gray-850 dark:text-gray-100 outline-none w-full py-3 px-3 rounded-xl resize-none h-[48px]"
 							placeholder={chatInputPlaceholder !== ''
 								? chatInputPlaceholder
 								: isRecording
 								? $i18n.t('Listening...')
+								: chatDisabled
+								? "Chat is disabled"
 								: disableChat
-								? "Chat is disabled as Client has left."
+								? "Chat is disabled as client has left"
 								: $i18n.t('Send a Message')}
 							bind:value={prompt}
 							on:keypress={(e) => {}}

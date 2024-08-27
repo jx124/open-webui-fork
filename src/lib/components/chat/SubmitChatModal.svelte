@@ -1,25 +1,15 @@
 <script lang="ts">
 	import Modal from '../common/Modal.svelte';
 
-	export let evaluateChatHandler: () => void;
+	export let submitChatHandler: () => void;
 	export let show: boolean;
-	
-	export const selectedEvalMethod: string = "Motivational Interviewing";
-	export const selectedEvalSkills: string[] = [
-		"Affirmation",
-		"Emphasizing Autonomy",
-		"Open Questions",
-		"Closed Questions",
-		"Persuasion (with Permission)",
-		"Reflection",
-		"Seeking Collaboration"
-	];
+	export let assignmentName = "";
 </script>
 
 <Modal bind:show size="sm">
 	<div class="text-gray-700 dark:text-gray-100">
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4">
-			<div class=" text-lg font-medium self-center">Evaluation</div>
+			<div class=" text-lg font-medium self-center">Chat Submission</div>
 			<button
 				class="self-center"
 				on:click={() => {
@@ -39,20 +29,15 @@
 			</button>
 		</div>
 		<div class="flex flex-col px-5 pb-4 pt-2 text-sm font-normal">
-			<div>
-				You cannot continue the conversation after evaluation. You may choose to <span class="underline">submit</span> 
-				the conversation or <span class="underline">restart</span> the conversation if the assignment permits.
-			</div>
-
 			<div class="pt-2">
-				Do you want to proceed with the evaluation?
+				Do you want to submit this chat transcript for the assignment "{assignmentName}"?
 			</div>
 		</div>
 
 		<div class="flex flex-row-reverse px-5 pb-4">
 			<button class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
-				on:click={evaluateChatHandler}>
-				Evaluate
+				on:click={submitChatHandler}>
+				Submit
 			</button>
 		</div>
 	</div>

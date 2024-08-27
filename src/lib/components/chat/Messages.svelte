@@ -4,7 +4,7 @@
 	import { tick, getContext } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
-	import { getChatList, updateChatById } from '$lib/apis/chats';
+	import { checkChatAssignmentSubmission, getChatList, submitChatById, updateChatById } from '$lib/apis/chats';
 
 	import UserMessage from './Messages/UserMessage.svelte';
 	import ResponseMessage from './Messages/ResponseMessage.svelte';
@@ -16,6 +16,9 @@
 	import ChevronDown from '../icons/ChevronDown.svelte';
 	import ChangeProfileDropdown from './Messages/ChangeProfileDropdown.svelte';
 	import { goto } from '$app/navigation';
+	import { type Assignment } from '$lib/apis/classes';
+	import Tooltip from '../common/Tooltip.svelte';
+	import SubmitChatModal from './SubmitChatModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -34,9 +37,13 @@
 
 	export let selectedModels;
 	export let selectedProfile: Prompt | undefined;
-	export let showClientInfo = false;
+	export let showClientInfo = true;
 
 	export let evaluatedChat: null | string;
+
+	export let currentAssignment: Assignment | null = null;
+	export let chatDisabled = false;
+	export let isSubmitted = false;
 
 	$: if (autoScroll && bottomPadding) {
 		(async () => {
@@ -245,7 +252,29 @@
 		});
 	};
 
+	const submitChatHandler = async () => {
+		await submitChatById(localStorage.token, chatId)
+			.then(() => {
+				isSubmitted = true;
+				show = false;
+			})
+			.catch((err) => {
+				isSubmitted = false;
+				toast.error(err);
+			});
+	}
+
 	let assignedPrompts: Prompt[] = [];
+	let beforeDeadline = true;
+
+	let show = false;
+	let assignmentName = "";
+
+	$: if (currentAssignment) {
+		beforeDeadline = currentAssignment.deadline === null 
+			|| currentAssignment.allow_submit_after_deadline
+			|| (new Date() <= new Date(currentAssignment.deadline));
+	}
 
 	$: {
 		if (['admin', 'instructor'].includes($_user?.role ?? '')) {
@@ -257,6 +286,8 @@
 		}
 	}
 </script>
+
+<SubmitChatModal bind:show bind:assignmentName {submitChatHandler} />
 
 <div class="h-full flex flex-col">
 	{#if selectedProfile}
@@ -270,23 +301,76 @@
 						<ChangeProfileDropdown profiles={assignedPrompts} bind:selectedProfile />
 					{/if}
 				</div>
-				{#if chatId !== ''}
-					<button
-						class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
-						type="button"
-						on:click={() => {
-							chatId = '';
-							$selectedPromptCommand = selectedProfile?.command ?? "";
-							goto(
-								`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
-									`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
-									`&class=${classId}`
-							);
-						}}
-					>
-						<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
-					</button>
-				{/if}
+				<div class="flex gap-2">
+					{#if chatId !== '' && currentAssignment?.allow_multiple_attempts}
+						<button
+							class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+							type="button"
+							on:click={() => {
+								chatId = '';
+								$selectedPromptCommand = selectedProfile?.command ?? "";
+								goto(
+									`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
+										`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
+										`&class=${classId}`
+								);
+							}}
+						>
+							<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
+						</button>
+					{/if}
+					{#if isSubmitted === false && chatId !== '' && evaluatedChat === null}
+						{#if chatDisabled && beforeDeadline}
+							<button
+								class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
+									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
+									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+								type="button"
+								on:click={() => {
+									show = true;
+									assignmentName = selectedProfile.title;
+								}}
+							>
+								<div class="self-center text-sm font-medium text-nowrap">Submit</div>
+							</button>
+						{:else if !chatDisabled}
+							<Tooltip content="Evaluate the chat first to end the conversation">
+								<button
+									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
+									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
+									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+									type="button"
+									disabled={true}
+								>
+									<div class="self-center text-sm font-medium text-nowrap">Submit</div>
+								</button>
+							</Tooltip>
+						{:else if !beforeDeadline}
+							<Tooltip content="Submission deadline passed">
+								<button
+									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
+									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
+									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+									type="button"
+									disabled={true}
+								>
+									<div class="self-center text-sm font-medium text-nowrap">Submit</div>
+								</button>
+							</Tooltip>
+						{/if}
+					{/if}
+					{#if isSubmitted && evaluatedChat === null}
+						<button
+							class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
+							bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
+							disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+							type="button"
+							disabled={true}
+						>
+							<div class="self-center text-sm font-medium text-nowrap">Submitted</div>
+						</button>
+					{/if}
+				</div>
 			</div>
 
 			<div class="flex justify-start mb-4">
@@ -405,9 +489,7 @@
 									<UserMessage
 										on:delete={() => messageDeleteHandler(message.id)}
 										{user}
-										{readOnly}
 										{message}
-										isFirstMessage={messageIdx === 0}
 										siblings={message.parentId !== null
 											? history.messages[message.parentId]?.childrenIds ?? []
 											: Object.values(history.messages)
@@ -416,7 +498,6 @@
 										{confirmEditMessage}
 										{showPreviousMessage}
 										{showNextMessage}
-										copyToClipboard={copyToClipboardWithToast}
 									/>
 								{:else if $mobile || (history.messages[message.parentId]?.models?.length ?? 1) === 1}
 									{#key message.id}

@@ -1,11 +1,15 @@
 <script lang="ts">
-	import { type Assignment } from '$lib/apis/classes';
+	import { getAssignmentSubmissions, type Assignment } from '$lib/apis/classes';
 	import { prompts, type Prompt } from '$lib/stores';
 	import NUSModerator from 'nusmoderator';
 	import { onMount } from 'svelte';
 
 	export let assignments: Assignment[] = [];
 	export let currentClassId: number;
+
+	let submitted: {
+		[key: number]: boolean;
+	} = {};
 
 	let noDeadlineIds: number[] = [];
 	let sortedDeadlineIds: number[] = [];
@@ -40,7 +44,10 @@
 		return new Date(a.deadline).getTime() < new Date(b.deadline).getTime() ? -1 : 1;
 	};
 
-	onMount(() => {
+	onMount(async () => {
+		submitted = await getAssignmentSubmissions(localStorage.token, currentClassId).catch((error) => toast.error(error));
+		console.log("submitted", submitted);
+		
 		noDeadlineIds = assignments.filter((p) => p.deadline === null).map(a => a.prompt_id);
 		sortedDeadlineIds = assignments.filter((p) => p.deadline !== null).sort(dateSorter).map(a => a.prompt_id);
 		
@@ -125,6 +132,9 @@
 							{#if profileDeadlineMap.get(profile.id)}
 								<div class="text-xs text-gray-600 dark:text-gray-400">
 									Due: {new Date(profileDeadlineMap.get(profile.id) ?? "").toString()}
+								</div>
+								<div class="text-xs">
+									{submitted[profile.id] ? "Submitted" : "Not Submitted"}
 								</div>
 							{/if}
 						</div>

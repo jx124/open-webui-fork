@@ -108,6 +108,36 @@ export const getClassById = async (
 	return res;
 };
 
+export const getAssignmentSubmissions = async (
+    token: string = '', classId: number
+) => {
+	let error = null;
+
+	const res = await fetch(`${WEBUI_API_BASE_URL}/classes/${classId}/assignments/list`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err.detail;
+            console.log(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const updateClass = async (
     token: string = '', form_data: ClassForm
 ) => {
