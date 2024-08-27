@@ -112,12 +112,16 @@
                                 class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
                                 type="button"
                                 on:click={() => {
+                                    console.log("deleted prompt.id", prompt.id);
                                     selectedAssignments = selectedAssignments.filter(
                                         (selected) => selected.prompt_id !== prompt.id
                                     );
                                     selectedPromptIds.delete(prompt.id);
+                                    selectedPromptIds = selectedPromptIds;
                                     unselectedPromptIds.add(prompt.id);
+                                    unselectedPromptIds = unselectedPromptIds;
                                     unselectedPrompts.push({ label: prompt.title, value: prompt.id });
+                                    unselectedPrompts = unselectedPrompts;
                                 }}
                             >
                                 <XMark />
@@ -168,7 +172,9 @@
                             class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-none transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-[highlighted]:bg-muted"
                             on:click={() => {
                                 selectedPromptIds.add(item.value);
+                                selectedPromptIds = selectedPromptIds;
                                 unselectedPromptIds.delete(item.value);
+                                unselectedPromptIds = unselectedPromptIds;
                                 unselectedPrompts = unselectedPrompts.filter(
                                     (item) => unselectedPromptIds.has(item.value)
                                 );
