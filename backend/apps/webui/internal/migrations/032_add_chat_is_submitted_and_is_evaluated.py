@@ -1,4 +1,4 @@
-"""Peewee migrations -- 031_delete_prompt_deadline.py.
+"""Peewee migrations -- 032_add_chat_is_submitted_and_is_evaluated.py.
 
 Some examples (model - class or model name)::
 
@@ -37,9 +37,11 @@ with suppress(ImportError):
 def migrate(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your migrations here."""
 
-    migrator.remove_fields("prompt", "deadline")
+    migrator.add_fields("chat",  is_submitted=pw.BooleanField(default=False))
+    migrator.add_fields("chat",  is_disabled=pw.BooleanField(default=False))
 
 def rollback(migrator: Migrator, database: pw.Database, *, fake=False):
     """Write your rollback migrations here."""
 
-    migrator.add_fields("prompt", deadline=pw.DateTimeField(null=True))
+    migrator.remove_fields("chat", "is_submitted")
+    migrator.remove_fields("chat", "is_disabled")

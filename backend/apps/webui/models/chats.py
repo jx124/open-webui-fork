@@ -32,6 +32,9 @@ class Chat(Model):
     class_id = IntegerField(null=True)  # Not using foreign key field since that leads to an error with postgres
     prompt_id = IntegerField(null=True) # Not using foreign key field since that leads to an error with postgres
 
+    is_submitted = BooleanField(default=False)
+    is_disabled = BooleanField(default=False)
+
     class Meta:
         database = DB
 
@@ -53,6 +56,9 @@ class ChatModel(BaseModel):
 
     class_id: Optional[int] = None
     prompt_id: Optional[int] = None
+
+    is_submitted: bool = False
+    is_disabled: bool = False
 
 
 ####################
@@ -82,6 +88,8 @@ class ChatResponse(BaseModel):
     archived: bool
     class_id: Optional[int] = None
     prompt_id: Optional[int] = None
+    is_submitted: bool = False
+    is_disabled: bool = False
 
 
 class ChatTitleIdResponse(BaseModel):
@@ -100,6 +108,8 @@ class ChatInfoResponse(BaseModel):
     created_at: int
     class_id: Optional[int] = None
     prompt_id: Optional[int] = None
+    is_submitted: bool = False
+    is_disabled: bool = False
 
 class ChatTable:
     def __init__(self, db):
@@ -401,6 +411,35 @@ class ChatTable:
             return True
         except:
             return False
+    
+    def disable_chat_by_id(self, user_id: str, chat_id) -> bool:
+        try:
+            query = Chat.update(is_disabled=True).where((Chat.user_id == user_id) & (Chat.id == chat_id))
+            result = query.execute()
 
+            return result == 1
+        except:
+            return False
+
+    def submit_chat_by_id(self, user_id: str, chat_id) -> bool:
+        try:
+            query = Chat.update(is_submitted=True).where((Chat.user_id == user_id) & (Chat.id == chat_id))
+            result = query.execute()
+
+            return result == 1
+        except:
+            return False
+        
+    def check_chat_assignment_submission_by_id(self, user_id: str, chat_id) -> bool:
+        try:
+            chat = Chat.select(Chat.class_id, Chat.prompt_id).where((Chat.id == chat_id)).get()
+
+            count = Chat.select(Chat.id).where(
+                (Chat.user_id == user_id) & (Chat.is_submitted == True) 
+                & (Chat.class_id == chat.class_id) & (Chat.prompt_id == chat.prompt_id)).count()
+
+            return count >= 1
+        except:
+            return False
 
 Chats = ChatTable(DB)

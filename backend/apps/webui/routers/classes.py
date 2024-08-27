@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, status
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter
 
-from apps.webui.models.prompts_classes import ClassForm, ClassModel, Classes
+from apps.webui.models.prompts_classes import ClassForm, ClassModel, ClassPrompts, Classes
 from utils.utils import get_admin_or_instructor, get_current_user
 from constants import ERROR_MESSAGES
 
@@ -59,6 +59,16 @@ async def get_class_by_id(class_id: int, user=Depends(get_admin_or_instructor)):
         detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
     )
 
+
+############################
+# getAssignmentSubmissions
+############################
+
+
+@router.get("/{class_id}/assignments/list", response_model=Dict[int, bool])
+async def get_assignment_submissions(class_id: int, user=Depends(get_current_user)):
+    submissions = ClassPrompts.get_assignment_submission_by_class_and_user_id(class_id, user.id)
+    return submissions
 
 ###########################
 # UpdateClass

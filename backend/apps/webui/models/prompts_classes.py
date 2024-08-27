@@ -1,4 +1,5 @@
 from collections import defaultdict
+import datetime
 from pydantic import BaseModel
 import peewee as pw
 from playhouse.shortcuts import model_to_dict
@@ -787,6 +788,41 @@ class ClassPromptsTable:
             return result
         except:
             return defaultdict(lambda: [])
+
+    def check_assignment_before_deadline(self, chat_id: str) -> bool:
+        try:
+            chat = Chat.select(Chat.class_id, Chat.prompt_id).where((Chat.id == chat_id)).get()
+
+            assignment = ClassPrompt.select().where(
+                (ClassPrompt.class_id == chat.class_id) & (ClassPrompt.prompt_id == chat.prompt_id)).get()
+
+            deadline = assignment.deadline
+
+            # postgres has a datetime type, but sqlite stores it as a string
+            if deadline is not None and type(deadline) is not datetime.datetime:
+                deadline = datetime.datetime.fromisoformat(assignment.deadline)
+
+            return deadline is None if deadline is None else (datetime.datetime.now() <= deadline)
+        
+        except:
+            return False
+        
+    def get_assignment_submission_by_class_and_user_id(self, class_id: str, user_id: str) -> Dict[int, bool]:
+        # returns a dict mapping prompt_id -> submission status
+        try:
+            prompts = ClassPrompt.select(ClassPrompt.prompt_id).where(ClassPrompt.class_id == class_id)
+            result = {prompt.prompt_id.id: False for prompt in prompts}
+
+            submitted = ClassPrompt.select(ClassPrompt.prompt_id)\
+                .join(Chat, on=((Chat.class_id == ClassPrompt.class_id) & (Chat.prompt_id == ClassPrompt.prompt_id)))\
+                .where((Chat.is_submitted) & (Chat.user_id == user_id) & (Chat.class_id == class_id))
+            
+            for chat in submitted:
+                result[chat.prompt_id.id] = True
+
+            return result
+        except:
+            return {}
 
     def update_class_prompts_by_class(
         self, class_id: int, assignments: List[ClassPromptForm]

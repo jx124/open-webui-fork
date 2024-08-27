@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import json
 import logging
 
-from apps.webui.models.prompts_classes import Classes
+from apps.webui.models.prompts_classes import ClassPrompts, Classes
 from apps.webui.models.users import Users
 from apps.webui.models.chats import (
     ChatResponse,
@@ -559,4 +559,64 @@ async def delete_all_chat_tags_by_id(id: str, user=Depends(get_current_user)):
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
+        )
+
+
+############################
+# DisableChatById
+############################
+
+
+@router.post("/{id}/disable", response_model=bool)
+async def disable_chat_by_id(
+    id: str, user=Depends(get_current_user)
+):
+    result = Chats.disable_chat_by_id(user.id, id)
+    if result:
+        return True
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
+        )
+
+
+############################
+# CheckChatAssignmentSubmission
+############################
+
+
+@router.get("/{id}/submit", response_model=bool)
+async def check_chat_assignment_submission_by_id(
+    id: str, user=Depends(get_current_user)
+):
+    # check if any chats have already been submitted for the same assignment
+    result = Chats.check_chat_assignment_submission_by_id(user.id, id)
+    return result
+
+
+############################
+# SubmitChatById
+############################
+
+
+@router.post("/{id}/submit", response_model=bool)
+async def submit_chat_by_id(
+    id: str, user=Depends(get_current_user)
+):
+    if Chats.check_chat_assignment_submission_by_id(user.id, id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.EXISTING_CHAT_SUBMISSION
+        )
+
+    if not ClassPrompts.check_assignment_before_deadline(id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.DEADLINE_CHAT_SUBMISSION
+        )
+
+    result = Chats.submit_chat_by_id(user.id, id)
+    if result:
+        return True
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
         )
