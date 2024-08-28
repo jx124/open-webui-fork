@@ -288,14 +288,6 @@
 				$selectedPromptCommand = chatContent.systemCommand;
 				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
 
-				// Check if prompt has been updated via its command. If so, override previous chat system prompt.
-				// Don't update if selectedPromptCommand is undefined since it's an evaluation chat.
-				if ($selectedPromptCommand) {
-					if (selectedProfile?.content !== chatContent.system) {
-						chatContent.system = selectedProfile?.content;
-					}
-				}
-
 				const userSettings = await getUserSettings(localStorage.token);
 
 				if (userSettings) {
@@ -306,7 +298,6 @@
 
 				await settings.set({
 					...$settings,
-					system: chatContent.system ?? $settings.system,
 					params: chatContent.options ?? $settings.params
 				});
 
@@ -459,7 +450,6 @@
 						id: $chatId,
 						title: $i18n.t('New Chat'),
 						models: selectedModels,
-						system: $settings.system ?? undefined,
 						systemCommand: $selectedPromptCommand,
 						options: {
 							...($settings.params ?? {})
@@ -675,19 +665,7 @@
 		// Scroll down
 		scrollToBottom();
 
-		const messagesBody = [
-			$settings.system || (responseMessage?.userContext ?? null)
-				? {
-						role: 'system',
-						content: `${promptTemplate($settings?.system ?? '', $user.name)}${
-							responseMessage?.userContext ?? null
-								? `\n\nUser Context:\n${(responseMessage?.userContext ?? []).join('\n')}`
-								: ''
-						}`
-				  }
-				: undefined,
-			...messages
-		]
+		const messagesBody = messages
 			.filter((message) => message?.content?.trim())
 			.map((message, idx, arr) => {
 				// Prepare the base message object
@@ -735,6 +713,7 @@
 
 		const [res, controller] = await generateChatCompletion(localStorage.token, {
 			model: model,
+			profile_id: selectedProfile?.id,
 			messages: messagesBody,
 			options: {
 				...($settings.params ?? {}),
@@ -937,25 +916,11 @@
 				{
 					model: model.id,
 					stream: true,
-					stream_options:
-						model.info?.meta?.capabilities?.usage ?? false
-							? {
-									include_usage: true
-							  }
-							: undefined,
-					messages: [
-						$settings.system || (responseMessage?.userContext ?? null)
-							? {
-									role: 'system',
-									content: `${promptTemplate($settings?.system ?? '', $user.name)}${
-										responseMessage?.userContext ?? null
-											? `\n\nUser Context:\n${(responseMessage?.userContext ?? []).join('\n')}`
-											: ''
-									}`
-							  }
-							: undefined,
-						...messages
-					]
+					profile_id: selectedProfile?.id,
+					stream_options: {
+						include_usage: model.info?.meta?.capabilities?.usage ?? true
+					},
+					messages: messages
 						.filter((message) => message?.content?.trim())
 						.map((message, idx, arr) => ({
 							role: message.role,

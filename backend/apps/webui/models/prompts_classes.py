@@ -52,9 +52,10 @@ class PromptModel(BaseModel):
     selected_model_id: str = ""  # prevent namespace collision
 
 
-def prompt_to_promptmodel(prompt: Prompt) -> PromptModel:
+def prompt_to_promptmodel(prompt: Prompt, is_admin: bool) -> PromptModel:
     prompt_dict = model_to_dict(prompt)
-        
+    if not is_admin:
+        prompt_dict["content"] = ""
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
     model_id = prompt_dict.get("model_id")
     
@@ -107,7 +108,7 @@ class PromptsTable:
             )
 
             result = Prompt.create(**prompt.model_dump(exclude={'id'}), model_id=prompt.selected_model_id)
-            return prompt_to_promptmodel(result)
+            return prompt_to_promptmodel(result, True)
         except:
             return None
 
@@ -116,14 +117,14 @@ class PromptsTable:
             if user_role == "admin":
                 prompt = Prompt.get(Prompt.command == command)
 
-                return prompt_to_promptmodel(prompt)
+                return prompt_to_promptmodel(prompt, True)
 
             elif user_role == "instructor":
                 prompt = Prompt.select()\
                     .where((Prompt.command == command)
                            & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get()
                 
-                return prompt_to_promptmodel(prompt)
+                return prompt_to_promptmodel(prompt, False)
 
             else:
                 return None
@@ -135,8 +136,13 @@ class PromptsTable:
             return Prompt.select(Prompt.id).where(Prompt.command == command).get()
         except:
             return None
+    
+    def get_prompt_content_by_id(self, id: str) -> Optional[str]:
+        try:
+            return Prompt.select(Prompt.content).where(Prompt.id == id).get().content
+        except:
+            return None
 
-    # TODO: define list model with less info
     def get_prompts(self, user_id: str, user_role: str) -> List[PromptModel]:
         try:
             query = None
@@ -155,7 +161,7 @@ class PromptsTable:
                     .join(User, on=(StudentClass.student_id == User.id))\
                     .distinct()
                 
-            return [prompt_to_promptmodel(prompt) for prompt in query]
+            return [prompt_to_promptmodel(prompt, user_role == "admin") for prompt in query]
         except:
             return []
         

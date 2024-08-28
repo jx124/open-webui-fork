@@ -13,6 +13,7 @@ from starlette.background import BackgroundTask
 
 from apps.webui.models.models import Models
 from apps.webui.models.users import Users
+from apps.webui.models.prompts_classes import Prompts
 from constants import ERROR_MESSAGES
 from utils.utils import (
     decode_token,
@@ -426,6 +427,20 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             else:
                 pass
 
+            # Replace prompt command with prompt content so end users cannot see prompt
+            if "profile_id" in payload:
+                profile_id = payload["profile_id"]
+                content = Prompts.get_prompt_content_by_id(profile_id)
+                payload["messages"].insert(
+                    0,
+                    {
+                        "role": "system",
+                        "content": content,
+                    },
+                )
+
+                del payload["profile_id"]
+
             model = app.state.MODELS[payload.get("model")]
 
             idx = model["urlIdx"]
@@ -445,8 +460,6 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
     except json.JSONDecodeError as e:
         log.error("Error loading request body into a dictionary:", e)
-
-    print(payload)
 
     url = app.state.config.OPENAI_API_BASE_URLS[idx]
     key = app.state.config.OPENAI_API_KEYS[idx]

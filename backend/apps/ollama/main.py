@@ -33,6 +33,7 @@ from starlette.background import BackgroundTask
 
 from apps.webui.models.models import Models
 from apps.webui.models.users import Users
+from apps.webui.models.prompts_classes import Prompts
 from constants import ERROR_MESSAGES
 from utils.utils import (
     decode_token,
@@ -929,6 +930,20 @@ async def generate_openai_chat_completion(
                 status_code=400,
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
+
+    # Replace prompt command with prompt content so end users cannot see prompt
+    if "profile_id" in payload:
+        profile_id = payload["profile_id"]
+        content = Prompts.get_prompt_content_by_id(profile_id)
+        payload["messages"].insert(
+            0,
+            {
+                "role": "system",
+                "content": content,
+            },
+        )
+
+        del payload["profile_id"]
 
     url = app.state.config.OLLAMA_BASE_URLS[url_idx]
     log.info(f"url: {url}")
