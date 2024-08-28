@@ -106,13 +106,14 @@
 								<tbody>
 									{#each chats.sort(sortFactory(sortAttribute, ascending)) as chat, idx}
 										<tr
-											class="bg-transparent {idx !== chats.length - 1 &&
-												'border-b'} dark:bg-gray-900 dark:border-gray-850 text-xs"
+											class="{idx !== chats.length - 1 &&
+												'border-b'} dark:border-gray-850 text-xs 
+												{chat.is_submitted ? "bg-green-400/50 dark:bg-green-900/50" : "dark:bg-gray-900"}"
 										>
 											<td class="px-3 py-1 min-w-1/3">
 												<a href="/s/{chat.id}" target="_blank">
 													<div class=" underline line-clamp-1">
-														{chat.title}
+														{chat.title + (chat.is_submitted ? " (Submitted)" : "")}
 													</div>
 												</a>
 											</td>

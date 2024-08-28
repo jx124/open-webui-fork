@@ -9,7 +9,8 @@
 		showSidebar,
 		mobile,
 		showArchivedChats,
-		selectedPromptCommand
+		selectedPromptCommand,
+		classId
 	} from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
@@ -53,25 +54,34 @@
 
 	let filteredChatList = [];
 
-	$: filteredChatList = $chats.filter((chat) => {
-		if (search === '') {
-			return true;
-		} else {
-			let title = chat.title.toLowerCase();
-			const query = search.toLowerCase();
-
-			let contentMatches = false;
-			// Access the messages within chat.chat.messages
-			if (chat.chat && chat.chat.messages && Array.isArray(chat.chat.messages)) {
-				contentMatches = chat.chat.messages.some((message) => {
-					// Check if message.content exists and includes the search query
-					return message.content && message.content.toLowerCase().includes(query);
-				});
+	$: filteredChatList = $chats
+		.filter((chat) => {
+			console.log("chat", chat);
+			if ($user?.role === "admin" || $user?.role === "instructor" || $classId === null) {
+				return true;
+			} else {
+				return chat.class_id === $classId;
 			}
+		})
+		.filter((chat) => {
+			if (search === '') {
+				return true;
+			} else {
+				let title = chat.title.toLowerCase();
+				const query = search.toLowerCase();
 
-			return title.includes(query) || contentMatches;
-		}
-	});
+				let contentMatches = false;
+				// Access the messages within chat.chat.messages
+				if (chat.chat && chat.chat.messages && Array.isArray(chat.chat.messages)) {
+					contentMatches = chat.chat.messages.some((message) => {
+						// Check if message.content exists and includes the search query
+						return message.content && message.content.toLowerCase().includes(query);
+					});
+				}
+
+				return title.includes(query) || contentMatches;
+			}
+		});
 
 	mobile;
 	const onResize = () => {

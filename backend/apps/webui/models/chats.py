@@ -95,6 +95,8 @@ class ChatResponse(BaseModel):
 class ChatTitleIdResponse(BaseModel):
     id: str
     title: str
+    class_id: Optional[int] = None
+    prompt_id: Optional[int] = None
     updated_at: int
     created_at: int
 

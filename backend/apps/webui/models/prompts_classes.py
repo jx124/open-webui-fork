@@ -535,7 +535,7 @@ class ClassesTable:
             with self.db.atomic():
                 ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assignments)
                 StudentClasses.update_student_classes_by_class(form_data.id, form_data.assigned_students)
-                Class.update(**form_data.model_dump(exclude=excluded_columns)).where(Class.id == form_data.id)
+                Class.update(**form_data.model_dump(exclude=excluded_columns)).where(Class.id == form_data.id).execute()
 
             return True
         except:

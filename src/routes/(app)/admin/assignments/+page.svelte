@@ -25,6 +25,7 @@
 		profile_title: string;
         deadline: string;
         attempts: number;
+		submitted: boolean;
     }
     
     let userProfiles: {
@@ -89,6 +90,9 @@
 
             for (const student of class_.assigned_students) {
                 for (const assignment of class_.assignments) {
+					const chatAttempts = chats[student]?.filter((chat) => 
+                            chat.class_id === class_.id && chat.prompt_id === assignment.prompt_id
+                        ) ?? [];
                     entries.push({
 						user_id: student,
                         user_name: userProfiles[student].name,
@@ -98,9 +102,8 @@
                         profile_id: assignment.prompt_id,
 						profile_title: profileTitles[assignment.prompt_id],
                         deadline: assignment.deadline ?? "",
-                        attempts: chats[student]?.filter((chat) => 
-                            chat.class_id === class_.id && chat.prompt_id === assignment.prompt_id
-                        ).length ?? 0
+                        attempts: chatAttempts.length,
+						submitted: chatAttempts.filter((chat) => chat.is_submitted).length > 0,
                     })
                 }
             }
@@ -212,6 +215,10 @@
 						<SortableHeader displayName="Attempts" attributeName="attempts"
 							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
 					</th>
+					<th scope="col" class="px-3 py-2">
+						<SortableHeader displayName="Submitted" attributeName="submitted"
+							bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
+					</th>
 
 					<th scope="col" class="px-3 py-2 w-32" />
 				</tr>
@@ -263,6 +270,7 @@
 						<td class=" px-3 py-2"> {entry.profile_title} </td>
 						<td class=" px-3 py-2"> {entry.deadline ? new Date(entry.deadline).toString().split(" GMT")[0] : "No Deadline"} </td>
 						<td class=" px-3 py-2"> {entry.attempts} </td>
+						<td class=" px-3 py-2"> {entry.submitted ? "Yes" : "No"} </td>
 						<td class="px-3 py-2 text-right w-32">
 							<div class="flex justify-end w-full">
 								<div class="flex justify-start min-w-24">
