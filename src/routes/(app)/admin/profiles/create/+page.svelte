@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { models, prompts, user } from '$lib/stores';
+	import { evaluations, models, prompts, user } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
@@ -10,6 +10,7 @@
 	import { canvasPixelTest, generateInitialsImage } from '$lib/utils';
 	import { getModels } from '$lib/apis';
 	import ModelSelector from '$lib/components/admin/ModelSelector.svelte';
+	import EvaluationSelector from '$lib/components/admin/EvaluationSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -37,13 +38,24 @@
 	let modelItems: {
 		label: string;
 		value: string;
-	}[];
+	}[] = [];
+
+	let evaluationItems: {
+		label: string;
+		value: number;
+	}[] = [];
 
 	const submitHandler = async () => {
 		loading = true;
 
 		if (form_data.selected_model_id === '' || form_data.selected_model_id === null) {
 			toast.error('Please select a model.');
+			loading = false;
+			return null;
+		}
+
+		if (form_data.evaluation_id === null) {
+			toast.error('Please select an evaluation.');
 			loading = false;
 			return null;
 		}
@@ -114,6 +126,13 @@
 
 			sessionStorage.removeItem('prompt');
 		}
+
+		evaluationItems = $evaluations.map((e) => {
+			return {
+				label: e.title,
+				value: e.id
+			}
+		});
 
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);
@@ -298,7 +317,7 @@
 			<div>
 				<input
 					class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
-					placeholder={$i18n.t('Add a short title for this prompt')}
+					placeholder={$i18n.t('Add a short title for this profile')}
 					bind:value={form_data.title}
 					required
 				/>
@@ -327,7 +346,7 @@
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
 				>
-				are allowed. This will be part of the hyperlink to this prompt and cannot be modified in the
+				are allowed. This will be part of the hyperlink to this profile and cannot be modified in the
 				future.
 			</div>
 		</div>
@@ -368,8 +387,8 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Evaluation Prompt</div>
-			TODO
+			<div class=" text-sm font-semibold mb-1">Evaluation*</div>
+			<EvaluationSelector items={evaluationItems} bind:value={form_data.evaluation_id} />
 		</div>
 
 		<div class="my-2">

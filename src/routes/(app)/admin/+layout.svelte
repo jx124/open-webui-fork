@@ -9,9 +9,14 @@
 	const i18n = getContext('i18n');
 
 	onMount(async () => {
-		if ($user?.role === "instructor" 
-				&& ["/(app)/admin/documents", "/(app)/admin/playground"].includes($page.route.id ?? "")) {
-			await goto("/admin");
+		if ($user?.role === "instructor") {
+			const restricted = ["/(app)/admin/evaluations", "/(app)/admin/documents", "/(app)/admin/playground"];
+			
+			for (const route of restricted) {
+				if ($page.route.id?.startsWith(route)) {
+					await goto("/admin");
+				}
+			}
 		}
 	})
 </script>
@@ -66,6 +71,15 @@
 					: ''} transition"
 				href="/admin/models">{$i18n.t('Models')}</a
 			>
+			
+			{#if $user?.role === "admin"}
+				<a
+					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/evaluations')
+						? 'bg-gray-50 dark:bg-gray-850'
+						: ''} transition"
+					href="/admin/evaluations">{$i18n.t('Evaluations')}</a
+				>
+			{/if}
 
 			<a
 				class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/users')
