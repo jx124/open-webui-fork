@@ -7,6 +7,7 @@ from apps.webui.routers import (
     chats,
     classes,
     documents,
+    evaluations,
     models,
     prompts,
     roles,
@@ -66,6 +67,7 @@ app.include_router(chats.router, prefix="/chats", tags=["chats"])
 app.include_router(roles.router, prefix="/roles", tags=["roles"])
 
 app.include_router(documents.router, prefix="/documents", tags=["documents"])
+app.include_router(evaluations.router, prefix="/evaluations", tags=["evaluations"])
 app.include_router(models.router, prefix="/models", tags=["models"])
 app.include_router(prompts.router, prefix="/prompts", tags=["prompts"])
 app.include_router(memories.router, prefix="/memories", tags=["memories"])

@@ -189,6 +189,9 @@ class PromptsTable:
             return result
         except:
             return {}
+    
+    def get_profile_titles_by_eval_id(self, eval_id: int) -> int:
+        return [prompt.title for prompt in Prompt.select(Prompt.title).where(Prompt.evaluation == eval_id)]
 
     def update_prompt_by_command(
         self, form_data: PromptForm
