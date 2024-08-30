@@ -30,7 +30,6 @@
 
 	let chat = null;
 	let user = null;
-	let evaluatedChat: null | string = null;
 
 	let title = '';
 	let files = [];
@@ -93,8 +92,6 @@
 			const chatContent = chat.chat;
 
 			if (chatContent) {
-				console.log(chatContent);
-
 				selectedModels =
 					(chatContent?.models ?? undefined) !== undefined
 						? chatContent.models
@@ -104,7 +101,6 @@
 						? chatContent.history
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
-				evaluatedChat = chatContent.evaluatedChat;
 
 				tokenUsage = sumTokenUsage(history);
 
@@ -168,7 +164,6 @@
 							bind:history
 							bind:messages
 							bind:autoScroll
-							bind:evaluatedChat
 							bottomPadding={files.length > 0}
 							sendPrompt={() => {}}
 							continueGeneration={() => {}}

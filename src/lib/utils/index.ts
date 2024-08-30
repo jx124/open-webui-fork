@@ -600,16 +600,11 @@ export const downloadTxt = async (chat) => {
 	const _chat = chat.chat;
 	console.log('download', chat);
 
-	if (_chat.evaluatedChat !== null) {
-		// Remove first message containing convo history since it is an evaluation
-		_chat.messages.shift();
-	}
-
 	const chatText = _chat.messages.reduce((a, message) => {
 		// Rename role to reduce confusion
 		const newRole = message.role === "user" 
 			? "YOU" 
-			: _chat.evaluatedChat === null 
+			: message.role === "assistant" 
 			? "SERVICE USER"
 			: "EVALUATION";
 
@@ -627,16 +622,11 @@ export const downloadPdf = async (chat) => {
 	const _chat = chat.chat;
 	console.log('download', chat);
 
-	if (_chat.evaluatedChat !== null) {
-		// Remove first message containing convo history since it is an evaluation
-		_chat.messages.shift();
-	}
-
 	_chat.messages.forEach((message) => {
 		// Rename role to reduce confusion
 		message.role = message.role === "user" 
 			? "YOU" 
-			: _chat.evaluatedChat === null 
+			: message.role === "assistant" 
 			? "SERVICE USER"
 			: "EVALUATION";
 	});

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import {
 		chatId,
-		chats,
 		prompts,
 		selectedPromptCommand,
 		settings,
@@ -22,14 +21,6 @@
 	export let selectedModels;
 
 	export let className: string = "";
-
-	let evaluatedChat: null | string = null;
-	let evaluatedChatTitle: string;
-
-	$: {
-		evaluatedChat = chat?.chat?.evaluatedChat ?? null;
-		evaluatedChatTitle = $chats.find((chat) => chat?.id === evaluatedChat)?.title ?? "";
-	}
 
 	$: inChatInstance = $chatId !== '';
 
@@ -75,37 +66,19 @@
 					</div>
 
 					<div class="overflow-hidden max-w-full">
-						{#if evaluatedChat === null}
-							<PromptSelector 
-								bind:disabled={inChatInstance}
-							/>
-						{:else}
-							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
-								<div>{"Evaluation for"}</div>
-								<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
-							</div>
-						{/if}
+						<PromptSelector 
+							bind:disabled={inChatInstance}
+						/>
 					</div>
 				</div>
 			{:else}
-				{#if evaluatedChat !== null}
-					<div class="flex items-top w-full min-w-52">
-						<div class="overflow-hidden max-w-full">
-							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
-								<div>{"Evaluation for"}</div>
-								<a href={"/c/" + evaluatedChat} class="hover:underline">{evaluatedChatTitle}</a>
-							</div>
+				<div class="flex items-top w-full min-w-52">
+					<div class="overflow-hidden max-w-full">
+						<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
+							{className}
 						</div>
 					</div>
-				{:else}
-					<div class="flex items-top w-full min-w-52">
-						<div class="overflow-hidden max-w-full">
-							<div class="flex w-full text-left px-0.5 space-x-1 outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none">
-								{className}
-							</div>
-						</div>
-					</div>
-				{/if}
+				</div>
 			{/if}
 
 			<div class="self-start flex flex-none items-center text-gray-600 dark:text-gray-400">

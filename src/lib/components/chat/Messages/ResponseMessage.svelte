@@ -55,7 +55,6 @@
 
 	export let clientName;
 	export let clientImage;
-	export let isEvaluation = false;
 
 	let model = null;
 	$: model = $models.find((m) => m.id === message.model);
@@ -374,12 +373,12 @@
 		dir={$settings.chatDirection}
 	>
 		<ProfileImage
-			src={isEvaluation ? `${WEBUI_BASE_URL}/static/favicon.png` : clientImage ? clientImage : `/user.png`}
+			src={message.role === "evaluation" ? `${WEBUI_BASE_URL}/static/favicon.png` : clientImage ? clientImage : `/user.png`}
 		/>
 
 		<div class="w-full overflow-hidden pl-1">
 			<Name>
-				{isEvaluation ? "Evaluation" : clientName ?? "Client"}
+				{message.role === "assistant" ? (clientName ?? "Client") : "Evaluation"}
 
 				{#if message.timestamp}
 					<span

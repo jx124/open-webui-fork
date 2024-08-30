@@ -11,10 +11,6 @@
 
     $: if (chat) {
         additionalInfo = $prompts.find((prompt) => prompt.command === chat.chat.systemCommand)?.additional_info;
-
-        if (chat.chat.evaluatedChat) {
-            $showRightSidebar = false;
-        }
     }
 
     $: if (additionalInfo) {

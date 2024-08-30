@@ -56,7 +56,6 @@
 
 	$: filteredChatList = $chats
 		.filter((chat) => {
-			console.log("chat", chat);
 			if ($user?.role === "admin" || $user?.role === "instructor" || $classId === null) {
 				return true;
 			} else {
