@@ -14,6 +14,7 @@ from starlette.background import BackgroundTask
 from apps.webui.models.models import Models
 from apps.webui.models.users import Users
 from apps.webui.models.prompts_classes import Prompts
+from apps.webui.models.evaluations import Evaluations
 from constants import ERROR_MESSAGES
 from utils.utils import (
     decode_token,
@@ -440,6 +441,20 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 )
 
                 del payload["profile_id"]
+
+            # Replace evaluation id with evaluation content so end users cannot see prompt
+            if "evaluation_id" in payload:
+                profile_id = payload["evaluation_id"]
+                content = Evaluations.get_evaluation_content_by_id(profile_id)
+                payload["messages"].insert(
+                    0,
+                    {
+                        "role": "system",
+                        "content": content,
+                    },
+                )
+
+                del payload["evaluation_id"]
 
             model = app.state.MODELS[payload.get("model")]
 

@@ -48,6 +48,13 @@ class EvaluationsTable:
             return EvaluationModel(**model_to_dict(result))
         except:
             return None
+
+    def get_evaluation_content_by_id(self, eval_id: int) -> Optional[str]:
+        try:
+            result = Evaluation.select().where(Evaluation.id == eval_id).get().content
+            return result
+        except:
+            return None
     
     def get_evaluation_by_title(self, title: str) -> Optional[EvaluationModel]:
         try:

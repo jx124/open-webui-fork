@@ -34,6 +34,7 @@ from starlette.background import BackgroundTask
 from apps.webui.models.models import Models
 from apps.webui.models.users import Users
 from apps.webui.models.prompts_classes import Prompts
+from apps.webui.models.evaluations import Evaluations
 from constants import ERROR_MESSAGES
 from utils.utils import (
     decode_token,
@@ -696,6 +697,8 @@ class ChatMessage(BaseModel):
 
 class GenerateChatCompletionForm(BaseModel):
     model: str
+    profile_id: Optional[int] = None
+    evaluation_id: Optional[int] = None
     messages: List[ChatMessage]
     format: Optional[str] = None
     options: Optional[dict] = None
@@ -838,10 +841,36 @@ async def generate_chat_completion(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
+    # Replace prompt command with prompt content so end users cannot see prompt
+    if "profile_id" in payload:
+        profile_id = payload["profile_id"]
+        content = Prompts.get_prompt_content_by_id(profile_id)
+        payload["messages"].insert(
+            0,
+            {
+                "role": "system",
+                "content": content,
+            },
+        )
+
+        del payload["profile_id"]
+
+    # Replace evaluation id with evaluation content so end users cannot see prompt
+    if "evaluation_id" in payload:
+        profile_id = payload["evaluation_id"]
+        content = Evaluations.get_evaluation_content_by_id(profile_id)
+        payload["messages"].insert(
+            0,
+            {
+                "role": "system",
+                "content": content,
+            },
+        )
+
+        del payload["evaluation_id"]
+
     url = app.state.config.OLLAMA_BASE_URLS[url_idx]
     log.info(f"url: {url}")
-
-    print(payload)
 
     return await post_streaming_url(f"{url}/api/chat", json.dumps(payload))
 
@@ -944,6 +973,20 @@ async def generate_openai_chat_completion(
         )
 
         del payload["profile_id"]
+
+    # Replace evaluation id with evaluation content so end users cannot see prompt
+    if "evaluation_id" in payload:
+        profile_id = payload["evaluation_id"]
+        content = Evaluations.get_evaluation_content_by_id(profile_id)
+        payload["messages"].insert(
+            0,
+            {
+                "role": "system",
+                "content": content,
+            },
+        )
+
+        del payload["evaluation_id"]
 
     url = app.state.config.OLLAMA_BASE_URLS[url_idx]
     log.info(f"url: {url}")
