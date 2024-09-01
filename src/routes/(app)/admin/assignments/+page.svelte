@@ -248,8 +248,8 @@
 							return name.includes(query);
 						}
 					})
-					.slice((page - 1) * 20, page * 20)
-					.sort(sortFactory(sortAttribute, ascending)) as entry}
+					.sort(sortFactory(sortAttribute, ascending))
+					.slice((page - 1) * 20, page * 20) as entry}
 					<tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700 text-xs">
 						<td class="px-3 py-2 font-medium text-gray-900 dark:text-white w-max">
 							<div class="flex flex-row w-max">

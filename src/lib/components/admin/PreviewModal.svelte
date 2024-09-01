@@ -6,7 +6,7 @@
     export let previewContent;
 </script>
 
-<Modal bind:show size='sm'>
+<Modal bind:show size='lg'>
     <div class="text-gray-700 dark:text-gray-100">
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4">
 			<div class=" text-lg font-medium self-center">Additional Information HTML Preview</div>
@@ -30,7 +30,7 @@
 		</div>
 		
 		<div class="flex flex-col pb-2 px-5 mt-2 mb-6 min-h-48 max-h-96">
-			<div class="prose px-2.5 my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
+			<div class="prose !max-w-none my-2 text-gray-600 dark:text-gray-400 overflow-y-auto whitespace-pre-line text-sm
                 dark:prose-invert prose-headings:my-0 prose-headings:-mb-2 prose-p:my-0 prose-p:mb-0 prose-pre:my-0 prose-table:my-0 
                 prose-blockquote:my-0 prose-img:my-0 prose-ul:-my-1 prose-ol:-my-1 prose-li:-my-1 prose-li:py-0.5 
                 prose-ul:-mb-3 prose-ol:-mb-3 prose-li:-mb-1">

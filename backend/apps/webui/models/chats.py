@@ -444,4 +444,13 @@ class ChatTable:
         except:
             return False
 
+    def remove_class_reference(self, class_id: int) -> bool:
+        try:
+            query = Chat.update(class_id=None).where(Chat.class_id==class_id)
+            result = query.execute()
+
+            return result == 1
+        except:
+            return False
+
 Chats = ChatTable(DB)

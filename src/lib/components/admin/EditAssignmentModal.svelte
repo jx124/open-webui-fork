@@ -10,9 +10,11 @@
 
 	export let show = false;
     export let assignments: Assignment[] = [];
-    export let index: number;
+    export let selectedPromptId: number;
+    let index: number;
 
     $: if (show) {
+        index = assignments.findIndex((assignment) => assignment.prompt_id === selectedPromptId);
         selectedDateTime = assignments[index].deadline;
         hasDeadline = assignments[index]?.deadline !== null;
         profileName = $prompts.find((p) => p.id === assignments[index].prompt_id)?.title ?? "";

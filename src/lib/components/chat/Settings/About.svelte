@@ -142,12 +142,7 @@
 		<hr class=" dark:border-gray-700" />
 
 		<div class="mt-2 text-xs text-gray-500 dark:text-gray-300 font-medium">
-			SWAT:RolePlay is an open source fork of Open WebUI: 
-			<a
-				class=" text-gray-500 dark:text-gray-300 font-medium underline"
-				href="https://github.com/jx124/open-webui-fork"
-				target="_blank">https://github.com/jx124/open-webui-fork
-			</a>
+			SWAT:RolePlay is a fork of Open WebUI.
 		</div>
 	</div>
 </div>

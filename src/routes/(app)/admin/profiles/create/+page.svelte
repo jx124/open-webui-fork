@@ -42,7 +42,7 @@
 
 	let evaluationItems: {
 		label: string;
-		value: number;
+		value: number | null;
 	}[] = [];
 
 	const submitHandler = async () => {
@@ -50,12 +50,6 @@
 
 		if (form_data.selected_model_id === '' || form_data.selected_model_id === null) {
 			toast.error('Please select a model.');
-			loading = false;
-			return null;
-		}
-
-		if (form_data.evaluation_id === null) {
-			toast.error('Please select an evaluation.');
 			loading = false;
 			return null;
 		}
@@ -127,12 +121,12 @@
 			sessionStorage.removeItem('prompt');
 		}
 
-		evaluationItems = $evaluations.map((e) => {
+		evaluationItems = [{ label: "None", value: null }, ...$evaluations.map((e) => {
 			return {
 				label: e.title,
 				value: e.id
 			}
-		});
+		})];
 
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);
@@ -387,18 +381,25 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Evaluation*</div>
+			<div class=" text-sm font-semibold mb-1">Evaluation</div>
 			<EvaluationSelector items={evaluationItems} bind:value={form_data.evaluation_id} />
+			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+				Select an evaluation to apply to the chat transcript after ending the chat. If none is selected, chat ends immediately
+				without an evaluation.
+			</div>
 		</div>
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Model*</div>
 			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} />
+			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+				Select the LLM model to be used.
+			</div>
 		</div>
 
 		<div class="my-2">
 			<div class="flex w-full justify-between">
-				<div class=" self-center text-sm font-semibold">Additional Information</div>
+				<div class=" self-center text-sm font-semibold">Additional Client Information</div>
 			</div>
 
 			<div class="mt-2">

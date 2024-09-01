@@ -286,7 +286,7 @@
 					<a
 						id="home-button"
 						class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-						href="/classes"
+						href="/classes/{$classId}"
 						draggable="false"
 						on:click={() => $chatId = ""}
 					>
@@ -299,7 +299,7 @@
 							/>
 						</div>
 						<div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
-							View Classes
+							View Assignments
 						</div>
 					</a>
 				</div>

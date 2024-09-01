@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
-	import { chats, settings, user as _user, mobile, prompts, classes, type Prompt, classId, selectedPromptCommand } from '$lib/stores';
+	import { chats, settings, user as _user, mobile, prompts, classes, type Prompt, classId, selectedPromptCommand, chatId } from '$lib/stores';
 	import { tick, getContext } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
@@ -22,7 +22,6 @@
 
 	const i18n = getContext('i18n');
 
-	export let chatId = '';
 	export let readOnly = false;
 	export let sendPrompt: Function;
 	export let continueGeneration: Function;
@@ -94,7 +93,7 @@
 
 	const updateChatMessages = async () => {
 		await tick();
-		await updateChatById(localStorage.token, chatId, {
+		await updateChatById(localStorage.token, $chatId, {
 			messages: messages,
 			history: history
 		});
@@ -244,14 +243,14 @@
 		history.messages[messageParentId].childrenIds = history.messages[
 			messageParentId
 		].childrenIds.filter((id) => id !== messageId);
-		await updateChatById(localStorage.token, chatId, {
+		await updateChatById(localStorage.token, $chatId, {
 			messages: messages,
 			history: history
 		});
 	};
 
 	const submitChatHandler = async () => {
-		await submitChatById(localStorage.token, chatId)
+		await submitChatById(localStorage.token, $chatId)
 			.then(() => {
 				isSubmitted = true;
 				show = false;
@@ -300,12 +299,12 @@
 					{/if}
 				</div>
 				<div class="flex gap-2">
-					{#if chatId !== '' && currentAssignment?.allow_multiple_attempts}
+					{#if $chatId !== '' && currentAssignment?.allow_multiple_attempts}
 						<button
 							class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
 							type="button"
 							on:click={() => {
-								chatId = '';
+								$chatId = '';
 								$selectedPromptCommand = selectedProfile?.command ?? "";
 								goto(
 									`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
@@ -317,12 +316,12 @@
 							<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
 						</button>
 					{/if}
-					{#if isSubmitted === false && chatId !== ''}
+					{#if isSubmitted === false && $chatId !== '' && $classId !== null}
 						{#if chatDisabled && beforeDeadline}
 							<button
 								class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
-									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+									bg-emerald-700 hover:bg-emerald-800 text-gray-100
+									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 								type="button"
 								on:click={() => {
 									show = true;
@@ -335,8 +334,8 @@
 							<Tooltip content="End the chat first">
 								<button
 									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
-									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+									bg-emerald-700 hover:bg-emerald-800 text-gray-100
+									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 									type="button"
 									disabled={true}
 								>
@@ -347,8 +346,8 @@
 							<Tooltip content="Submission deadline passed">
 								<button
 									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
-									disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+									bg-emerald-700 hover:bg-emerald-800 text-gray-100
+									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 									type="button"
 									disabled={true}
 								>
@@ -360,8 +359,8 @@
 					{#if isSubmitted}
 						<button
 							class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-							bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900
-							disabled:bg-green-900/50 disabled:text-gray-700 disabled:dark:bg-green-900/50 disabled:dark:text-gray-500"
+							bg-emerald-700 hover:bg-emerald-800 text-gray-100
+							disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 							type="button"
 							disabled={true}
 						>
@@ -425,14 +424,14 @@
 			{/if}
 		</div>
 
-		{#if chatId === ""}
+		{#if $chatId === ""}
 			<div class="mx-auto text:gray-500 dark:text-gray-400">
 				Send a message to start a conversation with the client.
 			</div>
 		{/if}
 	{/if}
 
-	{#if chatId === '' && !selectedProfile}
+	{#if $chatId === '' && !selectedProfile}
 		<Placeholder
 			modelIds={selectedModels}
 			submitPrompt={async (p) => {
@@ -472,7 +471,7 @@
 		/>
 	{:else}
 		<div class="w-full pt-4">
-			{#key chatId}
+			{#key $chatId}
 				{#each messages as message, messageIdx}
 					<div class=" w-full {messageIdx === messages.length - 1 ? ' pb-12' : ''}">
 						<div
@@ -516,7 +515,7 @@
 
 											const message = e.detail;
 											history.messages[message.id] = message;
-											await updateChatById(localStorage.token, chatId, {
+											await updateChatById(localStorage.token, $chatId, {
 												messages: messages,
 												history: history
 											});
@@ -529,7 +528,7 @@
 										bind:history
 										{messages}
 										{readOnly}
-										{chatId}
+										{$chatId}
 										parentMessage={history.messages[message.parentId]}
 										{messageIdx}
 										{updateChatMessages}
@@ -539,7 +538,7 @@
 										{continueGeneration}
 										{regenerateResponse}
 										on:change={async () => {
-											await updateChatById(localStorage.token, chatId, {
+											await updateChatById(localStorage.token, $chatId, {
 												messages: messages,
 												history: history
 											});

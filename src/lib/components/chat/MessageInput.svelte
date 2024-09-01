@@ -569,8 +569,8 @@
 				{#if chatDisabled}
 					<div class="flex flex-row-reverse my-2">
 						<Tooltip content="Provide feedback">
-							<button class="bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black 
-								dark:hover:bg-gray-100 transition rounded-xl px-4 py-2 self-center"
+							<button class="bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800
+								 transition rounded-xl px-4 py-2 self-center"
 								type="button"
 								id="provide-feedback-button"
 								on:click={() => { showFeedbackModal = true; }}
@@ -581,7 +581,7 @@
 					<div class="flex flex-row-reverse my-2">
 						<Tooltip content="End the current chat">
 							<button class="{messages.length !== 0
-								? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
+								? 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800 '
 								: 'hidden'} transition rounded-xl px-4 py-2 self-center"
 								type="button"
 								id="evaluate-chat-button"

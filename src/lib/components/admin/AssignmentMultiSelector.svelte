@@ -33,7 +33,7 @@
 
 	let show = false;
 	let showModal = false;
-    let selectedIndex = 0;
+    let selectedPromptId = 0;
 
 	let searchValue = '';
 
@@ -50,7 +50,7 @@
     })
 </script>
 
-<EditAssignmentModal bind:assignments={selectedAssignments} bind:index={selectedIndex} bind:show={showModal}/>
+<EditAssignmentModal bind:assignments={selectedAssignments} bind:selectedPromptId bind:show={showModal}/>
 
 <div class="flex items-center w-full">
     <DropdownMenu.Root
@@ -63,7 +63,7 @@
         
         <div class="flex flex-col items-start w-full">
             <div class="mb-3 w-full">
-                {#each $prompts.filter((p) => selectedPromptIds.has(p.id)) as prompt, index}
+                {#each $prompts.filter((p) => selectedPromptIds.has(p.id)) as prompt}
                     <div
                         class=" flex space-x-4 w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
                     >
@@ -99,7 +99,7 @@
                                 class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
                                 type="button"
                                 on:click={() => {
-                                    selectedIndex = index;
+                                    selectedPromptId = prompt.id;
                                     showModal = true;
                                 }}
                             >

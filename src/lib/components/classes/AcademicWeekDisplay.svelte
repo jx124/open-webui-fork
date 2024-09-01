@@ -59,12 +59,10 @@
 			profileDeadlineMap.set(assignment.prompt_id, assignment.deadline);
 			const latest = $chats
 				.filter(c => {
-					const title: string = c.title;
-					console.log(title, c.prompt_id === assignment.prompt_id);
-					return (c.prompt_id === assignment.prompt_id) && !title.startsWith("Eval");
-				}) // TODO: this is a hack, add is_evaluation to chat schema
+					return (c.prompt_id === assignment.prompt_id);
+				})
 				.sort((a, b) => b.updated_at - a.updated_at)
-				.at(0)?.id
+				.at(0)?.id;
 			latestChatId.set(assignment.prompt_id, latest ?? null);
 		}
 
@@ -130,9 +128,11 @@
 				<div class="flex flex-1 space-x-4 cursor-pointer w-full">
 					<a
 						class="flex items-center"
-						href={`/c/?profile=${encodeURIComponent(profile.command)}` +
-							`&model=${encodeURIComponent(profile.selected_model_id)}` +
-							`&class=${currentClassId}`}
+						href={latestChatId.get(profile.id) 
+								? `/c/${latestChatId.get(profile.id)}`
+								: `/c/?profile=${encodeURIComponent(profile.command)}` +
+								`&model=${encodeURIComponent(profile.selected_model_id)}` +
+								`&class=${currentClassId}`}
 					>
 						<img
 							src={profile.image_url ? profile.image_url : '/user.png'}

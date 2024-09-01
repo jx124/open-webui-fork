@@ -13,7 +13,7 @@
     let selectedClassId = 0;
 	let searchValue = '';
 
-	const deleteHander = async () => {
+	const deleteHandler = async () => {
 		const result = await deleteClassById(localStorage.token, selectedClassId).catch((error) => {
 			toast.error(error);
 		});
@@ -43,7 +43,7 @@
 
 <DeleteModal bind:show={showDeleteModal}
 	deleteMessage={selectedClassName}
-	deleteHandler={deleteHander}
+	deleteHandler={deleteHandler}
     deleteArgs
 />
 

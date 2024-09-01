@@ -320,8 +320,8 @@
 							return name.includes(query);
 						}
 					})
-					.slice((page - 1) * 20, page * 20)
-					.sort(sortFactory(sortAttribute, ascending)) as user}
+					.sort(sortFactory(sortAttribute, ascending))
+					.slice((page - 1) * 20, page * 20) as user}
 					<tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700 text-xs">
 						<td class="px-3 py-2 min-w-[7rem] w-28">
 							<RoleSelector 

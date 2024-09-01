@@ -1827,7 +1827,6 @@
 			>
 				<div class=" h-full w-full flex flex-col py-4">
 					<Messages
-						bind:chatId={$chatId}
 						{selectedModels}
 						bind:selectedProfile
 						bind:showClientInfo

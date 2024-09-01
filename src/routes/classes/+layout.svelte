@@ -6,6 +6,7 @@
 	import SettingsModal from '$lib/components/chat/SettingsModal.svelte';
 	import ArchivedChatsModal from '$lib/components/layout/Sidebar/ArchivedChatsModal.svelte';
 	import { getChatList } from '$lib/apis/chats';
+	import { page } from '$app/stores';
 </script>
 
 <svelte:head>
@@ -35,7 +36,7 @@
 						<a
 							id="home-button"
 							class="flex flex-1 justify-between rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-							href="/"
+							href={$page.route.id === '/classes' ? '/' : '/classes'}
 							draggable="false"
 						>
 							<div class="self-center mx-1.5">
@@ -47,7 +48,7 @@
 								/>
 							</div>
 							<div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
-								{$WEBUI_NAME}
+								{$page.route.id === '/classes' ? $WEBUI_NAME : "View Classes"}
 							</div>
 						</a>
 					</div>

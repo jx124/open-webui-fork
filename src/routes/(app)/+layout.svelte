@@ -53,7 +53,6 @@
 	};
 
 	onMount(async () => {
-		console.log("/(app) layout", $page);
 		if ($user === undefined) {
 			await goto('/auth');
 		} else if ($user.role !== "pending") {
@@ -109,35 +108,11 @@
 				// Check if the Shift key is pressed
 				const isShiftPressed = event.shiftKey;
 
-				// Check if Ctrl + Shift + O is pressed
-				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === 'o') {
-					event.preventDefault();
-					console.log('newChat');
-					document.getElementById('sidebar-new-chat-button')?.click();
-				}
-
 				// Check if Shift + Esc is pressed
 				if (isShiftPressed && event.key === 'Escape') {
 					event.preventDefault();
 					console.log('focusInput');
 					document.getElementById('chat-textarea')?.focus();
-				}
-
-				// Check if Ctrl + Shift + ; is pressed
-				if (isCtrlPressed && isShiftPressed && event.key === ';') {
-					event.preventDefault();
-					console.log('copyLastCodeBlock');
-					const button = [...document.getElementsByClassName('copy-code-button')]?.at(-1);
-					button?.click();
-				}
-
-				// Check if Ctrl + Shift + C is pressed
-				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === 'c') {
-					event.preventDefault();
-					console.log('copyLastResponse');
-					const button = [...document.getElementsByClassName('copy-response-button')]?.at(-1);
-					console.log(button);
-					button?.click();
 				}
 
 				// Check if Ctrl + Shift + S is pressed
@@ -152,13 +127,6 @@
 					event.preventDefault();
 					console.log('deleteChat');
 					document.getElementById('delete-chat-button')?.click();
-				}
-
-				// Check if Ctrl + . is pressed
-				if (isCtrlPressed && event.key === '.') {
-					event.preventDefault();
-					console.log('openSettings');
-					showSettings.set(!$showSettings);
 				}
 
 				// Check if Ctrl + / is pressed

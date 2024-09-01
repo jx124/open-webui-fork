@@ -9,7 +9,7 @@ import time
 from apps.webui.models.roles import Role
 from apps.webui.models.users import User
 from apps.webui.models.evaluations import Evaluation
-from apps.webui.models.chats import Chat, ChatModel
+from apps.webui.models.chats import Chat, ChatModel, Chats
 
 from apps.webui.internal.db import DB
 
@@ -553,6 +553,7 @@ class ClassesTable:
     def delete_class_by_id(self, class_id: int) -> bool:
         try:
             with self.db.atomic():
+                Chats.remove_class_reference(class_id)
                 ClassPrompts.delete_class_prompts_by_class(class_id)
                 StudentClasses.delete_student_classes_by_class(class_id)
                 Class.delete().where(Class.id == class_id).execute()
