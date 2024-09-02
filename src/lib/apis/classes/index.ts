@@ -195,3 +195,46 @@ export const deleteClassById = async (token: string, classId: number) => {
 
 	return res;
 };
+
+
+export const downloadChatsByClassId = async (token: string, classId: number) => {
+	let error = null;
+	let filename = "";
+
+	const res = await fetch(`${WEBUI_API_BASE_URL}/classes/${classId}/download`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/zip',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			const disposition = res.headers.get('Content-Disposition');
+			filename = disposition?.split(/;(.+)/)[1].split(/=(.+)/)[1] ?? "Unknown Class-export.zip";
+			if (filename.toLowerCase().startsWith("utf-8''"))
+				filename = decodeURIComponent(filename.replace("utf-8''", ''));
+			else
+				filename = filename.replace(/['"]/g, '');
+			return res.blob();
+		})
+		.then((blob) => {
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.log(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+}

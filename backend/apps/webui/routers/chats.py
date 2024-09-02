@@ -139,7 +139,7 @@ async def create_new_chat(form_data: ChatForm, user=Depends(get_current_user)):
     try:
         chat = Chats.insert_new_chat(user.id, form_data)
         Users.increment_user_chat_attempts_by_id(user.id)
-
+        
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     except Exception as e:
         log.exception(e)
@@ -230,7 +230,7 @@ async def get_shared_chat_by_id(share_id: str, user=Depends(get_current_user)):
     if user.role == "admin" or user.role == "instructor":
         chat = Chats.get_chat_by_id(share_id)
     elif user.role == "instructor":
-        chat = Classes.get_chat_by_id_and_instructor(user.id)
+        chat = Classes.get_chat_by_id_and_instructor(share_id, user.id)
     else:
         chat = Chats.get_chat_by_share_id(share_id)
 

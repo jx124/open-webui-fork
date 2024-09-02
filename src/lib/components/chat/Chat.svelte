@@ -28,8 +28,6 @@
 	import {
 		convertMessagesToHistory,
 		copyToClipboard,
-		generateEvalSystemPrompt,
-		promptTemplate,
 		splitStream,
 		sumTokenUsage
 	} from '$lib/utils';

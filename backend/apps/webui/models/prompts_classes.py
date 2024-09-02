@@ -526,6 +526,34 @@ class ClassesTable:
         except:
             return None
 
+    def get_chats_by_class_id(self, class_id: str) -> List[ChatModel]:
+        try:
+            return [
+                ChatModel(**model_to_dict(chat, recurse=False)) 
+                for chat in Chat.select()
+                .join(Class, on=(Chat.class_id==Class.id))
+                .where(Class.id == class_id)
+            ]
+        except:
+            return []
+
+    def get_chats_by_class_id_and_instructor(self, class_id: str, instructor_id: str) -> List[ChatModel]:
+        try:
+            return [
+                ChatModel(**model_to_dict(chat, recurse=False)) 
+                for chat in Chat.select()
+                .join(Class, on=(Chat.class_id==Class.id))
+                .where((Class.id == class_id) & (Class.instructor == instructor_id))
+            ]
+        except:
+            return []
+    
+    def get_class_name(self, class_id: str) -> Optional[str]:
+        try:
+            return Class.select(Class.name).where(Class.id == class_id).get().name
+        except:
+            return None
+            
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
             with self.db.atomic():

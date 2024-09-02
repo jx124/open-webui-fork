@@ -296,14 +296,7 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_or_inst
         )
     
     existing_emails = set(Auths.get_emails())
-    user_emails = set([email.lower() for email in users["Email"]])
-
-    # TODO: skip emails but still add users
-    if existing_emails.intersection(user_emails):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.EXISTING_EMAIL_IMPORT(existing_emails.intersection(user_emails))
-        )
+    user_emails = set([email.lower() for email in users["Email"]]) - existing_emails
     
     for email in user_emails:
         if not validate_email_format(email):
@@ -311,6 +304,9 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_or_inst
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT(email)
             )
+    
+    # only create accounts for new users
+    users = users.loc[users["Email"].isin(user_emails)]
         
     users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
 

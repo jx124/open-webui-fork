@@ -581,21 +581,6 @@ export const getTimeRange = (timestamp) => {
 	}
 };
 
-export const generateEvalSystemPrompt = (selectedEvalMethod: string, selectedEvalSkills: string[]): string => {
-	let evalSystemPrompt = "You are an expert social worker giving feedback to a social worker in training. " +
-		"Given the following conversation, critique the social worker using the " + selectedEvalMethod + " framework. ";
-
-	if (selectedEvalSkills.length > 0) {
-		evalSystemPrompt += "Focus on these skills in your critique: " + selectedEvalSkills.join(", ") + ". ";
-	}
-
-	evalSystemPrompt += "Afterwards, provide the number of utterances made by the social worker in each " +
-		"category of the " + selectedEvalMethod + " framework. ";
-
-	return evalSystemPrompt;
-}
-
-
 export const downloadTxt = async (chat) => {
 	const _chat = chat.chat;
 	console.log('download', chat);

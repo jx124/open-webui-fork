@@ -159,6 +159,14 @@ class UsersTable:
 
         return result
 
+    def get_user_names(self) -> Dict[str, str]:
+        query = User.select(User.id, User.name)
+        result = {}
+        for user in query:
+            result[user.id] = user.name
+
+        return result
+
     def get_user_statistics(self) -> Dict[str, UserStatistics]:
         stats: Dict[str, UserStatistics] = {}
 

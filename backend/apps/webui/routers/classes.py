@@ -1,9 +1,16 @@
-from fastapi import Depends, HTTPException, status
+from collections import defaultdict
+import os
+import shutil
+import tempfile
+from fastapi import BackgroundTasks, Depends, HTTPException, status
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter
+from fastapi.responses import FileResponse
 
 from apps.webui.models.prompts_classes import ClassForm, ClassModel, ClassPrompts, Classes
+from apps.webui.models.users import Users
+from apps.webui.models.chats import ChatModel
 from utils.utils import get_admin_or_instructor, get_current_user
 from constants import ERROR_MESSAGES
 
@@ -128,3 +135,55 @@ async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(),
         )
+
+
+############################
+# DownloadChatsByClassId
+############################
+
+def cleanup(path: str):
+    print("Deleting temporary directory", path)
+    shutil.rmtree(path)
+
+
+@router.get("/{class_id}/download")
+async def download_chats_by_class_id(
+    class_id: str, bg_tasks: BackgroundTasks, user=Depends(get_admin_or_instructor)
+):
+    chats = []
+    if user.role == "admin":
+        chats = Classes.get_chats_by_class_id(class_id)
+    elif user.role == "instructor":
+        chats = Classes.get_chats_by_class_id_and_instructor(class_id, user.id)
+
+    users = Users.get_user_names()
+    name = Classes.get_class_name(class_id)
+    class_name = "Unknown Class" if name is None else name
+
+    user_attempts: defaultdict[str, List[ChatModel]] = defaultdict(lambda: [])
+
+    for chat in chats:
+        user = users.get(chat.user_id, "Deleted User")
+        user_attempts[user].append(chat)
+
+    tmp = tempfile.mkdtemp()
+    print("Creating temporary directory", tmp)
+    class_dir = os.path.join(tmp, f"{class_name}")
+    os.makedirs(class_dir)
+
+    for user in user_attempts:
+        user_dir = os.path.join(class_dir, user)
+        os.makedirs(user_dir)
+
+        attempts = user_attempts[user]
+        for attempt in attempts:
+            with open(os.path.join(user_dir, f"{attempt.title}.json"), "w") as f:
+                f.write(attempt.chat)
+    
+    base_name = os.path.join(tmp, f"{class_name}-export")
+    out_file = shutil.make_archive(base_name, "zip", class_dir)
+    bg_tasks.add_task(cleanup, tmp)
+
+    headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
+
+    return FileResponse(out_file, filename=f"{class_name}-export.zip", background=bg_tasks, headers=headers)
