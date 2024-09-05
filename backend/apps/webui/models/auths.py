@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Union, Optional
+from typing import Dict, List, Union, Optional
 import time
 import uuid
 import logging
@@ -197,6 +197,14 @@ class AuthsTable:
         result = [
             auth.email for auth in Auth.select(Auth.email)
         ]
+        return result
+
+    def get_user_ids_by_email(self) -> Dict[str, str]:
+        result = {}
+        rows = Auth.select(Auth.id, Auth.email)
+        for row in rows:
+            result[row.email] = row.id
+
         return result
 
 
