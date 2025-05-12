@@ -11,7 +11,7 @@ from constants import ERROR_MESSAGES
 router = APIRouter()
 
 ############################
-# GetRoles
+# GetEvaluations
 ############################
 
 
@@ -21,7 +21,7 @@ async def get_evaluations(user=Depends(get_admin_user)):
 
 
 ############################
-# GetRolesById
+# GetEvaluationsById
 ############################
 
 
@@ -31,7 +31,7 @@ async def get_evaluation_by_id(eval_id: int, user=Depends(get_admin_user)):
 
 
 ############################
-# CreateNewRole
+# CreateNewEvaluation
 ############################
 
 
@@ -44,7 +44,7 @@ async def create_new_evaluation(form_data: EvaluationForm, user=Depends(get_admi
         )
 
     evaluation = Evaluations.get_evaluation_by_title(form_data.title)
-    if evaluation == None:
+    if evaluation is None:
         evaluation = Evaluations.insert_new_evaluation(form_data)
 
         if evaluation:
@@ -60,7 +60,7 @@ async def create_new_evaluation(form_data: EvaluationForm, user=Depends(get_admi
 
 
 ############################
-# UpdateRoleByCommand   
+# UpdateEvaluationByCommand
 ############################
 
 
@@ -73,7 +73,7 @@ async def update_evaluation(form_data: EvaluationForm, user=Depends(get_admin_us
         )
 
     evaluation = Evaluations.get_evaluation_by_title(form_data.title)
-    if evaluation == None or evaluation.id == form_data.id:
+    if evaluation is None or evaluation.id == form_data.id:
         result = Evaluations.update_evaluation(form_data)
         if result:
             return result
@@ -88,7 +88,7 @@ async def update_evaluation(form_data: EvaluationForm, user=Depends(get_admin_us
     )
 
 # ############################
-# # DeleteRoleByCommand
+# DeleteEvaluationByCommand
 # ############################
 
 

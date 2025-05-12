@@ -3,7 +3,7 @@ import datetime
 from pydantic import BaseModel
 import peewee as pw
 from playhouse.shortcuts import model_to_dict
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional
 import time
 
 from apps.webui.models.roles import Role
@@ -13,6 +13,11 @@ from apps.webui.models.chats import Chat, ChatModel, Chats
 
 from apps.webui.internal.db import DB
 
+import logging
+from config import SRC_LOG_LEVELS
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["MODELS"])
 
 ####################
 # Prompts DB Schema
@@ -58,9 +63,8 @@ def prompt_to_promptmodel(prompt: Prompt, is_admin: bool) -> PromptModel:
         prompt_dict["content"] = ""
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
     model_id = prompt_dict.get("model_id")
-    
+
     return PromptModel(**prompt_dict,
-                    #    deadline=date_str,
                        evaluation_id=evaluation_id,
                        selected_model_id=model_id)
 
@@ -109,38 +113,53 @@ class PromptsTable:
 
             result = Prompt.create(**prompt.model_dump(exclude={'id'}), model_id=prompt.selected_model_id)
             return prompt_to_promptmodel(result, True)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_prompt_by_command(self, user_id: str, user_role: str, command: str) -> Optional[PromptModel]:
         try:
             if user_role == "admin":
-                prompt = Prompt.get(Prompt.command == command)
+                prompt = Prompt.get_or_none(Prompt.command == command)
 
-                return prompt_to_promptmodel(prompt, True)
+                if prompt:
+                    return prompt_to_promptmodel(prompt, True)
+                return None
 
             elif user_role == "instructor":
                 prompt = Prompt.select()\
                     .where((Prompt.command == command)
-                           & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get()
-                
-                return prompt_to_promptmodel(prompt, False)
+                           & ((Prompt.user_id == user_id) | Prompt.is_visible == True)).get_or_none()
+
+                if prompt:
+                    return prompt_to_promptmodel(prompt, True)
+                return None
 
             else:
                 return None
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
-        
+
     def get_prompt_id_by_command(self, command: str) -> Optional[int]:
         try:
-            return Prompt.select(Prompt.id).where(Prompt.command == command).get()
-        except:
+            return Prompt.select(Prompt.id).where(Prompt.command == command).get_or_none()
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
-    
+
     def get_prompt_content_by_id(self, id: str) -> Optional[str]:
         try:
-            return Prompt.select(Prompt.content).where(Prompt.id == id).get().content
-        except:
+            prompt = Prompt.select(Prompt.content).where(Prompt.id == id).get_or_none()
+            if prompt:
+                return prompt.content
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_prompts(self, user_id: str, user_role: str) -> List[PromptModel]:
@@ -160,11 +179,13 @@ class PromptsTable:
                     .join(StudentClass, on=(Class.id == StudentClass.class_id))\
                     .join(User, on=(StudentClass.student_id == User.id))\
                     .distinct()
-                
+
             return [prompt_to_promptmodel(prompt, user_role == "admin") for prompt in query]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
-        
+
     def get_prompt_titles(self, user_id: str, user_role: str) -> Dict[int, str]:
         try:
             prompts = []
@@ -187,11 +208,16 @@ class PromptsTable:
             for prompt in prompts:
                 result[prompt.id] = prompt.title
             return result
-        except:
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return {}
-    
-    def get_profile_titles_by_eval_id(self, eval_id: int) -> int:
-        return [prompt.title for prompt in Prompt.select(Prompt.title).where(Prompt.evaluation == eval_id)]
+
+    def get_profile_titles_by_eval_id(self, eval_id: int) -> List[str]:
+        try:
+            return [prompt.title for prompt in Prompt.select(Prompt.title).where(Prompt.evaluation == eval_id)]
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def update_prompt_by_command(
         self, form_data: PromptForm
@@ -224,12 +250,14 @@ class PromptsTable:
             excluded_columns = {"id", "user_id", "selected_model_id"}
 
             query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
-                                model_id=form_data.selected_model_id)\
+                                  model_id=form_data.selected_model_id)\
                 .where(Prompt.command == command)
             result = query.execute()
 
-            return result == 1
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def delete_prompt_by_command(self, command: str) -> bool:
@@ -243,7 +271,9 @@ class PromptsTable:
                 Prompt.delete().where(Prompt.command == command).execute()
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def delete_prompt_by_id(self, prompt_id: int) -> bool:
@@ -253,8 +283,11 @@ class PromptsTable:
                 Prompt.delete().where(Prompt.id == prompt_id).execute()
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
+
 
 Prompts = PromptsTable(DB)
 
@@ -294,18 +327,20 @@ class PromptRolesTable:
         self.db.create_tables([PromptRole])
 
     def insert_new_prompt_roles_by_prompt(
-        self, prompt_id: int, role_ids: List[int] 
+        self, prompt_id: int, role_ids: List[int]
     ) -> List[PromptRoleModel]:
-        data = [{ "prompt_id": prompt_id, "role_id": role_id } for role_id in role_ids]
+        data = [{"prompt_id": prompt_id, "role_id": role_id} for role_id in role_ids]
 
         try:
             result = PromptRole.insert_many(data).execute()
             if result:
                 return PromptRole.select()
             else:
-                return None
-        except:
-            return None
+                return []
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def update_prompt_roles_by_prompt(
         self, prompt_id: int, role_ids: List[int]
@@ -315,26 +350,33 @@ class PromptRolesTable:
                 # delete everything and reinsert for now since the expected number of roles is still quite small
                 PromptRole.delete().where(PromptRole.prompt_id == prompt_id).execute()
                 return self.insert_new_prompt_roles_by_prompt(prompt_id, role_ids)
-        except:
-            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def delete_prompt_roles_by_prompt(self, prompt_id: int) -> bool:
         try:
             query = PromptRole.delete().where(PromptRole.prompt_id == prompt_id)
-            query.execute()  # Remove the rows, return number of rows removed.
+            result = query.execute()  # Remove the rows, return number of rows removed.
 
-            return True
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def delete_prompt_roles_by_role(self, role_id: int) -> bool:
         try:
             query = PromptRole.delete().where(PromptRole.role_id == role_id)
-            query.execute()  # Remove the rows, return number of rows removed.
+            result = query.execute()  # Remove the rows, return number of rows removed.
 
-            return True
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
+
 
 PromptRoles = PromptRolesTable(DB)
 
@@ -410,18 +452,18 @@ class ClassForm(BaseModel):
     name: str
     instructor_id: str
     image_url: str
-    
+
     assignments: List[ClassPromptForm]
     assigned_students: List[str]
 
 
-def class_to_classmodel(class_: Class, assignments: List[ClassPromptModel] = [], students: List[str] = []) -> ClassModel:
-    class_dict = model_to_dict(class_)
+def class_to_classmodel(cls: Class, assignments: List[ClassPromptModel] = [], students: List[str] = []) -> ClassModel:
+    class_dict = model_to_dict(cls)
     return ClassModel(**class_dict,
-                    instructor_id=class_dict["instructor"]["id"],
-                    instructor_name=class_dict["instructor"]["name"],
-                    assignments=assignments,
-                    assigned_students=students)
+                      instructor_id=class_dict["instructor"]["id"],
+                      instructor_name=class_dict["instructor"]["name"],
+                      assignments=assignments,
+                      assigned_students=students)
 
 
 class ClassesTable:
@@ -444,38 +486,50 @@ class ClassesTable:
                             .join(StudentClass, on=(Class.id == StudentClass.class_id))\
                             .join(User, on=(User.id == StudentClass.student_id))\
                             .where((User.id == user_id))
-                
+
             assignments = ClassPrompts.get_all_assignments_by_classes()
             students = StudentClasses.get_all_students_by_classes()
-            
+
             return [class_to_classmodel(class_, assignments[class_.id], students[class_.id]) for class_ in query]
-        except:
-            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def get_class_by_name(self, name: str) -> Optional[ClassModel]:
         try:
             class_ = Class.select()\
-                .where(Class.name == name).get()
-            
+                .where(Class.name == name).get_or_none()
+
+            if class_ is None:
+                return None
+
             prompts = ClassPrompts.get_assignments_by_class(class_.id)
             students = StudentClasses.get_students_by_class(class_.id)
 
             return class_to_classmodel(class_, prompts, students)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
-        
-    def get_class_by_id(self, user_id:str, user_role: str, class_id: int) -> Optional[ClassModel]:
+
+    def get_class_by_id(self, user_id: str, user_role: str, class_id: int) -> Optional[ClassModel]:
         try:
             class_ = Class.select()\
-                .where((Class.id == class_id) & ((Class.instructor == user_id) | (user_role == "admin"))).get()
+                .where((Class.id == class_id) & ((Class.instructor == user_id) | (user_role == "admin"))).get_or_none()
+
+            if class_ is None:
+                return None
 
             prompts = ClassPrompts.get_assignments_by_class(class_.id)
             students = StudentClasses.get_students_by_class(class_.id)
 
             return class_to_classmodel(class_, prompts, students)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
- 
+
     # Chat methods placed here to prevent circular dependencies
     def get_chat_list_by_user_id_and_instructor(
         self,
@@ -483,58 +537,75 @@ class ClassesTable:
         instructor_id: str,
         include_archived: bool = False,
     ) -> List[ChatModel]:
-        if include_archived:
-            return [
-                ChatModel(**model_to_dict(chat, recurse=False))
-                for chat in Chat.select()
-                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
-                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
-                .where(Chat.user_id == user_id)
-                .order_by(Chat.updated_at.desc())
-            ]
-        else:
-            return [
-                ChatModel(**model_to_dict(chat, recurse=False))
-                for chat in Chat.select()
-                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
-                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
-                .where(Chat.archived == False)
-                .where(Chat.user_id == user_id)
-                .order_by(Chat.updated_at.desc())
-            ]
+        try:
+            if include_archived:
+                return [
+                    ChatModel(**model_to_dict(chat, recurse=False))
+                    for chat in Chat.select()
+                    .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id == Class.id))
+                    .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+                    .where(Chat.user_id == user_id)
+                    .order_by(Chat.updated_at.desc())
+                ]
+            else:
+                return [
+                    ChatModel(**model_to_dict(chat, recurse=False))
+                    for chat in Chat.select()
+                    .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id == Class.id))
+                    .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+                    .where(Chat.archived == False)
+                    .where(Chat.user_id == user_id)
+                    .order_by(Chat.updated_at.desc())
+                ]
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def get_chats_by_instructor(
         self,
         instructor_id: str,
     ) -> List[ChatModel]:
-        return [
-            ChatModel(**model_to_dict(chat, recurse=False))
-            for chat in Chat.select()
-            .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))
-            .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
-            .order_by(Chat.updated_at.desc())
-        ]
+        try:
+            return [
+                ChatModel(**model_to_dict(chat, recurse=False))
+                for chat in Chat.select()
+                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id == Class.id))
+                .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))
+                .order_by(Chat.updated_at.desc())
+            ]
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def get_chat_by_id_and_instructor(self, id: str, instructor_id: str) -> Optional[ChatModel]:
         try:
             chat = Chat.select()\
-                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id==Class.id))\
+                .join(Class, pw.JOIN.LEFT_OUTER, on=(Chat.class_id == Class.id))\
                 .where((Class.instructor == instructor_id) | (Class.id.is_null() & (Chat.user_id == instructor_id)))\
                 .where(Chat.id == id)\
-                .get()
-            return ChatModel(**model_to_dict(chat, recurse=False))
-        except:
+                .get_or_none()
+
+            if chat:
+                return ChatModel(**model_to_dict(chat, recurse=False))
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_chats_by_class_id(self, class_id: str) -> List[ChatModel]:
         try:
             return [
-                ChatModel(**model_to_dict(chat, recurse=False)) 
+                ChatModel(**model_to_dict(chat, recurse=False))
                 for chat in Chat.select()
-                .join(Class, on=(Chat.class_id==Class.id))
+                .join(Class, on=(Chat.class_id == Class.id))
                 .where(Class.id == class_id)
             ]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
     def get_chats_by_class_id_and_instructor(self, class_id: str, instructor_id: str) -> List[ChatModel]:
@@ -542,18 +613,25 @@ class ClassesTable:
             return [
                 ChatModel(**model_to_dict(chat, recurse=False)) 
                 for chat in Chat.select()
-                .join(Class, on=(Chat.class_id==Class.id))
+                .join(Class, on=(Chat.class_id == Class.id))
                 .where((Class.id == class_id) & (Class.instructor == instructor_id))
             ]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
-    
+
     def get_class_name(self, class_id: str) -> Optional[str]:
         try:
-            return Class.select(Class.name).where(Class.id == class_id).get().name
-        except:
+            class_ = Class.select(Class.name).where(Class.id == class_id).get_or_none()
+            if class_:
+                return class_.name
             return None
-            
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
+
     def insert_new_class(self, form_data: ClassForm) -> Optional[ClassModel]:
         try:
             with self.db.atomic():
@@ -562,12 +640,14 @@ class ClassesTable:
                 StudentClasses.insert_new_student_classes_by_class(result.id, form_data.assigned_students)
 
                 return class_to_classmodel(result, assignments, form_data.assigned_students)
+
         except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def update_class_by_id(self, form_data: ClassForm) -> bool:
         excluded_columns = {"id", "assignments", "assigned_students"}
-        
+
         try:
             with self.db.atomic():
                 ClassPrompts.update_class_prompts_by_class(form_data.id, form_data.assignments)
@@ -575,9 +655,11 @@ class ClassesTable:
                 Class.update(**form_data.model_dump(exclude=excluded_columns)).where(Class.id == form_data.id).execute()
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
-        
+
     def delete_class_by_id(self, class_id: int) -> bool:
         try:
             with self.db.atomic():
@@ -587,7 +669,9 @@ class ClassesTable:
                 Class.delete().where(Class.id == class_id).execute()
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
 
@@ -625,37 +709,43 @@ class StudentClassesTable:
     def insert_new_student_classes_by_student(
         self, student_id: str, class_ids: List[int]
     ) -> List[StudentClassModel]:
-        data = [{ "student_id": student_id, "class_id": class_id } for class_id in class_ids]
-        
+        data = [{"student_id": student_id, "class_id": class_id} for class_id in class_ids]
+
         try:
             result = StudentClass.insert_many(data).execute()
             if result:
                 return StudentClass.select()
             else:
-                return None
-        except:
-            return None
+                return []
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def insert_new_student_classes_by_class(
         self, class_id: str, student_ids: List[str]
     ) -> List[StudentClassModel]:
-        data = [{ "student_id": student_id, "class_id": class_id } for student_id in student_ids]
-        
+        data = [{"student_id": student_id, "class_id": class_id} for student_id in student_ids]
+
         try:
             result = StudentClass.insert_many(data).execute()
             if result:
                 return StudentClass.select()
             else:
-                return None
-        except:
-            return None
+                return []
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def get_classes_by_student(self, student_id: str) -> List[int]:
         try:
             query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)\
                 .where(StudentClass.student_id == student_id)
             return [row.class_id.id for row in query]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
     def get_students_by_class(self, class_id: int) -> List[str]:
@@ -663,7 +753,9 @@ class StudentClassesTable:
             query = StudentClass.select(StudentClass.student_id, StudentClass.class_id)\
                 .where(StudentClass.class_id == class_id)
             return [row.student_id.id for row in query]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
     def get_all_classes_by_students(self) -> defaultdict[str, List[int]]:
@@ -676,9 +768,11 @@ class StudentClassesTable:
                 result[row.student_id.id].append(row.class_id.id)
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return defaultdict(lambda: [])
- 
+
     def get_all_students_by_classes(self) -> defaultdict[int, List[str]]:
         # returns defaultdict of class_id -> [student_ids]
         try:
@@ -689,7 +783,9 @@ class StudentClassesTable:
                 result[row.class_id.id].append(row.student_id.id)
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return defaultdict(lambda: [])
 
     def update_student_classes_by_student(
@@ -697,10 +793,12 @@ class StudentClassesTable:
     ) -> List[StudentClassModel]:
         try:
             with self.db.atomic():
-                # delete everything and reinsert for now since the expected number of classes/students is still quite small
+                # delete everything and reinsert for now since the expected no. of classes/students is still quite small
                 StudentClass.delete().where(StudentClass.student_id == student_id).execute()
                 return self.insert_new_student_classes_by_student(student_id, class_ids)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
     def update_student_classes_by_class(
@@ -708,32 +806,38 @@ class StudentClassesTable:
     ) -> List[StudentClassModel]:
         try:
             with self.db.atomic():
-                # delete everything and reinsert for now since the expected number of classes/students is still quite small
+                # delete everything and reinsert for now since the expected no. of classes/students is still quite small
                 StudentClass.delete().where(StudentClass.class_id == class_id).execute()
                 return self.insert_new_student_classes_by_class(class_id, student_ids)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
-    def delete_student_classes_by_student(self, student_id: str):
+    def delete_student_classes_by_student(self, student_id: str) -> bool:
         try:
             query = StudentClass.delete().where(StudentClass.student_id == student_id)
-            query.execute()  # Remove the rows, return number of rows removed.
+            result = query.execute()  # Remove the rows, return number of rows removed.
 
-            return True
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
-    def delete_student_classes_by_class(self, class_id: int):
+    def delete_student_classes_by_class(self, class_id: int) -> bool:
         try:
             query = StudentClass.delete().where(StudentClass.class_id == class_id)
-            query.execute()  # Remove the rows, return number of rows removed.
+            result = query.execute()  # Remove the rows, return number of rows removed.
 
-            return True
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
-StudentClasses = StudentClassesTable(DB)
 
+StudentClasses = StudentClassesTable(DB)
 
 
 ####################
@@ -759,7 +863,7 @@ class ClassPromptsTable:
         self.db.create_tables([ClassPrompt])
 
     def insert_new_assignments(
-        self, class_id: int, assignments: List[ClassPromptForm] 
+        self, class_id: int, assignments: List[ClassPromptForm]
     ) -> List[ClassPromptModel]:
         data = [
             {
@@ -773,19 +877,26 @@ class ClassPromptsTable:
         try:
             result = ClassPrompt.insert_many(data).execute()
             if result:
-                return [classprompt_to_classprompt_model(row) for row in ClassPrompt.select().where(ClassPrompt.class_id == class_id)]
+                return [
+                    classprompt_to_classprompt_model(row)
+                    for row in ClassPrompt.select().where(ClassPrompt.class_id == class_id)
+                ]
             else:
-                return None
-        except Exception as e:
-            return None
-        
+                return []
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
+
     def get_assignments_by_class(self, class_id: int) -> List[int]:
         try:
             query = ClassPrompt.select().where(ClassPrompt.class_id == class_id)
             return [classprompt_to_classprompt_model(row) for row in query]
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
-    
+
     def get_all_classes_by_prompts(self) -> defaultdict[int, List[int]]:
         # returns defaultdict of prompt_id -> [class_ids]
         try:
@@ -796,9 +907,11 @@ class ClassPromptsTable:
                 result[row.prompt_id.id].append(row.class_id.id)
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return defaultdict(lambda: [])
-        
+
     def get_all_assignments_by_classes(self) -> defaultdict[int, List[ClassPromptModel]]:
         # returns defaultdict of class_id -> [ClassPromptModel]
         try:
@@ -809,7 +922,9 @@ class ClassPromptsTable:
                 result[row.class_id.id].append(classprompt_to_classprompt_model(row))
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return defaultdict(lambda: [])
 
     def get_all_assignments_by_classes_and_instructor(self, instructor_id: str) -> defaultdict[int, List[ClassPromptModel]]:
@@ -824,15 +939,21 @@ class ClassPromptsTable:
                 result[row.class_id.id].append(classprompt_to_classprompt_model(row))
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return defaultdict(lambda: [])
 
     def check_assignment_before_deadline(self, chat_id: str) -> bool:
         try:
-            chat = Chat.select(Chat.class_id, Chat.prompt_id).where((Chat.id == chat_id)).get()
+            chat = Chat.select(Chat.class_id, Chat.prompt_id).where((Chat.id == chat_id)).get_or_none()
+            if chat is None:
+                return False
 
             assignment = ClassPrompt.select().where(
-                (ClassPrompt.class_id == chat.class_id) & (ClassPrompt.prompt_id == chat.prompt_id)).get()
+                (ClassPrompt.class_id == chat.class_id) & (ClassPrompt.prompt_id == chat.prompt_id)).get_or_none()
+            if assignment is None:
+                return False
 
             deadline = assignment.deadline
 
@@ -841,10 +962,11 @@ class ClassPromptsTable:
                 deadline = datetime.datetime.fromisoformat(assignment.deadline)
 
             return deadline is None if deadline is None else (datetime.datetime.now() <= deadline)
-        
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
-        
+
     def get_assignment_submission_by_class_and_user_id(self, class_id: str, user_id: str) -> Dict[int, bool]:
         # returns a dict mapping prompt_id -> submission status
         try:
@@ -854,12 +976,14 @@ class ClassPromptsTable:
             submitted = ClassPrompt.select(ClassPrompt.prompt_id)\
                 .join(Chat, on=((Chat.class_id == ClassPrompt.class_id) & (Chat.prompt_id == ClassPrompt.prompt_id)))\
                 .where((Chat.is_submitted) & (Chat.user_id == user_id) & (Chat.class_id == class_id))
-            
+
             for chat in submitted:
                 result[chat.prompt_id.id] = True
 
             return result
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return {}
 
     def update_class_prompts_by_class(
@@ -867,10 +991,12 @@ class ClassPromptsTable:
     ) -> List[ClassPromptModel]:
         try:
             with self.db.atomic():
-                # delete everything and reinsert for now since the expected number of classes/prompts is still quite small
+                # delete everything and reinsert for now since the expected no. of classes/prompts is still quite small
                 ClassPrompt.delete().where(ClassPrompt.class_id == class_id).execute()
                 return self.insert_new_assignments(class_id, assignments)
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return []
 
     def delete_class_prompts_by_prompt(self, prompt_id: int) -> bool:
@@ -879,7 +1005,9 @@ class ClassPromptsTable:
             query.execute()  # Remove the rows, return number of rows removed.
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def delete_class_prompts_by_class(self, class_id: int) -> bool:
@@ -888,7 +1016,9 @@ class ClassPromptsTable:
             query.execute()  # Remove the rows, return number of rows removed.
 
             return True
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
 

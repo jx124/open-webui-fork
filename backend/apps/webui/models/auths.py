@@ -1,16 +1,15 @@
 import datetime
 from pydantic import BaseModel
-from typing import Dict, List, Union, Optional
-import time
+from typing import Dict, List, Optional
 import uuid
-import logging
-from peewee import *
+import peewee as pw
 
 from apps.webui.models.users import UserModel, Users
 from utils.utils import verify_password
 
 from apps.webui.internal.db import DB
 
+import logging
 from config import SRC_LOG_LEVELS
 
 log = logging.getLogger(__name__)
@@ -21,13 +20,13 @@ log.setLevel(SRC_LOG_LEVELS["MODELS"])
 ####################
 
 
-class Auth(Model):
-    id = CharField(unique=True)
-    email = CharField()
-    password = TextField()
-    active = BooleanField()
-    otp_value = IntegerField()
-    otp_expiry = TimestampField()
+class Auth(pw.Model):
+    id = pw.CharField(unique=True)
+    email = pw.CharField()
+    password = pw.TextField()
+    active = pw.BooleanField()
+    otp_value = pw.IntegerField()
+    otp_expiry = pw.TimestampField()
 
     class Meta:
         database = DB
@@ -70,17 +69,21 @@ class SigninForm(BaseModel):
     email: str
     password: str
 
+
 class ResetPasswordForm(BaseModel):
     email: str
+
 
 class ResetOTPForm(BaseModel):
     OTP: str
     email: str
 
+
 class ResetPasswordOTPForm(BaseModel):
     OTP: str
     email: str
     password: str
+
 
 class ProfileImageUrlForm(BaseModel):
     profile_image_url: str
@@ -121,25 +124,28 @@ class AuthsTable:
         role: str = "pending",
     ) -> Optional[UserModel]:
         log.info("insert_new_auth")
+        try:
+            id = str(uuid.uuid4())
 
-        id = str(uuid.uuid4())
+            auth = AuthModel(
+                **{"id": id, "email": email, "password": password, "active": True}
+            )
+            result = Auth.create(**auth.model_dump())
 
-        auth = AuthModel(
-            **{"id": id, "email": email, "password": password, "active": True}
-        )
-        result = Auth.create(**auth.model_dump())
+            user = Users.insert_new_user(id, name, email, profile_image_url, role.strip())
 
-        user = Users.insert_new_user(id, name, email, profile_image_url, role.strip())
-
-        if result and user:
-            return user
-        else:
+            if result and user:
+                return user
+            else:
+                return None
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
         log.info(f"authenticate_user: {email}")
         try:
-            auth = Auth.get(Auth.email == email, Auth.active == True)
+            auth = Auth.get_or_none(Auth.email == email, Auth.active == True)
             if auth:
                 if verify_password(password, auth.password):
                     user = Users.get_user_by_id(auth.id)
@@ -148,7 +154,9 @@ class AuthsTable:
                     return None
             else:
                 return None
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def authenticate_user_by_api_key(self, api_key: str) -> Optional[UserModel]:
@@ -160,22 +168,26 @@ class AuthsTable:
         try:
             user = Users.get_user_by_api_key(api_key)
             return user if user else None
-        except:
-            return False
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
 
     def authenticate_user_by_trusted_header(self, email: str) -> Optional[UserModel]:
         log.info(f"authenticate_user_by_trusted_header: {email}")
         try:
-            auth = Auth.get(Auth.email == email, Auth.active == True)
+            auth = Auth.get_or_none(Auth.email == email, Auth.active == True)
             if auth:
                 user = Users.get_user_by_id(auth.id)
                 return user
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
-    def authenticate_user_otp(self, id: str, otp: str):
+    def authenticate_user_otp(self, id: str, otp: str) -> bool:
         try:
-            auth = Auth.get(Auth.id == id)
+            auth = Auth.get_or_none(Auth.id == id)
             if auth:
                 if auth.otp_value is None:
                     return False
@@ -187,7 +199,9 @@ class AuthsTable:
                 return True
 
             return False
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def update_user_password_by_id(self, id: str, new_password: str) -> bool:
@@ -195,8 +209,10 @@ class AuthsTable:
             query = Auth.update(password=new_password).where(Auth.id == id)
             result = query.execute()
 
-            return True if result == 1 else False
-        except:
+            return result == 1
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def update_user_otp_by_id(self, id: str, otp: int, expiry: int) -> bool:
@@ -204,8 +220,10 @@ class AuthsTable:
             query = Auth.update(otp_value=otp, otp_expiry=expiry).where(Auth.id == id)
             result = query.execute()
 
-            return True if result == 1 else False
-        except:
+            return result == 1
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def update_email_by_id(self, id: str, email: str) -> bool:
@@ -213,8 +231,10 @@ class AuthsTable:
             query = Auth.update(email=email).where(Auth.id == id)
             result = query.execute()
 
-            return True if result == 1 else False
-        except:
+            return result == 1
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
     def delete_auth_by_id(self, id: str) -> bool:
@@ -230,21 +250,34 @@ class AuthsTable:
                 return True
             else:
                 return False
-        except:
-            return False
-        
-    def get_emails(self) -> List[str]:
-        result = [
-            auth.email for auth in Auth.select(Auth.email)
-        ]
-        return result
-    
-    def get_user_ids_by_email(self) -> Dict[str, str]:
-        result = {}
-        rows = Auth.select(Auth.id, Auth.email)
-        for row in rows:
-            result[row.email] = row.id
 
-        return result
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return False
+
+    def get_emails(self) -> List[str]:
+        try:
+            result = [
+                auth.email for auth in Auth.select(Auth.email)
+            ]
+            return result
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
+
+    def get_user_ids_by_email(self) -> Dict[str, str]:
+        try:
+            result = {}
+            rows = Auth.select(Auth.id, Auth.email)
+            for row in rows:
+                result[row.email] = row.id
+
+            return result
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return {}
+
 
 Auths = AuthsTable(DB)

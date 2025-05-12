@@ -1,23 +1,19 @@
-import json
-import logging
-from typing import Optional
-
 import peewee as pw
-from peewee import *
 
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel, ConfigDict
 
 from apps.webui.internal.db import DB, JSONField
 
-from typing import List, Union, Optional
-from config import SRC_LOG_LEVELS
+from typing import List, Optional
 
 import time
 
+import logging
+from config import SRC_LOG_LEVELS
+
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
 
 ####################
 # Models DB Schema
@@ -73,8 +69,8 @@ class Model(pw.Model):
         Holds a JSON encoded blob of metadata, see `ModelMeta`.
     """
 
-    updated_at = BigIntegerField()
-    created_at = BigIntegerField()
+    updated_at = pw.BigIntegerField()
+    created_at = pw.BigIntegerField()
 
     class Meta:
         database = DB
@@ -125,33 +121,43 @@ class ModelsTable:
     def insert_new_model(
         self, form_data: ModelForm, user_id: str
     ) -> Optional[ModelModel]:
-        model = ModelModel(
-            **{
-                **form_data.model_dump(),
-                "user_id": user_id,
-                "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-            }
-        )
         try:
+            model = ModelModel(
+                **{
+                    **form_data.model_dump(),
+                    "user_id": user_id,
+                    "created_at": int(time.time()),
+                    "updated_at": int(time.time()),
+                }
+            )
             result = Model.create(**model.model_dump())
 
             if result:
                 return model
             else:
                 return None
-        except Exception as e:
-            print(e)
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_all_models(self) -> List[ModelModel]:
-        return [ModelModel(**model_to_dict(model)) for model in Model.select()]
+        try:
+            return [ModelModel(**model_to_dict(model)) for model in Model.select()]
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def get_model_by_id(self, id: str) -> Optional[ModelModel]:
         try:
-            model = Model.get(Model.id == id)
-            return ModelModel(**model_to_dict(model))
-        except:
+            model = Model.get_or_none(Model.id == id)
+            if model:
+                return ModelModel(**model_to_dict(model))
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def update_model_by_id(self, id: str, model: ModelForm) -> Optional[ModelModel]:
@@ -160,19 +166,23 @@ class ModelsTable:
             query = Model.update(**model.model_dump()).where(Model.id == id)
             query.execute()
 
-            model = Model.get(Model.id == id)
-            return ModelModel(**model_to_dict(model))
-        except Exception as e:
-            print(e)
+            model = Model.get_or_none(Model.id == id)
+            if model:
+                return ModelModel(**model_to_dict(model))
+            return None
 
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def delete_model_by_id(self, id: str) -> bool:
         try:
             query = Model.delete().where(Model.id == id)
-            query.execute()
-            return True
-        except:
+            result = query.execute()
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
 

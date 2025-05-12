@@ -1,19 +1,24 @@
 from pydantic import BaseModel
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
+import peewee as pw
+from typing import List, Optional
 
 from apps.webui.internal.db import DB
-from apps.webui.models.chats import Chats
+
+import logging
+from config import SRC_LOG_LEVELS
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["MODELS"])
 
 ####################
 # Evaluation DB Schema
 ####################
 
 
-class Evaluation(Model):
-    title = CharField(null=False, unique=True)
-    content = TextField(default="")
+class Evaluation(pw.Model):
+    title = pw.CharField(null=False, unique=True)
+    content = pw.TextField(default="")
+    model_id = pw.TextField(default="")
 
     class Meta:
         database = DB
@@ -23,6 +28,7 @@ class EvaluationModel(BaseModel):
     id: int
     title: str
     content: str
+    selected_model_id: str  # prevent namespace collision
 
 
 ####################
@@ -33,6 +39,8 @@ class EvaluationForm(BaseModel):
     id: int = 0
     title: str
     content: str
+    selected_model_id: str
+
 
 class EvaluationsTable:
     def __init__(self, db):
@@ -40,56 +48,108 @@ class EvaluationsTable:
         self.db.create_tables([Evaluation])
 
     def get_evaluations(self) -> List[EvaluationModel]:
-        return Evaluation.select()
-    
+        try:
+            return [EvaluationModel(
+                id=result.id,
+                title=result.title,
+                content=result.content,
+                selected_model_id=result.model_id
+            ) for result in Evaluation.select()]
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
+
     def get_evaluation_by_id(self, eval_id: int) -> Optional[EvaluationModel]:
         try:
-            result = Evaluation.select().where(Evaluation.id == eval_id).get()
-            return EvaluationModel(**model_to_dict(result))
-        except:
+            result = Evaluation.get_or_none(Evaluation.id == eval_id)
+            if result:
+                return EvaluationModel(
+                    id=result.id,
+                    title=result.title,
+                    content=result.content,
+                    selected_model_id=result.model_id
+                )
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_evaluation_content_by_id(self, eval_id: int) -> Optional[str]:
         try:
-            result = Evaluation.select().where(Evaluation.id == eval_id).get().content
-            return result
-        except:
+            result = Evaluation.get_or_none(Evaluation.id == eval_id)
+            if result:
+                return result.content
             return None
-    
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
+
     def get_evaluation_by_title(self, title: str) -> Optional[EvaluationModel]:
         try:
-            result = Evaluation.select().where(Evaluation.title == title).get()
-            return EvaluationModel(**model_to_dict(result))
-        except:
+            result = Evaluation.get_or_none(Evaluation.title == title)
+            if result:
+                return EvaluationModel(
+                    id=result.id,
+                    title=result.title,
+                    content=result.content,
+                    selected_model_id=result.model_id
+                )
             return None
-    
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
+
     def insert_new_evaluation(self, form_data: EvaluationForm) -> Optional[EvaluationModel]:
         try:
             result = Evaluation.create(title=form_data.title, content=form_data.content)
             if result:
-                return EvaluationModel(**model_to_dict(result))
+                return EvaluationModel(
+                    id=result.id,
+                    title=result.title,
+                    content=result.content,
+                    selected_model_id=result.model_id
+                )
             else:
                 return None
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def update_evaluation(self, form_data: EvaluationForm) -> Optional[EvaluationModel]:
         try:
-            result = Evaluation.update(title=form_data.title, content=form_data.content)\
+            result = Evaluation.update(
+                    title=form_data.title,
+                    content=form_data.content,
+                    model_id=form_data.selected_model_id)\
                 .where(Evaluation.id == form_data.id).execute()
             if result:
-                return EvaluationModel(**model_to_dict(Evaluation.get(Evaluation.id == form_data.id)))
+                updated = Evaluation.get_or_none(Evaluation.id == form_data.id)
+                return EvaluationModel(
+                    id=updated.id,
+                    title=updated.title,
+                    content=updated.content,
+                    selected_model_id=updated.model_id
+                )
             else:
                 return None
-        except Exception as e:
-            print("error", e)
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
-        
+
     def delete_evaluation_by_id(self, eval_id: int) -> bool:
         try:
             result = Evaluation.delete().where(Evaluation.id == eval_id).execute()
             return result == 1
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
+
 
 Evaluations = EvaluationsTable(DB)

@@ -1,17 +1,14 @@
 from pydantic import BaseModel
-from peewee import *
+import peewee as pw
 from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
+from typing import List, Optional
 import time
-import logging
-
-from utils.utils import decode_token
-from utils.misc import get_gravatar_url
 
 from apps.webui.internal.db import DB
 
 import json
 
+import logging
 from config import SRC_LOG_LEVELS
 
 log = logging.getLogger(__name__)
@@ -22,14 +19,14 @@ log.setLevel(SRC_LOG_LEVELS["MODELS"])
 ####################
 
 
-class Document(Model):
-    collection_name = CharField(unique=True)
-    name = CharField(unique=True)
-    title = TextField()
-    filename = TextField()
-    content = TextField(null=True)
-    user_id = CharField()
-    timestamp = BigIntegerField()
+class Document(pw.Model):
+    collection_name = pw.CharField(unique=True)
+    name = pw.CharField(unique=True)
+    title = pw.TextField()
+    filename = pw.TextField()
+    content = pw.TextField(null=True)
+    user_id = pw.CharField()
+    timestamp = pw.BigIntegerField()
 
     class Meta:
         database = DB
@@ -79,36 +76,46 @@ class DocumentsTable:
     def insert_new_doc(
         self, user_id: str, form_data: DocumentForm
     ) -> Optional[DocumentModel]:
-        document = DocumentModel(
-            **{
-                **form_data.model_dump(),
-                "user_id": user_id,
-                "timestamp": int(time.time()),
-            }
-        )
-
         try:
+            document = DocumentModel(
+                **{
+                    **form_data.model_dump(),
+                    "user_id": user_id,
+                    "timestamp": int(time.time()),
+                }
+            )
+
             result = Document.create(**document.model_dump())
             if result:
                 return document
             else:
                 return None
-        except:
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_doc_by_name(self, name: str) -> Optional[DocumentModel]:
         try:
-            document = Document.get(Document.name == name)
-            return DocumentModel(**model_to_dict(document))
-        except:
+            document = Document.get_or_none(Document.name == name)
+            if document:
+                return DocumentModel(**model_to_dict(document))
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def get_docs(self) -> List[DocumentModel]:
-        return [
-            DocumentModel(**model_to_dict(doc))
-            for doc in Document.select()
-            # .limit(limit).offset(skip)
-        ]
+        try:
+            return [
+                DocumentModel(**model_to_dict(doc))
+                for doc in Document.select()
+            ]
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return []
 
     def update_doc_by_name(
         self, name: str, form_data: DocumentUpdateForm
@@ -119,12 +126,14 @@ class DocumentsTable:
                 name=form_data.name,
                 timestamp=int(time.time()),
             ).where(Document.name == name)
-            query.execute()
+            result = query.execute()
 
-            doc = Document.get(Document.name == form_data.name)
-            return DocumentModel(**model_to_dict(doc))
-        except Exception as e:
-            log.exception(e)
+            if result:
+                return self.get_doc_by_name(name)
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def update_doc_content_by_name(
@@ -139,21 +148,25 @@ class DocumentsTable:
                 content=json.dumps(doc_content),
                 timestamp=int(time.time()),
             ).where(Document.name == name)
-            query.execute()
+            result = query.execute()
 
-            doc = Document.get(Document.name == name)
-            return DocumentModel(**model_to_dict(doc))
-        except Exception as e:
-            log.exception(e)
+            if result:
+                return self.get_doc_by_name(name)
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return None
 
     def delete_doc_by_name(self, name: str) -> bool:
         try:
             query = Document.delete().where((Document.name == name))
-            query.execute()  # Remove the rows, return number of rows removed.
+            result = query.execute()  # Remove the rows, return number of rows removed.
 
-            return True
-        except:
+            return result != 0
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
             return False
 
 
