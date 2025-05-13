@@ -1,12 +1,11 @@
 from pathlib import Path
 import hashlib
-import json
 import re
 from datetime import timedelta
 from typing import Optional
 
 
-def get_gravatar_url(email):
+def get_gravatar_url(email) -> str:
     # Trim leading and trailing whitespace from
     # an email address and force all characters
     # to lower case

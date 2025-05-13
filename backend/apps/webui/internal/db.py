@@ -1,6 +1,6 @@
 import json
 
-from peewee import *
+import peewee as pw
 from peewee_migrate import Router
 from playhouse.db_url import connect
 from config import SRC_LOG_LEVELS, DATA_DIR, DATABASE_URL, BACKEND_DIR
@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["DB"])
 
 
-class JSONField(TextField):
+class JSONField(pw.TextField):
     def db_value(self, value):
         return json.dumps(value)
 

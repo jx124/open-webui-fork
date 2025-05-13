@@ -342,7 +342,7 @@ class UsersTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def update_user_api_key_by_id(self, id: str, api_key: str) -> bool:
+    def update_user_api_key_by_id(self, id: str, api_key: Optional[str]) -> bool:
         try:
             query = User.update(api_key=api_key).where(User.id == id)
             result: int = query.execute()

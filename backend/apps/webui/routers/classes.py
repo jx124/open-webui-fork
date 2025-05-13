@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from apps.webui.models.prompts_classes import ClassForm, ClassModel, ClassPrompts, Classes
-from apps.webui.models.users import Users
+from apps.webui.models.users import Users, UserModel
 from apps.webui.models.chats import ChatModel
 from utils.utils import get_admin_or_instructor, get_current_user
 from constants import ERROR_MESSAGES
@@ -22,8 +22,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[ClassModel])
-async def get_classes(user=Depends(get_current_user)):
-    return Classes.get_classes(user.id, user.role)
+async def get_classes(user: UserModel = Depends(get_current_user)) -> List[ClassModel]:
+    result: List[ClassModel] = Classes.get_classes(user.id, user.role)
+    return result
 
 
 ############################
@@ -32,7 +33,9 @@ async def get_classes(user=Depends(get_current_user)):
 
 
 @router.post("/create", response_model=Optional[ClassModel])
-async def create_new_class(form_data: ClassForm, user=Depends(get_admin_or_instructor)):
+async def create_new_class(
+    form_data: ClassForm, user: UserModel = Depends(get_admin_or_instructor)
+) -> Optional[ClassModel]:
     class_ = Classes.get_class_by_name(form_data.name)
     if class_ is None:
         class_ = Classes.insert_new_class(form_data)
@@ -55,7 +58,7 @@ async def create_new_class(form_data: ClassForm, user=Depends(get_admin_or_instr
 
 
 @router.get("/{class_id}", response_model=Optional[ClassModel])
-async def get_class_by_id(class_id: int, user=Depends(get_admin_or_instructor)):
+async def get_class_by_id(class_id: int, user: UserModel = Depends(get_admin_or_instructor)) -> Optional[ClassModel]:
     class_ = Classes.get_class_by_id(user.id, user.role, class_id)
 
     if class_:
@@ -73,8 +76,8 @@ async def get_class_by_id(class_id: int, user=Depends(get_admin_or_instructor)):
 
 
 @router.get("/{class_id}/assignments/list", response_model=Dict[int, bool])
-async def get_assignment_submissions(class_id: int, user=Depends(get_current_user)):
-    submissions = ClassPrompts.get_assignment_submission_by_class_and_user_id(class_id, user.id)
+async def get_assignment_submissions(class_id: int, user: UserModel = Depends(get_current_user)) -> Dict[int, bool]:
+    submissions: Dict[int, bool] = ClassPrompts.get_assignment_submission_by_class_and_user_id(class_id, user.id)
     return submissions
 
 ###########################
@@ -84,8 +87,8 @@ async def get_assignment_submissions(class_id: int, user=Depends(get_current_use
 
 @router.post("/update", response_model=bool)
 async def update_class_by_id(
-    form_data: ClassForm, user=Depends(get_admin_or_instructor)
-):
+    form_data: ClassForm, user: UserModel = Depends(get_admin_or_instructor)
+) -> bool:
     # check if authorized
     class_ = Classes.get_class_by_id(user.id, user.role, form_data.id)
     if class_ is None:
@@ -93,11 +96,11 @@ async def update_class_by_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-    
+
     # check for name collision
     class_ = Classes.get_class_by_name(form_data.name)
     if class_ is None or class_.id == form_data.id:
-        result = Classes.update_class_by_id(form_data)
+        result: bool = Classes.update_class_by_id(form_data)
         if result:
             return result
 
@@ -118,7 +121,7 @@ async def update_class_by_id(
 
 
 @router.delete("/delete/{class_id}", response_model=bool)
-async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor)):
+async def delete_class_by_id(class_id: int, user: UserModel = Depends(get_admin_or_instructor)) -> bool:
     # check if authorized
     class_ = Classes.get_class_by_id(user.id, user.role, class_id)
     if class_ is None:
@@ -126,11 +129,11 @@ async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-    
+
     result = Classes.delete_class_by_id(class_id)
     if result:
         return True
-    
+
     raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(),
@@ -141,15 +144,15 @@ async def delete_class_by_id(class_id: int, user=Depends(get_admin_or_instructor
 # DownloadChatsByClassId
 ############################
 
-def cleanup(path: str):
+def cleanup(path: str) -> None:
     print("Deleting temporary directory", path)
     shutil.rmtree(path)
 
 
 @router.get("/{class_id}/download")
 async def download_chats_by_class_id(
-    class_id: str, bg_tasks: BackgroundTasks, user=Depends(get_admin_or_instructor)
-):
+    class_id: str, bg_tasks: BackgroundTasks, user: UserModel = Depends(get_admin_or_instructor)
+) -> FileResponse:
     chats = []
     if user.role == "admin":
         chats = Classes.get_chats_by_class_id(class_id)
@@ -163,23 +166,23 @@ async def download_chats_by_class_id(
     user_attempts: defaultdict[str, List[ChatModel]] = defaultdict(lambda: [])
 
     for chat in chats:
-        user = users.get(chat.user_id, "Deleted User")
-        user_attempts[user].append(chat)
+        user_id = users.get(chat.user_id, "Deleted User")
+        user_attempts[user_id].append(chat)
 
     tmp = tempfile.mkdtemp()
     print("Creating temporary directory", tmp)
     class_dir = os.path.join(tmp, f"{class_name}")
     os.makedirs(class_dir)
 
-    for user in user_attempts:
-        user_dir = os.path.join(class_dir, user)
+    for user_id in user_attempts:
+        user_dir = os.path.join(class_dir, user_id)
         os.makedirs(user_dir)
 
         attempts = user_attempts[user]
         for attempt in attempts:
             with open(os.path.join(user_dir, f"{attempt.title}.json"), "w") as f:
                 f.write(attempt.chat)
-    
+
     base_name = os.path.join(tmp, f"{class_name}-export")
     out_file = shutil.make_archive(base_name, "zip", class_dir)
     bg_tasks.add_task(cleanup, tmp)

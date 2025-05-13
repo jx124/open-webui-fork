@@ -1,7 +1,7 @@
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, status, Depends
 
-from apps.webui.models.users import Users
+from apps.webui.models.users import Users, UserModel
 
 from pydantic import BaseModel
 from typing import Union, Optional
@@ -76,13 +76,13 @@ def get_http_authorization_cred(auth_header: str):
 
 def get_current_user(
     auth_token: HTTPAuthorizationCredentials = Depends(bearer_security),
-):
+) -> UserModel:
     # auth by api key
     if auth_token.credentials.startswith("sk-"):
         return get_current_user_by_api_key(auth_token.credentials)
     # auth by jwt token
     data = decode_token(auth_token.credentials)
-    if data != None and "id" in data:
+    if data is not None and "id" in data:
         user = Users.get_user_by_id(data["id"])
         if user is None:
             raise HTTPException(
@@ -99,7 +99,7 @@ def get_current_user(
         )
 
 
-def get_current_user_by_api_key(api_key: str):
+def get_current_user_by_api_key(api_key: str) -> UserModel:
     user = Users.get_user_by_api_key(api_key)
 
     if user is None:
@@ -113,7 +113,7 @@ def get_current_user_by_api_key(api_key: str):
     return user
 
 
-def get_verified_user(user=Depends(get_current_user)):
+def get_verified_user(user=Depends(get_current_user)) -> UserModel:
     if user.role == "pending":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -122,7 +122,7 @@ def get_verified_user(user=Depends(get_current_user)):
     return user
 
 
-def get_admin_user(user=Depends(get_current_user)):
+def get_admin_user(user=Depends(get_current_user)) -> UserModel:
     if user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -130,7 +130,8 @@ def get_admin_user(user=Depends(get_current_user)):
         )
     return user
 
-def get_admin_or_instructor(user=Depends(get_current_user)):
+
+def get_admin_or_instructor(user=Depends(get_current_user)) -> UserModel:
     if user.role not in ["admin", "instructor"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

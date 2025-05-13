@@ -44,8 +44,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[UserModel])
-async def get_users(user=Depends(get_admin_or_instructor)):
-    return Users.get_users()
+async def get_users(user: UserModel = Depends(get_admin_or_instructor)) -> List[UserModel]:
+    result: List[UserModel] = Users.get_users()
+    return result
 
 
 ############################
@@ -54,8 +55,9 @@ async def get_users(user=Depends(get_admin_or_instructor)):
 
 
 @router.get("/profiles", response_model=Dict[str, UserProfile])
-async def get_user_profiles(user=Depends(get_admin_or_instructor)):
-    return Users.get_user_profiles()
+async def get_user_profiles(user: UserModel = Depends(get_admin_or_instructor)) -> Dict[str, UserProfile]:
+    result: Dict[str, UserProfile] = Users.get_user_profiles()
+    return result
 
 
 ############################
@@ -64,8 +66,9 @@ async def get_user_profiles(user=Depends(get_admin_or_instructor)):
 
 
 @router.get("/statistics", response_model=Dict[str, UserStatistics])
-async def get_user_statistics(user=Depends(get_admin_or_instructor)):
-    return Users.get_user_statistics()
+async def get_user_statistics(user: UserModel = Depends(get_admin_or_instructor)) -> Dict[str, UserStatistics]:
+    result: Dict[str, UserStatistics] = Users.get_user_statistics()
+    return result
 
 
 ############################
@@ -74,14 +77,15 @@ async def get_user_statistics(user=Depends(get_admin_or_instructor)):
 
 
 @router.get("/permissions/user")
-async def get_user_permissions(request: Request, user=Depends(get_admin_or_instructor)):
+async def get_user_permissions(
+        request: Request, user: UserModel = Depends(get_admin_or_instructor)) -> Dict[str, object]:
     return request.app.state.config.USER_PERMISSIONS
 
 
 @router.post("/permissions/user")
 async def update_user_permissions(
-    request: Request, form_data: dict, user=Depends(get_admin_or_instructor)
-):
+    request: Request, form_data: dict[str, object], user: UserModel = Depends(get_admin_or_instructor)
+) -> Dict[str, object]:
     request.app.state.config.USER_PERMISSIONS = form_data
     return request.app.state.config.USER_PERMISSIONS
 
@@ -92,9 +96,17 @@ async def update_user_permissions(
 
 
 @router.post("/update/role", response_model=Optional[UserModel])
-async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin_user)):
+async def update_user_role(
+        form_data: UserRoleUpdateForm, user: UserModel = Depends(get_admin_user)) -> Optional[UserModel]:
 
-    if user.id != form_data.id and form_data.id != Users.get_first_user().id:
+    first_user = Users.get_first_user()
+    if first_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ERROR_MESSAGES.DEFAULT(),
+        )
+
+    if user.id != form_data.id and form_data.id != first_user.id:
         if "," in form_data.role or len(form_data.role) > 255:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -114,8 +126,7 @@ async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin
 
 
 @router.get("/user/settings", response_model=Optional[UserSettings])
-async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
-    user = Users.get_user_by_id(user.id)
+async def get_user_settings_by_session_user(user: UserModel = Depends(get_verified_user)) -> Optional[UserSettings]:
     if user:
         return user.settings
     else:
@@ -132,16 +143,23 @@ async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
 
 @router.post("/user/settings/update", response_model=UserSettings)
 async def update_user_settings_by_session_user(
-    form_data: UserSettings, user=Depends(get_verified_user)
-):
-    user = Users.update_user_by_id(user.id, {"settings": form_data.model_dump()})
-    if user:
-        return user.settings
-    else:
+    form_data: UserSettings, user: UserModel = Depends(get_verified_user)
+) -> UserSettings:
+    updated_user = Users.update_user_by_id(user.id, {"settings": form_data.model_dump()})
+    if updated_user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.USER_NOT_FOUND,
         )
+
+    settings = updated_user.settings
+    if settings is None:
+        raise HTTPException(
+            status_code=500,
+            detail=ERROR_MESSAGES.DEFAULT(),
+        )
+
+    return settings
 
 
 ############################
@@ -155,7 +173,7 @@ class UserResponse(BaseModel):
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
+async def get_user_by_id(user_id: str, user: UserModel = Depends(get_verified_user)) -> UserResponse:
 
     # Check if user_id is a shared chat
     # If it is, get the user_id from the chat
@@ -170,10 +188,10 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
                 detail=ERROR_MESSAGES.USER_NOT_FOUND,
             )
 
-    user = Users.get_user_by_id(user_id)
+    result = Users.get_user_by_id(user_id)
 
-    if user:
-        return UserResponse(name=user.name, profile_image_url=user.profile_image_url)
+    if result:
+        return UserResponse(name=result.name, profile_image_url=result.profile_image_url)
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -188,8 +206,8 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
 
 @router.post("/{user_id}/update", response_model=Optional[UserModel])
 async def update_user_by_id(
-    user_id: str, form_data: UserUpdateForm, session_user=Depends(get_admin_or_instructor)
-):
+    user_id: str, form_data: UserUpdateForm, session_user: UserModel = Depends(get_admin_or_instructor)
+) -> Optional[UserModel]:
     user = Users.get_user_by_id(user_id)
 
     if user:
@@ -236,7 +254,7 @@ async def update_user_by_id(
 
 
 @router.delete("/{user_id}", response_model=bool)
-async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
+async def delete_user_by_id(user_id: str, user: UserModel = Depends(get_admin_user)) -> bool:
     if user.id != user_id:
         result = Auths.delete_auth_by_id(user_id)
 
@@ -260,21 +278,23 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
 
 background_tasks = set()
 
+
 @router.post("/import", response_model=List[UserModel])
-async def import_users_by_excel(request: Request, user=Depends(get_admin_or_instructor)):
+async def import_users_by_excel(
+        request: Request, user: UserModel = Depends(get_admin_or_instructor)) -> List[UserModel]:
     users = None
 
     try:
         recv_bytes = await request.body()
         users = pd.read_excel(io.BytesIO(recv_bytes))
-    except:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.INVALID_IMPORT_FILE
         )
 
     if len(users) == 0:
-        return None
+        return []
 
     required_columns = set(["Name", "Email", "Role"])
 
@@ -283,35 +303,35 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_or_inst
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.MISSING_COLUMNS_IMPORT(required_columns.difference(users.columns))
         )
-    
+
     users = users[["Name", "Email", "Role"]]
-    
+
     available_roles = set([role.name for role in Roles.get_roles()])
     user_roles = set([role.strip() for role in users["Role"]])
-    
+
     if not user_roles.issubset(available_roles):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.MISSING_ROLES(user_roles.difference(available_roles))
         )
-    
+
     existing_emails = set(Auths.get_emails())
     user_emails = set([email.lower() for email in users["Email"]]) - existing_emails
-    
+
     for email in user_emails:
         if not validate_email_format(email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT(email)
             )
-    
+
     # only create accounts for new users
     users = users.loc[users["Email"].isin(user_emails)]
-        
+
     users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
 
     task = asyncio.create_task(email_user_account_details(users))
-    
+
     # save reference to prevent garbage collection
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
@@ -329,13 +349,14 @@ async def import_users_by_excel(request: Request, user=Depends(get_admin_or_inst
             "/user.png",
             role,
         )
-        new_users.append(result)
+        if result is not None:
+            new_users.append(result)
 
     return new_users
 
 
 # TODO: set daily limits
-async def email_user_account_details(users):
+async def email_user_account_details(users) -> None:
     smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     smtp_server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
 
@@ -370,31 +391,30 @@ async def email_user_account_details(users):
     smtp_server.quit()
 
 
-
 ############################
 # GetUserIdssByExcel
 ############################
 
 
 @router.post("/ids/import", response_model=List[str])
-async def get_user_ids_by_excel(request: Request, user=Depends(get_admin_or_instructor)):
+async def get_user_ids_by_excel(request: Request, user: UserModel = Depends(get_admin_or_instructor)) -> List[str]:
     users = None
 
     try:
         recv_bytes = await request.body()
         users = pd.read_excel(io.BytesIO(recv_bytes))
-    except:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.INVALID_IMPORT_FILE
         )
-    
+
     if "Email" not in users.columns:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.MISSING_COLUMNS_IMPORT("Email")
         )
-    
+
     existing_emails = set(Auths.get_emails())
     user_emails = set([email.lower() for email in users["Email"]])
 
@@ -403,7 +423,7 @@ async def get_user_ids_by_excel(request: Request, user=Depends(get_admin_or_inst
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.MISSING_EMAILS(user_emails.difference(existing_emails))
         )
-    
+
     email_ids = Auths.get_user_ids_by_email()
     result = []
 

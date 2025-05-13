@@ -51,6 +51,7 @@ class ERROR_MESSAGES(str, Enum):
     INVALID_ROLE_DELETION = lambda num=0: f"This role cannot be deleted as {num} {'user is' if num==1 else 'users are'} assigned to it."
     DUPLICATE_ROLES = "Roles must be unique."
     EXISTING_USERS = "You can't turn off authentication because there are existing users. If you want to disable WEBUI_AUTH, make sure your web interface doesn't have any existing users and is a fresh installation."
+    INVALID_DURATION = "Invalid duration format."
 
     UNAUTHORIZED = "401 Unauthorized"
     ACCESS_PROHIBITED = "You do not have permission to access this resource. Please contact your administrator for assistance."

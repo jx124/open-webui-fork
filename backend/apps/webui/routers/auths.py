@@ -10,7 +10,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import re
 import uuid
-
+from typing import Optional
 
 from apps.webui.models.auths import (
     ResetOTPForm,
@@ -39,7 +39,7 @@ from utils.utils import (
 from utils.misc import parse_duration, validate_email_format
 from utils.webhook import post_webhook
 from constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
-from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, SITE_LINK, WEBUI_AUTH, WEBUI_AUTH_TRUSTED_EMAIL_HEADER
+from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, WEBUI_AUTH, WEBUI_AUTH_TRUSTED_EMAIL_HEADER
 
 router = APIRouter()
 
@@ -49,14 +49,14 @@ router = APIRouter()
 
 
 @router.get("/", response_model=UserResponse)
-async def get_session_user(user=Depends(get_current_user)):
-    return {
+async def get_session_user(user: UserModel = Depends(get_current_user)) -> UserResponse:
+    return UserResponse(**{
         "id": user.id,
         "email": user.email,
         "name": user.name,
         "role": user.role,
         "profile_image_url": user.profile_image_url,
-    }
+    })
 
 
 ############################
@@ -66,19 +66,19 @@ async def get_session_user(user=Depends(get_current_user)):
 
 @router.post("/update/profile", response_model=UserResponse)
 async def update_profile(
-    form_data: UpdateProfileForm, session_user=Depends(get_current_user)
-):
+    form_data: UpdateProfileForm, session_user: UserModel = Depends(get_current_user)
+) -> UserResponse:
     if session_user:
         user = Users.update_user_by_id(
             session_user.id,
             {"profile_image_url": form_data.profile_image_url, "name": form_data.name},
         )
-        if user:
-            return user
-        else:
-            raise HTTPException(400, detail=ERROR_MESSAGES.DEFAULT())
+        if user is None:
+            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT())
+        return user
+
     else:
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_CRED)
 
 
 ############################
@@ -88,20 +88,25 @@ async def update_profile(
 
 @router.post("/update/password", response_model=bool)
 async def update_password(
-    form_data: UpdatePasswordForm, session_user=Depends(get_current_user)
-):
+    form_data: UpdatePasswordForm, session_user: UserModel = Depends(get_current_user)
+) -> bool:
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
-        raise HTTPException(400, detail=ERROR_MESSAGES.ACTION_PROHIBITED)
+        raise HTTPException(401, detail=ERROR_MESSAGES.ACTION_PROHIBITED)
     if session_user:
         user = Auths.authenticate_user(session_user.email, form_data.password)
 
-        if user:
-            hashed = get_password_hash(form_data.new_password)
-            return Auths.update_user_password_by_id(user.id, hashed)
-        else:
-            raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_PASSWORD)
+        if user is None:
+            raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_PASSWORD)
+
+        hashed = get_password_hash(form_data.new_password)
+        success = Auths.update_user_password_by_id(user.id, hashed)
+
+        if success is None:
+            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT())
+
+        return success
     else:
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_CRED)
 
 
 ############################
@@ -110,10 +115,10 @@ async def update_password(
 
 
 @router.post("/signin", response_model=SigninResponse)
-async def signin(request: Request, form_data: SigninForm):
+async def signin(request: Request, form_data: SigninForm) -> SigninResponse:
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
         if WEBUI_AUTH_TRUSTED_EMAIL_HEADER not in request.headers:
-            raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_TRUSTED_HEADER)
+            raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_TRUSTED_HEADER)
 
         trusted_email = request.headers[WEBUI_AUTH_TRUSTED_EMAIL_HEADER].lower()
         if not Users.get_user_by_email(trusted_email.lower()):
@@ -124,7 +129,7 @@ async def signin(request: Request, form_data: SigninForm):
                 ),
             )
         user = Auths.authenticate_user_by_trusted_header(trusted_email)
-    elif WEBUI_AUTH == False:
+    elif not WEBUI_AUTH:
         admin_email = "admin@localhost"
         admin_password = "admin"
 
@@ -132,7 +137,7 @@ async def signin(request: Request, form_data: SigninForm):
             user = Auths.authenticate_user(admin_email.lower(), admin_password)
         else:
             if Users.get_num_users() != 0:
-                raise HTTPException(400, detail=ERROR_MESSAGES.EXISTING_USERS)
+                raise HTTPException(403, detail=ERROR_MESSAGES.EXISTING_USERS)
 
             await signup(
                 request,
@@ -149,7 +154,7 @@ async def signin(request: Request, form_data: SigninForm):
             expires_delta=parse_duration(request.app.state.config.JWT_EXPIRES_IN),
         )
 
-        return {
+        return SigninResponse(**{
             "token": token,
             "token_type": "Bearer",
             "id": user.id,
@@ -157,9 +162,9 @@ async def signin(request: Request, form_data: SigninForm):
             "name": user.name,
             "role": user.role,
             "profile_image_url": user.profile_image_url,
-        }
+        })
     else:
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_CRED)
 
 
 ############################
@@ -168,7 +173,7 @@ async def signin(request: Request, form_data: SigninForm):
 
 
 @router.post("/signup", response_model=SigninResponse)
-async def signup(request: Request, form_data: SignupForm):
+async def signup(request: Request, form_data: SignupForm) -> SigninResponse:
     if not request.app.state.config.ENABLE_SIGNUP and WEBUI_AUTH:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
@@ -197,35 +202,35 @@ async def signup(request: Request, form_data: SignupForm):
             role,
         )
 
-        if user:
-            token = create_token(
-                data={"id": user.id},
-                expires_delta=parse_duration(request.app.state.config.JWT_EXPIRES_IN),
-            )
-            # response.set_cookie(key='token', value=token, httponly=True)
-
-            if request.app.state.config.WEBHOOK_URL:
-                post_webhook(
-                    request.app.state.config.WEBHOOK_URL,
-                    WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                    {
-                        "action": "signup",
-                        "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                        "user": user.model_dump_json(exclude_none=True),
-                    },
-                )
-
-            return {
-                "token": token,
-                "token_type": "Bearer",
-                "id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "role": user.role,
-                "profile_image_url": user.profile_image_url,
-            }
-        else:
+        if user is None:
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
+
+        token = create_token(
+            data={"id": user.id},
+            expires_delta=parse_duration(request.app.state.config.JWT_EXPIRES_IN),
+        )
+        # response.set_cookie(key='token', value=token, httponly=True)
+
+        if request.app.state.config.WEBHOOK_URL:
+            post_webhook(
+                request.app.state.config.WEBHOOK_URL,
+                WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                {
+                    "action": "signup",
+                    "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                    "user": user.model_dump_json(exclude_none=True),
+                },
+            )
+
+        return SigninResponse(**{
+            "token": token,
+            "token_type": "Bearer",
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "profile_image_url": user.profile_image_url,
+        })
     except Exception as err:
         raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
 
@@ -236,7 +241,7 @@ async def signup(request: Request, form_data: SignupForm):
 
 
 @router.post("/add", response_model=SigninResponse)
-async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
+async def add_user(form_data: AddUserForm, user: UserModel = Depends(get_admin_user)) -> SigninResponse:
 
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
@@ -247,10 +252,8 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-
-        print(form_data)
         hashed = get_password_hash(form_data.password)
-        user = Auths.insert_new_auth(
+        new_user: Optional[UserModel] = Auths.insert_new_auth(
             form_data.email.lower(),
             hashed,
             form_data.name,
@@ -258,19 +261,19 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
             form_data.role,
         )
 
-        if user:
-            token = create_token(data={"id": user.id})
-            return {
-                "token": token,
-                "token_type": "Bearer",
-                "id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "role": user.role.strip(),
-                "profile_image_url": user.profile_image_url,
-            }
-        else:
+        if new_user is None:
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
+
+        token = create_token(data={"id": new_user.id})
+        return SigninResponse(**{
+            "token": token,
+            "token_type": "Bearer",
+            "id": new_user.id,
+            "email": new_user.email,
+            "name": new_user.name,
+            "role": new_user.role.strip(),
+            "profile_image_url": new_user.profile_image_url,
+        })
     except Exception as err:
         raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
 
@@ -281,35 +284,39 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
 
 background_tasks = set()
 
+
 @router.post("/reset", response_model=bool)
-async def send_user_otp(form_data: ResetPasswordForm):
+async def send_user_otp(form_data: ResetPasswordForm) -> bool:
 
     user = Users.get_user_by_email(form_data.email.lower())
 
     if user is None:
         await asyncio.sleep(2)
-        return True
+        raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_MISMATCH)
 
     try:
         otp = secrets.randbelow(1000000)
         expiry = int(time.time()) + 60 * 15
 
         result = Auths.update_user_otp_by_id(user.id, otp, expiry)
-        
+
         if result:
             task = asyncio.create_task(email_user_otp(user, str(otp).zfill(6)))
-        
+
             # save reference to prevent garbage collection
             background_tasks.add(task)
             task.add_done_callback(background_tasks.discard)
+            return True
 
-        return True
+        else:
+            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT())
+
     except Exception:
         return True
 
 
 # TODO: set daily limits
-async def email_user_otp(user: UserModel, otp: str):
+async def email_user_otp(user: UserModel, otp: str) -> None:
     smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     smtp_server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
 
@@ -330,18 +337,17 @@ async def email_user_otp(user: UserModel, otp: str):
     except Exception as e:
         print(f"SMTP error {e}")
 
-
     smtp_server.quit()
 
 
 @router.post("/reset/verify", response_model=bool)
-async def verify_user_otp(form_data: ResetOTPForm):
+async def verify_user_otp(form_data: ResetOTPForm) -> bool:
 
     user = Users.get_user_by_email(form_data.email.lower())
 
     if user is None:
         await asyncio.sleep(1)
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+        raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_MISMATCH)
 
     try:
         authorized = Auths.authenticate_user_otp(user.id, form_data.OTP)
@@ -350,39 +356,39 @@ async def verify_user_otp(form_data: ResetOTPForm):
             return True
 
         await asyncio.sleep(1)
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_OTP)
 
     except Exception:
         await asyncio.sleep(1)
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_OTP)
 
 
 @router.post("/reset/password", response_model=bool)
-async def reset_user_password(form_data: ResetPasswordOTPForm):
+async def reset_user_password(form_data: ResetPasswordOTPForm) -> bool:
 
     user = Users.get_user_by_email(form_data.email.lower())
 
     if user is None:
         await asyncio.sleep(1)
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+        raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_MISMATCH)
 
     try:
         authorized = Auths.authenticate_user_otp(user.id, form_data.OTP)
 
         if not authorized:
             await asyncio.sleep(1)
-            raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+            raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_OTP)
 
         hashed = get_password_hash(form_data.password)
         result = Auths.update_user_password_by_id(user.id, hashed)
 
         if result:
             return True
-        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT)
+        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT())
 
     except Exception:
         await asyncio.sleep(1)
-        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_OTP)
+        raise HTTPException(401, detail=ERROR_MESSAGES.INVALID_OTP)
 
 
 ############################
@@ -391,12 +397,13 @@ async def reset_user_password(form_data: ResetPasswordOTPForm):
 
 
 @router.get("/signup/enabled", response_model=bool)
-async def get_sign_up_status(request: Request, user=Depends(get_admin_user)):
-    return request.app.state.config.ENABLE_SIGNUP
+async def get_sign_up_status(request: Request, user: UserModel = Depends(get_admin_user)) -> bool:
+    enabled: bool = request.app.state.config.ENABLE_SIGNUP
+    return enabled
 
 
 @router.get("/signup/enabled/toggle", response_model=bool)
-async def toggle_sign_up(request: Request, user=Depends(get_admin_user)):
+async def toggle_sign_up(request: Request, user: UserModel = Depends(get_admin_user)) -> bool:
     request.app.state.config.ENABLE_SIGNUP = not request.app.state.config.ENABLE_SIGNUP
     return request.app.state.config.ENABLE_SIGNUP
 
@@ -406,23 +413,25 @@ async def toggle_sign_up(request: Request, user=Depends(get_admin_user)):
 ############################
 
 
-@router.get("/signup/user/role")
-async def get_default_user_role(request: Request, user=Depends(get_admin_user)):
-    return request.app.state.config.DEFAULT_USER_ROLE
+@router.get("/signup/user/role", response_model=str)
+async def get_default_user_role(request: Request, user: UserModel = Depends(get_admin_user)) -> str:
+    default_role: str = request.app.state.config.DEFAULT_USER_ROLE
+    return default_role
 
 
 class UpdateRoleForm(BaseModel):
     role: str
 
 
-@router.post("/signup/user/role")
+@router.post("/signup/user/role", response_model=str)
 async def update_default_user_role(
-    request: Request, form_data: UpdateRoleForm, user=Depends(get_admin_user)
-):
+    request: Request, form_data: UpdateRoleForm, user: UserModel = Depends(get_admin_user)
+) -> str:
     roles = [role.name for role in Roles.get_roles()]
     if form_data.role.strip() in roles:
         request.app.state.config.DEFAULT_USER_ROLE = form_data.role.strip()
-    return request.app.state.config.DEFAULT_USER_ROLE
+    new_role: str = request.app.state.config.DEFAULT_USER_ROLE
+    return new_role
 
 
 ############################
@@ -430,29 +439,32 @@ async def update_default_user_role(
 ############################
 
 
-@router.get("/token/expires")
-async def get_token_expires_duration(request: Request, user=Depends(get_admin_user)):
-    return request.app.state.config.JWT_EXPIRES_IN
+@router.get("/token/expires", response_model=str)
+async def get_token_expires_duration(request: Request, user: UserModel = Depends(get_admin_user)) -> str:
+    duration: str = request.app.state.config.JWT_EXPIRES_IN
+    return duration
 
 
 class UpdateJWTExpiresDurationForm(BaseModel):
     duration: str
 
 
-@router.post("/token/expires/update")
+@router.post("/token/expires/update", response_model=str)
 async def update_token_expires_duration(
     request: Request,
     form_data: UpdateJWTExpiresDurationForm,
-    user=Depends(get_admin_user),
-):
+    user: UserModel = Depends(get_admin_user),
+) -> str:
     pattern = r"^(-1|0|(-?\d+(\.\d+)?)(ms|s|m|h|d|w))$"
 
     # Check if the input string matches the pattern
     if re.match(pattern, form_data.duration):
         request.app.state.config.JWT_EXPIRES_IN = form_data.duration
-        return request.app.state.config.JWT_EXPIRES_IN
     else:
-        return request.app.state.config.JWT_EXPIRES_IN
+        raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_DURATION)
+
+    duration: str = request.app.state.config.JWT_EXPIRES_IN
+    return duration
 
 
 ############################
@@ -462,31 +474,28 @@ async def update_token_expires_duration(
 
 # create api key
 @router.post("/api_key", response_model=ApiKey)
-async def create_api_key_(user=Depends(get_current_user)):
+async def create_api_key_(user: UserModel = Depends(get_current_user)) -> ApiKey:
     api_key = create_api_key()
     success = Users.update_user_api_key_by_id(user.id, api_key)
     if success:
-        return {
-            "api_key": api_key,
-        }
+        result: ApiKey = ApiKey(api_key=api_key)
+        return result
     else:
         raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_API_KEY_ERROR)
 
 
 # delete api key
 @router.delete("/api_key", response_model=bool)
-async def delete_api_key(user=Depends(get_current_user)):
-    success = Users.update_user_api_key_by_id(user.id, None)
+async def delete_api_key(user: UserModel = Depends(get_current_user)) -> bool:
+    success: bool = Users.update_user_api_key_by_id(user.id, None)
     return success
 
 
 # get api key
 @router.get("/api_key", response_model=ApiKey)
-async def get_api_key(user=Depends(get_current_user)):
+async def get_api_key(user: UserModel = Depends(get_current_user)) -> ApiKey:
     api_key = Users.get_user_api_key_by_id(user.id)
-    if api_key:
-        return {
-            "api_key": api_key,
-        }
+    if api_key is not None:
+        return ApiKey(api_key=api_key)
     else:
         raise HTTPException(404, detail=ERROR_MESSAGES.API_KEY_NOT_FOUND)

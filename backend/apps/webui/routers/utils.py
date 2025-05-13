@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, Response
+from fastapi import APIRouter, Response
 from fastapi import Depends, HTTPException, status
 from peewee import SqliteDatabase
 from starlette.responses import FileResponse
@@ -8,6 +8,8 @@ from fpdf import FPDF
 import markdown
 
 from apps.webui.internal.db import DB
+from apps.webui.models.users import UserModel
+
 from utils.utils import get_admin_user
 from utils.misc import get_gravatar_url
 
@@ -21,7 +23,7 @@ router = APIRouter()
 @router.get("/gravatar")
 async def get_gravatar(
     email: str,
-):
+) -> str:
     return get_gravatar_url(email)
 
 
@@ -32,7 +34,7 @@ class MarkdownForm(BaseModel):
 @router.post("/markdown")
 async def get_html_from_markdown(
     form_data: MarkdownForm,
-):
+) -> dict[str, str]:
     return {"html": markdown.markdown(form_data.md)}
 
 
@@ -44,7 +46,7 @@ class ChatForm(BaseModel):
 @router.post("/pdf")
 async def download_chat_as_pdf(
     form_data: ChatForm,
-):
+) -> Response:
     pdf = FPDF()
     pdf.add_page()
 
@@ -85,12 +87,12 @@ async def download_chat_as_pdf(
     return Response(
         content=bytes(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment;filename=chat.pdf"},
+        headers={"Content-Disposition": "attachment;filename=chat.pdf"},
     )
 
 
 @router.get("/db/download")
-async def download_db(user=Depends(get_admin_user)):
+async def download_db(user: UserModel = Depends(get_admin_user)) -> FileResponse:
     if not ENABLE_ADMIN_EXPORT:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,7 +111,7 @@ async def download_db(user=Depends(get_admin_user)):
 
 
 @router.get("/litellm/config")
-async def download_litellm_config_yaml(user=Depends(get_admin_user)):
+async def download_litellm_config_yaml(user: UserModel = Depends(get_admin_user)) -> FileResponse:
     return FileResponse(
         f"{DATA_DIR}/litellm/config.yaml",
         media_type="application/octet-stream",

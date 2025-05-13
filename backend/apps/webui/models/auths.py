@@ -120,8 +120,8 @@ class AuthsTable:
         email: str,
         password: str,
         name: str,
-        profile_image_url: str = "/user.png",
-        role: str = "pending",
+        profile_image_url: Optional[str] = "/user.png",
+        role: Optional[str] = "pending",
     ) -> Optional[UserModel]:
         log.info("insert_new_auth")
         try:
@@ -132,7 +132,9 @@ class AuthsTable:
             )
             result = Auth.create(**auth.model_dump())
 
-            user = Users.insert_new_user(id, name, email, profile_image_url, role.strip())
+            user = Users.insert_new_user(id, name, email,
+                                         profile_image_url if profile_image_url is not None else "/user.png",
+                                         role.strip() if role is not None else "pending")
 
             if result and user:
                 return user
@@ -167,7 +169,7 @@ class AuthsTable:
 
         try:
             user = Users.get_user_by_api_key(api_key)
-            return user if user else None
+            return user
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -186,7 +188,7 @@ class AuthsTable:
             log.exception(" Exception caught in model method.")
             return None
 
-    def authenticate_user_otp(self, id: str, otp: str) -> bool:
+    def authenticate_user_otp(self, id: str, otp: str) -> Optional[bool]:
         try:
             auth = Auth.get_or_none(Auth.id == id)
             if auth:
@@ -203,9 +205,9 @@ class AuthsTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return False
+            return None
 
-    def update_user_password_by_id(self, id: str, new_password: str) -> bool:
+    def update_user_password_by_id(self, id: str, new_password: str) -> Optional[bool]:
         try:
             query = Auth.update(password=new_password).where(Auth.id == id)
             result: int = query.execute()
@@ -214,9 +216,9 @@ class AuthsTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return False
+            return None
 
-    def update_user_otp_by_id(self, id: str, otp: int, expiry: int) -> bool:
+    def update_user_otp_by_id(self, id: str, otp: int, expiry: int) -> Optional[bool]:
         try:
             query = Auth.update(otp_value=otp, otp_expiry=expiry).where(Auth.id == id)
             result: int = query.execute()
@@ -225,9 +227,9 @@ class AuthsTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return False
+            return None
 
-    def update_email_by_id(self, id: str, email: str) -> bool:
+    def update_email_by_id(self, id: str, email: str) -> Optional[bool]:
         try:
             query = Auth.update(email=email).where(Auth.id == id)
             result: int = query.execute()
@@ -236,9 +238,9 @@ class AuthsTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return False
+            return None
 
-    def delete_auth_by_id(self, id: str) -> bool:
+    def delete_auth_by_id(self, id: str) -> Optional[bool]:
         try:
             # Delete User
             result = Users.delete_user_by_id(id)
@@ -254,7 +256,7 @@ class AuthsTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return False
+            return None
 
     def get_emails(self) -> List[str]:
         try:

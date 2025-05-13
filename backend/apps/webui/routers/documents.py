@@ -1,6 +1,5 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from fastapi import Depends, HTTPException, status
+from typing import List, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -13,6 +12,7 @@ from apps.webui.models.documents import (
     DocumentModel,
     DocumentResponse,
 )
+from apps.webui.models.users import UserModel
 
 from utils.utils import get_current_user, get_admin_user
 from constants import ERROR_MESSAGES
@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[DocumentResponse])
-async def get_documents(user=Depends(get_current_user)):
+async def get_documents(user: UserModel = Depends(get_current_user)) -> List[DocumentResponse]:
     docs = [
         DocumentResponse(
             **{
@@ -44,9 +44,9 @@ async def get_documents(user=Depends(get_current_user)):
 
 
 @router.post("/create", response_model=Optional[DocumentResponse])
-async def create_new_doc(form_data: DocumentForm, user=Depends(get_admin_user)):
+async def create_new_doc(form_data: DocumentForm, user: UserModel = Depends(get_admin_user)) -> Optional[DocumentResponse]:
     doc = Documents.get_doc_by_name(form_data.name)
-    if doc == None:
+    if doc is None:
         doc = Documents.insert_new_doc(user.id, form_data)
 
         if doc:
@@ -74,7 +74,7 @@ async def create_new_doc(form_data: DocumentForm, user=Depends(get_admin_user)):
 
 
 @router.get("/name/{name}", response_model=Optional[DocumentResponse])
-async def get_doc_by_name(name: str, user=Depends(get_current_user)):
+async def get_doc_by_name(name: str, user: UserModel = Depends(get_current_user)) -> Optional[DocumentResponse]:
     doc = Documents.get_doc_by_name(name)
 
     if doc:
@@ -102,11 +102,12 @@ class TagItem(BaseModel):
 
 class TagDocumentForm(BaseModel):
     name: str
-    tags: List[dict]
+    tags: List[str]
 
 
 @router.post("/name/{name}/tags", response_model=Optional[DocumentResponse])
-async def tag_doc_by_name(form_data: TagDocumentForm, user=Depends(get_current_user)):
+async def tag_doc_by_name(
+        form_data: TagDocumentForm, user: UserModel = Depends(get_current_user)) -> Optional[DocumentResponse]:
     doc = Documents.update_doc_content_by_name(form_data.name, {"tags": form_data.tags})
 
     if doc:
@@ -130,8 +131,8 @@ async def tag_doc_by_name(form_data: TagDocumentForm, user=Depends(get_current_u
 
 @router.post("/name/{name}/update", response_model=Optional[DocumentResponse])
 async def update_doc_by_name(
-    name: str, form_data: DocumentUpdateForm, user=Depends(get_admin_user)
-):
+    name: str, form_data: DocumentUpdateForm, user: UserModel = Depends(get_admin_user)
+) -> Optional[DocumentResponse]:
     doc = Documents.update_doc_by_name(name, form_data)
     if doc:
         return DocumentResponse(
@@ -153,6 +154,6 @@ async def update_doc_by_name(
 
 
 @router.delete("/name/{name}/delete", response_model=bool)
-async def delete_doc_by_name(name: str, user=Depends(get_admin_user)):
-    result = Documents.delete_doc_by_name(name)
+async def delete_doc_by_name(name: str, user: UserModel = Depends(get_admin_user)) -> bool:
+    result: bool = Documents.delete_doc_by_name(name)
     return result

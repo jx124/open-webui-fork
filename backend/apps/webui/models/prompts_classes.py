@@ -978,7 +978,7 @@ class ClassPromptsTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def get_assignment_submission_by_class_and_user_id(self, class_id: str, user_id: str) -> Dict[int, bool]:
+    def get_assignment_submission_by_class_and_user_id(self, class_id: int, user_id: str) -> Dict[int, bool]:
         # returns a dict mapping prompt_id -> submission status
         try:
             prompts = ClassPrompt.select(ClassPrompt.prompt_id).where(ClassPrompt.class_id == class_id)

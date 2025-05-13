@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request, Response, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 import requests
 import aiohttp
@@ -17,7 +17,6 @@ from apps.webui.models.prompts_classes import Prompts
 from apps.webui.models.evaluations import Evaluations
 from constants import ERROR_MESSAGES
 from utils.utils import (
-    decode_token,
     get_current_user,
     get_verified_user,
     get_admin_user,

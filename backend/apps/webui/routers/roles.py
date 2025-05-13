@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter
 
 from apps.webui.models.roles import Roles, RoleForm, RoleModel
-from apps.webui.models.users import Users
+from apps.webui.models.users import Users, UserModel
 from apps.webui.models.prompts_classes import PromptRoles
 
 from utils.utils import get_admin_or_instructor, get_admin_user
@@ -18,8 +18,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[RoleModel])
-async def get_roles(user=Depends(get_admin_or_instructor)):
-    return Roles.get_roles()
+async def get_roles(user: UserModel = Depends(get_admin_or_instructor)) -> List[RoleModel]:
+    result: List[RoleModel] = Roles.get_roles()
+    return result
 
 
 ############################
@@ -28,7 +29,7 @@ async def get_roles(user=Depends(get_admin_or_instructor)):
 
 
 @router.post("/create", response_model=Optional[RoleModel])
-async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
+async def create_new_role(form_data: RoleForm, user: UserModel = Depends(get_admin_user)) -> Optional[RoleModel]:
     if "," in form_data.name or len(form_data.name) > 255:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -36,7 +37,7 @@ async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
         )
 
     role = Roles.get_role_by_name(form_data.name)
-    if role == None:
+    if role is None:
 
         role = Roles.insert_new_role(form_data.name)
 
@@ -53,12 +54,12 @@ async def create_new_role(form_data: RoleForm, user=Depends(get_admin_user)):
 
 
 ############################
-# UpdateRoleByCommand   
+# UpdateRoleByCommand
 ############################
 
 
 @router.post("/update", response_model=List[RoleModel])
-async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
+async def update_roles(roles: List[RoleForm], user: UserModel = Depends(get_admin_user)) -> List[RoleModel]:
     for role in roles:
         if "," in role.name or len(role.name) > 255:
             raise HTTPException(
@@ -74,14 +75,15 @@ async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
         if role.id == 0:
             Roles.insert_new_role(role.name)
         else:
-            result = Roles.update_role(role)
+            result: Optional[RoleModel] = Roles.update_role(role)
             if result is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=ERROR_MESSAGES.DUPLICATE_ROLES,
                 )
 
-    return Roles.get_roles()
+    new_roles: List[RoleModel] = Roles.get_roles()
+    return new_roles
 
 
 # ############################
@@ -90,10 +92,10 @@ async def update_roles(roles: List[RoleForm], user=Depends(get_admin_user)):
 
 
 @router.delete("/delete/{role_id}", response_model=bool)
-async def delete_role_by_id(role_id: int, user=Depends(get_admin_user)):
+async def delete_role_by_id(role_id: int, user: UserModel = Depends(get_admin_user)) -> bool:
     if role_id == 0:
         return True
-    
+
     invalid_roles = [role.id for role in Roles.get_roles() if role.name in ["pending", "admin", "instructor"]]
 
     # "pending", "admin", and "instructor" roles cannot be deleted
@@ -102,7 +104,7 @@ async def delete_role_by_id(role_id: int, user=Depends(get_admin_user)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_ROLE_CHANGE,
             )
-    
+
     num_users = Users.get_num_users_by_role_id(role_id)
     if num_users != 0:
         raise HTTPException(
@@ -110,7 +112,9 @@ async def delete_role_by_id(role_id: int, user=Depends(get_admin_user)):
             detail=ERROR_MESSAGES.INVALID_ROLE_DELETION(num_users),
         )
 
-    result = PromptRoles.delete_prompt_roles_by_role(role_id)
+    result: bool = PromptRoles.delete_prompt_roles_by_role(role_id)
+    role_result: bool = False
+
     if result:
-        result = Roles.delete_role_by_id(role_id)
-    return result
+        role_result = Roles.delete_role_by_id(role_id)
+    return result and role_result

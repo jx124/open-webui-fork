@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from config import BannerModel
-
+from apps.webui.models.users import UserModel
 
 from utils.utils import (
     get_current_user,
@@ -36,8 +36,8 @@ class SetDefaultSuggestionsForm(BaseModel):
 
 @router.post("/default/models", response_model=str)
 async def set_global_default_models(
-    request: Request, form_data: SetDefaultModelsForm, user=Depends(get_admin_user)
-):
+    request: Request, form_data: SetDefaultModelsForm, user: UserModel = Depends(get_admin_user)
+) -> str:
     request.app.state.config.DEFAULT_MODELS = form_data.models
     return request.app.state.config.DEFAULT_MODELS
 
@@ -46,11 +46,12 @@ async def set_global_default_models(
 async def set_global_default_suggestions(
     request: Request,
     form_data: SetDefaultSuggestionsForm,
-    user=Depends(get_admin_user),
-):
+    user: UserModel = Depends(get_admin_user),
+) -> List[PromptSuggestion]:
     data = form_data.model_dump()
     request.app.state.config.DEFAULT_PROMPT_SUGGESTIONS = data["suggestions"]
-    return request.app.state.config.DEFAULT_PROMPT_SUGGESTIONS
+    result: List[PromptSuggestion] = request.app.state.config.DEFAULT_PROMPT_SUGGESTIONS
+    return result
 
 
 ############################
@@ -66,16 +67,18 @@ class SetBannersForm(BaseModel):
 async def set_banners(
     request: Request,
     form_data: SetBannersForm,
-    user=Depends(get_admin_user),
-):
+    user: UserModel = Depends(get_admin_user),
+) -> List[BannerModel]:
     data = form_data.model_dump()
     request.app.state.config.BANNERS = data["banners"]
-    return request.app.state.config.BANNERS
+    result: List[BannerModel] = request.app.state.config.BANNERS
+    return result
 
 
 @router.get("/banners", response_model=List[BannerModel])
 async def get_banners(
     request: Request,
-    user=Depends(get_current_user),
-):
-    return request.app.state.config.BANNERS
+    user: UserModel = Depends(get_current_user),
+) -> List[BannerModel]:
+    result: List[BannerModel] = request.app.state.config.BANNERS
+    return result
