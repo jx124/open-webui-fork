@@ -145,7 +145,10 @@ class PromptsTable:
 
     def get_prompt_id_by_command(self, command: str) -> Optional[int]:
         try:
-            return Prompt.select(Prompt.id).where(Prompt.command == command).get_or_none()
+            prompt: PromptModel = Prompt.select(Prompt.id).where(Prompt.command == command).get_or_none()
+            if prompt:
+                return prompt.id
+            return None
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -153,7 +156,7 @@ class PromptsTable:
 
     def get_prompt_content_by_id(self, id: str) -> Optional[str]:
         try:
-            prompt = Prompt.select(Prompt.content).where(Prompt.id == id).get_or_none()
+            prompt: PromptModel = Prompt.select(Prompt.content).where(Prompt.id == id).get_or_none()
             if prompt:
                 return prompt.content
             return None
@@ -224,7 +227,6 @@ class PromptsTable:
     ) -> bool:
         try:
             command = f"/{form_data.command}"
-            result = None
 
             prompt = PromptModel(
                 **{
@@ -252,7 +254,7 @@ class PromptsTable:
             query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
                                   model_id=form_data.selected_model_id)\
                 .where(Prompt.command == command)
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 
@@ -260,10 +262,10 @@ class PromptsTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def delete_prompt_by_command(self, command: str) -> bool:
+    def delete_prompt_by_command(self, user_id: str, user_role: str, command: str) -> bool:
         try:
-            prompt = Prompts.get_prompt_by_command(command)
-            if not prompt:
+            prompt = Prompts.get_prompt_by_command(user_id, user_role, command)
+            if prompt is None:
                 return False
 
             with self.db.atomic():
@@ -334,7 +336,8 @@ class PromptRolesTable:
         try:
             result = PromptRole.insert_many(data).execute()
             if result:
-                return PromptRole.select()
+                prompt_roles: List[PromptRoleModel] = PromptRole.select()
+                return prompt_roles
             else:
                 return []
 
@@ -358,7 +361,7 @@ class PromptRolesTable:
     def delete_prompt_roles_by_prompt(self, prompt_id: int) -> bool:
         try:
             query = PromptRole.delete().where(PromptRole.prompt_id == prompt_id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -369,7 +372,7 @@ class PromptRolesTable:
     def delete_prompt_roles_by_role(self, role_id: int) -> bool:
         try:
             query = PromptRole.delete().where(PromptRole.role_id == role_id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -611,7 +614,7 @@ class ClassesTable:
     def get_chats_by_class_id_and_instructor(self, class_id: str, instructor_id: str) -> List[ChatModel]:
         try:
             return [
-                ChatModel(**model_to_dict(chat, recurse=False)) 
+                ChatModel(**model_to_dict(chat, recurse=False))
                 for chat in Chat.select()
                 .join(Class, on=(Chat.class_id == Class.id))
                 .where((Class.id == class_id) & (Class.instructor == instructor_id))
@@ -623,7 +626,7 @@ class ClassesTable:
 
     def get_class_name(self, class_id: str) -> Optional[str]:
         try:
-            class_ = Class.select(Class.name).where(Class.id == class_id).get_or_none()
+            class_: Optional[ClassModel] = Class.select(Class.name).where(Class.id == class_id).get_or_none()
             if class_:
                 return class_.name
             return None
@@ -714,7 +717,8 @@ class StudentClassesTable:
         try:
             result = StudentClass.insert_many(data).execute()
             if result:
-                return StudentClass.select()
+                student_classes: List[StudentClassModel] = StudentClass.select()
+                return student_classes
             else:
                 return []
 
@@ -723,14 +727,15 @@ class StudentClassesTable:
             return []
 
     def insert_new_student_classes_by_class(
-        self, class_id: str, student_ids: List[str]
+        self, class_id: int, student_ids: List[str]
     ) -> List[StudentClassModel]:
         data = [{"student_id": student_id, "class_id": class_id} for student_id in student_ids]
 
         try:
             result = StudentClass.insert_many(data).execute()
             if result:
-                return StudentClass.select()
+                student_classes: List[StudentClassModel] = StudentClass.select()
+                return student_classes
             else:
                 return []
 
@@ -802,7 +807,7 @@ class StudentClassesTable:
             return []
 
     def update_student_classes_by_class(
-        self, class_id: str, student_ids: List[str]
+        self, class_id: int, student_ids: List[str]
     ) -> List[StudentClassModel]:
         try:
             with self.db.atomic():
@@ -817,7 +822,7 @@ class StudentClassesTable:
     def delete_student_classes_by_student(self, student_id: str) -> bool:
         try:
             query = StudentClass.delete().where(StudentClass.student_id == student_id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -828,7 +833,7 @@ class StudentClassesTable:
     def delete_student_classes_by_class(self, class_id: int) -> bool:
         try:
             query = StudentClass.delete().where(StudentClass.class_id == class_id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -888,7 +893,7 @@ class ClassPromptsTable:
             log.exception(" Exception caught in model method.")
             return []
 
-    def get_assignments_by_class(self, class_id: int) -> List[int]:
+    def get_assignments_by_class(self, class_id: int) -> List[ClassPromptModel]:
         try:
             query = ClassPrompt.select().where(ClassPrompt.class_id == class_id)
             return [classprompt_to_classprompt_model(row) for row in query]
@@ -955,13 +960,19 @@ class ClassPromptsTable:
             if assignment is None:
                 return False
 
-            deadline = assignment.deadline
+            unparsed_deadline: Optional[str | datetime.datetime] = assignment.deadline
+            deadline: datetime.datetime
+
+            if unparsed_deadline is None:
+                return True
 
             # postgres has a datetime type, but sqlite stores it as a string
-            if deadline is not None and type(deadline) is not datetime.datetime:
+            if type(unparsed_deadline) is not datetime.datetime:
                 deadline = datetime.datetime.fromisoformat(assignment.deadline)
+            else:
+                deadline = unparsed_deadline
 
-            return deadline is None if deadline is None else (datetime.datetime.now() <= deadline)
+            return datetime.datetime.now() <= deadline
 
         except Exception:
             log.exception(" Exception caught in model method.")

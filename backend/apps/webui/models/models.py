@@ -35,7 +35,7 @@ class ModelMeta(BaseModel):
         User-facing description of the model.
     """
 
-    capabilities: Optional[dict] = None
+    capabilities: Optional[dict[str, bool]] = None
 
     model_config = ConfigDict(extra="allow")
 
@@ -178,7 +178,7 @@ class ModelsTable:
     def delete_model_by_id(self, id: str) -> bool:
         try:
             query = Model.delete().where(Model.id == id)
-            result = query.execute()
+            result: int = query.execute()
             return result != 0
 
         except Exception:

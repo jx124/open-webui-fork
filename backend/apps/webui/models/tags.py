@@ -105,9 +105,16 @@ class TagTable:
 
     def add_tag_to_chat(self, user_id: str, form_data: ChatIdTagForm) -> Optional[ChatIdTagModel]:
         try:
-            tag = self.get_tag_by_name_and_user_id(form_data.tag_name, user_id)
-            if tag is None:
-                tag = self.insert_new_tag(form_data.tag_name, user_id)
+            tag: TagModel
+            opt_tag = self.get_tag_by_name_and_user_id(form_data.tag_name, user_id)
+
+            if opt_tag is None:
+                new_tag = self.insert_new_tag(form_data.tag_name, user_id)
+                if new_tag is None:
+                    return None
+                tag = new_tag
+            else:
+                tag = opt_tag
 
             id = str(uuid.uuid4())
             chatIdTag = ChatIdTagModel(
@@ -170,7 +177,7 @@ class TagTable:
             log.exception(" Exception caught in model method.")
             return []
 
-    def get_chat_ids_by_tag_name_and_user_id(self, tag_name: str, user_id: str) -> Optional[ChatIdTagModel]:
+    def get_chat_ids_by_tag_name_and_user_id(self, tag_name: str, user_id: str) -> List[ChatIdTagModel]:
         try:
             return [
                 ChatIdTagModel(**model_to_dict(chat_id_tag))
@@ -181,13 +188,14 @@ class TagTable:
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return None
+            return []
 
     def count_chat_ids_by_tag_name_and_user_id(self, tag_name: str, user_id: str) -> int:
         try:
-            return ChatIdTag.select()\
+            count: int = ChatIdTag.select()\
                 .where((ChatIdTag.tag_name == tag_name) & (ChatIdTag.user_id == user_id))\
                 .count()
+            return count
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -199,7 +207,7 @@ class TagTable:
                 query = ChatIdTag.delete().where(
                     (ChatIdTag.tag_name == tag_name) & (ChatIdTag.user_id == user_id)
                 )
-                result = query.execute()  # Remove the rows, return number of rows removed.
+                result: int = query.execute()  # Remove the rows, return number of rows removed.
 
                 tag_count = self.count_chat_ids_by_tag_name_and_user_id(tag_name, user_id)
                 if tag_count == 0:
@@ -223,7 +231,7 @@ class TagTable:
                     & (ChatIdTag.chat_id == chat_id)
                     & (ChatIdTag.user_id == user_id)
                 )
-                result = query.execute()  # Remove the rows, return number of rows removed.
+                result: int = query.execute()  # Remove the rows, return number of rows removed.
 
                 tag_count = self.count_chat_ids_by_tag_name_and_user_id(tag_name, user_id)
                 if tag_count == 0:
@@ -231,7 +239,8 @@ class TagTable:
                     query = Tag.delete().where(
                         (Tag.name == tag_name) & (Tag.user_id == user_id)
                     )
-                    result += query.execute()  # Remove the rows, return number of rows removed.
+                    tag_result: int = query.execute()  # Remove the rows, return number of rows removed.
+                    result += tag_result
 
                 return result != 0
 

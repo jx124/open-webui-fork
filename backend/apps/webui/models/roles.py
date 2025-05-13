@@ -93,7 +93,7 @@ class RolesTable:
 
     def delete_role_by_id(self, id: int) -> bool:
         try:
-            result = Role.delete().where(Role.id == id).execute()
+            result: int = Role.delete().where(Role.id == id).execute()
             return result == 1
 
         except Exception:

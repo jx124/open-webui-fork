@@ -180,6 +180,7 @@ class AuthsTable:
             if auth:
                 user = Users.get_user_by_id(auth.id)
                 return user
+            return None
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -207,7 +208,7 @@ class AuthsTable:
     def update_user_password_by_id(self, id: str, new_password: str) -> bool:
         try:
             query = Auth.update(password=new_password).where(Auth.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 
@@ -218,7 +219,7 @@ class AuthsTable:
     def update_user_otp_by_id(self, id: str, otp: int, expiry: int) -> bool:
         try:
             query = Auth.update(otp_value=otp, otp_expiry=expiry).where(Auth.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 
@@ -229,7 +230,7 @@ class AuthsTable:
     def update_email_by_id(self, id: str, email: str) -> bool:
         try:
             query = Auth.update(email=email).where(Auth.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 

@@ -52,7 +52,7 @@ class DocumentResponse(BaseModel):
     name: str
     title: str
     filename: str
-    content: Optional[dict] = None
+    content: Optional[dict[str, object]] = None
     user_id: str
     timestamp: int  # timestamp in epoch
 
@@ -137,10 +137,13 @@ class DocumentsTable:
             return None
 
     def update_doc_content_by_name(
-        self, name: str, updated: dict
+        self, name: str, updated: dict[str, object]
     ) -> Optional[DocumentModel]:
         try:
             doc = self.get_doc_by_name(name)
+            if doc is None:
+                return None
+
             doc_content = json.loads(doc.content if doc.content else "{}")
             doc_content = {**doc_content, **updated}
 
@@ -161,7 +164,7 @@ class DocumentsTable:
     def delete_doc_by_name(self, name: str) -> bool:
         try:
             query = Document.delete().where((Document.name == name))
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 

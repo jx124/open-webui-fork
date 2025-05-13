@@ -73,7 +73,7 @@ class ChatModel(BaseModel):
 
 
 class ChatForm(BaseModel):
-    chat: dict
+    chat: dict[str, object]     # TODO: formalize chat json fields
 
 
 class ChatTitleForm(BaseModel):
@@ -81,14 +81,14 @@ class ChatTitleForm(BaseModel):
 
 
 class ChatTimingForm(BaseModel):
-    timings: dict
+    timings: dict[str, int]     # map of chat_id to time spent in seconds
 
 
 class ChatResponse(BaseModel):
     id: str
     user_id: str
     title: str
-    chat: dict
+    chat: dict[str, object]     # TODO: formalize chat json fields
     updated_at: int  # timestamp in epoch
     created_at: int  # timestamp in epoch
     share_id: Optional[str] = None  # id of the chat to be shared
@@ -152,7 +152,7 @@ class ChatTable:
             log.exception(" Exception caught in model method.")
             return None
 
-    def update_chat_by_id(self, id: str, chat: dict) -> Optional[ChatModel]:
+    def update_chat_by_id(self, id: str, chat: dict[str, object]) -> Optional[ChatModel]:
         try:
             query = Chat.update(
                 chat=json.dumps(chat),
@@ -242,7 +242,7 @@ class ChatTable:
     def delete_shared_chat_by_chat_id(self, chat_id: str) -> bool:
         try:
             query = Chat.delete().where(Chat.user_id == f"shared-{chat_id}")
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -399,7 +399,8 @@ class ChatTable:
     def increment_chat_visits(self, id: str, user_id: str) -> bool:
         try:
             # check user id so admin visiting chat does not increment visits
-            result = Chat.update(visits=Chat.visits + 1).where((Chat.id == id) & (Chat.user_id == user_id)).execute()
+            result: int = Chat.update(visits=Chat.visits + 1)\
+                    .where((Chat.id == id) & (Chat.user_id == user_id)).execute()
             return result != 0
 
         except Exception:
@@ -479,7 +480,7 @@ class ChatTable:
             self.delete_shared_chats_by_user_id(user_id)
 
             query = Chat.delete().where(Chat.user_id == user_id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -495,7 +496,7 @@ class ChatTable:
             ]
 
             query = Chat.delete().where(Chat.share_id == shared_chat_ids)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -503,10 +504,10 @@ class ChatTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def disable_chat_by_id(self, user_id: str, chat_id) -> bool:
+    def disable_chat_by_id(self, user_id: str, chat_id: str) -> bool:
         try:
             query = Chat.update(is_disabled=True).where((Chat.user_id == user_id) & (Chat.id == chat_id))
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 
@@ -514,10 +515,10 @@ class ChatTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def submit_chat_by_id(self, user_id: str, chat_id) -> bool:
+    def submit_chat_by_id(self, user_id: str, chat_id: str) -> bool:
         try:
             query = Chat.update(is_submitted=True).where((Chat.user_id == user_id) & (Chat.id == chat_id))
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 
@@ -525,11 +526,11 @@ class ChatTable:
             log.exception(" Exception caught in model method.")
             return False
 
-    def check_chat_assignment_submission_by_id(self, user_id: str, chat_id) -> bool:
+    def check_chat_assignment_submission_by_id(self, user_id: str, chat_id: str) -> bool:
         try:
             chat = Chat.select(Chat.class_id, Chat.prompt_id).where((Chat.id == chat_id)).get_or_none()
             if chat:
-                count = Chat.select(Chat.id).where(
+                count: int = Chat.select(Chat.id).where(
                         (Chat.user_id == user_id) & (Chat.is_submitted == True)
                         & (Chat.class_id == chat.class_id) & (Chat.prompt_id == chat.prompt_id)).count()
                 return count != 0
@@ -542,7 +543,7 @@ class ChatTable:
     def remove_class_reference(self, class_id: int) -> bool:
         try:
             query = Chat.update(class_id=None).where(Chat.class_id == class_id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 

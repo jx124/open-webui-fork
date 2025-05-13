@@ -78,7 +78,7 @@ class EvaluationsTable:
 
     def get_evaluation_content_by_id(self, eval_id: int) -> Optional[str]:
         try:
-            result = Evaluation.get_or_none(Evaluation.id == eval_id)
+            result: Optional[EvaluationModel] = Evaluation.get_or_none(Evaluation.id == eval_id)
             if result:
                 return result.content
             return None
@@ -144,7 +144,7 @@ class EvaluationsTable:
 
     def delete_evaluation_by_id(self, eval_id: int) -> bool:
         try:
-            result = Evaluation.delete().where(Evaluation.id == eval_id).execute()
+            result: int = Evaluation.delete().where(Evaluation.id == eval_id).execute()
             return result == 1
 
         except Exception:

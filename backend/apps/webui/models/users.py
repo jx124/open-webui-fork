@@ -6,7 +6,7 @@ import time
 
 from apps.webui.internal.db import DB, JSONField
 from apps.webui.models.chats import Chats
-from apps.webui.models.roles import Role
+from apps.webui.models.roles import Role, RoleModel
 
 import logging
 from config import SRC_LOG_LEVELS
@@ -42,7 +42,7 @@ class User(pw.Model):
 
 
 class UserSettings(BaseModel):
-    ui: Optional[dict] = {}
+    ui: Optional[dict[str, object]] = {}
     model_config = ConfigDict(extra="allow")
     pass
 
@@ -110,9 +110,9 @@ class UsersTable:
         role: str = "pending",
     ) -> Optional[UserModel]:
         try:
-            role = Role.get_or_none(name=role)
+            role_model: RoleModel = Role.get_or_none(Role.name == role)
 
-            if role is None:
+            if role_model is None:
                 return None
 
             user = UserModel(
@@ -120,14 +120,14 @@ class UsersTable:
                     "id": id,
                     "name": name,
                     "email": email,
-                    "role": role.name,
+                    "role": role_model.name,
                     "profile_image_url": profile_image_url,
                     "last_active_at": int(time.time()),
                     "created_at": int(time.time()),
                     "updated_at": int(time.time())
                 }
             )
-            result = User.create(**user.model_dump(exclude={"role"}), role_id=role.id)
+            result = User.create(**user.model_dump(exclude={"role"}), role_id=role_model.id)
             if result:
                 return user
             else:
@@ -226,7 +226,8 @@ class UsersTable:
 
     def get_num_users(self) -> Optional[int]:
         try:
-            return User.select().count()
+            count: int = User.select().count()
+            return count
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -252,18 +253,21 @@ class UsersTable:
             log.exception(" Exception caught in model method.")
             return []
 
-    def get_num_users_by_role_id(self, role_id: int) -> int:
+    def get_num_users_by_role_id(self, role_id: int) -> Optional[int]:
         try:
-            return User.select().join(Role).where(Role.id == role_id).count()
+            count: int = User.select().join(Role).where(Role.id == role_id).count()
+            return count
 
         except Exception:
             log.exception(" Exception caught in model method.")
-            return 0
+            return None
 
     def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
         try:
-            role, _ = Role.get_or_create(name=role.strip())
-            query = User.update(role_id=role.id).where(User.id == id)
+            role_model: RoleModel
+            role_model, _ = Role.get_or_create(name=role.strip())
+
+            query = User.update(role_id=role_model.id).where(User.id == id)
             result = query.execute()
 
             if result:
@@ -305,7 +309,7 @@ class UsersTable:
             log.exception(" Exception caught in model method.")
             return None
 
-    def update_user_by_id(self, id: str, updated: dict) -> Optional[UserModel]:
+    def update_user_by_id(self, id: str, updated: dict[str, object]) -> Optional[UserModel]:
         try:
             query = User.update(**updated).where(User.id == id)
             result = query.execute()
@@ -328,9 +332,9 @@ class UsersTable:
                 if result:
                     # Delete User
                     query = User.delete().where(User.id == id)
-                    result = query.execute()  # Remove the rows, return number of rows removed.
+                    delete_result: int = query.execute()  # Remove the rows, return number of rows removed.
 
-                    return result != 0
+                    return delete_result != 0
                 else:
                     return False
 
@@ -341,7 +345,7 @@ class UsersTable:
     def update_user_api_key_by_id(self, id: str, api_key: str) -> bool:
         try:
             query = User.update(api_key=api_key).where(User.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 
@@ -351,7 +355,7 @@ class UsersTable:
 
     def get_user_api_key_by_id(self, id: str) -> Optional[str]:
         try:
-            user = User.get_or_none(User.id == id)
+            user: Optional[UserModel] = User.get_or_none(User.id == id)
             if user:
                 return user.api_key
             return None
@@ -363,7 +367,7 @@ class UsersTable:
     def increment_user_token_count_by_id(self, id: str, count: int) -> bool:
         try:
             query = User.update(token_count=User.token_count + count).where(User.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 
@@ -374,7 +378,7 @@ class UsersTable:
     def increment_user_chat_attempts_by_id(self, id: str) -> bool:
         try:
             query = User.update(attempts=User.attempts + 1).where(User.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 
@@ -385,7 +389,7 @@ class UsersTable:
     def increment_user_session_time_by_id(self, id: str, amount: int) -> bool:
         try:
             query = User.update(session_time=User.session_time + amount).where(User.id == id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result == 1
 

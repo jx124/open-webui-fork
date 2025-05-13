@@ -92,7 +92,7 @@ class MemoriesTable:
             log.exception(" Exception caught in model method.")
             return []
 
-    def get_memory_by_id(self, id) -> Optional[MemoryModel]:
+    def get_memory_by_id(self, id: str) -> Optional[MemoryModel]:
         try:
             memory = Memory.get_or_none(Memory.id == id)
             if memory:
@@ -106,7 +106,7 @@ class MemoriesTable:
     def delete_memory_by_id(self, id: str) -> bool:
         try:
             query = Memory.delete().where(Memory.id == id)
-            result = query.execute()  # Remove the rows, return number of rows removed.
+            result: int = query.execute()  # Remove the rows, return number of rows removed.
 
             return result != 0
 
@@ -117,7 +117,7 @@ class MemoriesTable:
     def delete_memories_by_user_id(self, user_id: str) -> bool:
         try:
             query = Memory.delete().where(Memory.user_id == user_id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 
@@ -128,7 +128,7 @@ class MemoriesTable:
     def delete_memory_by_id_and_user_id(self, id: str, user_id: str) -> bool:
         try:
             query = Memory.delete().where(Memory.id == id, Memory.user_id == user_id)
-            result = query.execute()
+            result: int = query.execute()
 
             return result != 0
 
