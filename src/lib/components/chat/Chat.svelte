@@ -178,7 +178,7 @@
 
 	const initNewChat = async () => {
 		// goto("/c/", { replaceState: true });
-		await chatId.set('');
+		chatId.set('');
 
 		autoScroll = true;
 		isDisabled = false;
@@ -286,12 +286,12 @@
 				const userSettings = await getUserSettings(localStorage.token);
 
 				if (userSettings) {
-					await settings.set(userSettings.ui);
+					settings.set(userSettings.ui);
 				} else {
-					await settings.set(JSON.parse(localStorage.getItem('settings') ?? '{}'));
+					settings.set(JSON.parse(localStorage.getItem('settings') ?? '{}'));
 				}
 
-				await settings.set({
+				settings.set({
 					...$settings,
 					params: chatContent.options ?? $settings.params
 				});
@@ -461,10 +461,10 @@
 						class_id: $classId,
 						prompt_id: selectedProfile?.id,
 					});
-					await chats.set(await getChatList(localStorage.token));
-					await chatId.set(chat.id);
+					chats.set(await getChatList(localStorage.token));
+					chatId.set(chat.id);
 				} else {
-					await chatId.set('local');
+					chatId.set('local');
 				}
 				await tick();
 			}
@@ -1047,7 +1047,7 @@
 							history: history,
 							usage: tokenUsage
 						});
-						await chats.set(await getChatList(localStorage.token));
+						chats.set(await getChatList(localStorage.token));
 					}
 				}
 			} else {
@@ -1498,7 +1498,7 @@
 							history: history,
 							usage: tokenUsage
 						});
-						await chats.set(await getChatList(localStorage.token));
+						chats.set(await getChatList(localStorage.token));
 					}
 				}
 			} else {

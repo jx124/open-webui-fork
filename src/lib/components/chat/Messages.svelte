@@ -8,9 +8,9 @@
 
 	import UserMessage from './Messages/UserMessage.svelte';
 	import ResponseMessage from './Messages/ResponseMessage.svelte';
+	import EvaluationMessage from './Messages/EvaluationMessage.svelte';
 	import Placeholder from './Messages/Placeholder.svelte';
 	import { copyToClipboard, findWordIndices } from '$lib/utils';
-	import CompareMessages from './Messages/CompareMessages.svelte';
 	import sanitizeHtml from 'sanitize-html';
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
@@ -22,10 +22,7 @@
 
 	const i18n = getContext('i18n');
 
-	export let readOnly = false;
 	export let sendPrompt: Function;
-	export let continueGeneration: Function;
-	export let regenerateResponse: Function;
 
 	export let user = $_user;
 	export let prompt;
@@ -493,21 +490,13 @@
 									{showPreviousMessage}
 									{showNextMessage}
 								/>
-							{:else if $mobile || (history.messages[message.parentId]?.models?.length ?? 1) === 1}
+							{:else if message.role === "assistant"}
 								{#key message.id}
 									<ResponseMessage
 										{message}
 										siblings={history.messages[message.parentId]?.childrenIds ?? []}
-										isLastMessage={messageIdx + 1 === messages.length}
-										{readOnly}
-										{updateChatMessages}
-										{confirmEditResponseMessage}
 										{showPreviousMessage}
 										{showNextMessage}
-										{rateMessage}
-										copyToClipboard={copyToClipboardWithToast}
-										{continueGeneration}
-										{regenerateResponse}
 										clientName={selectedProfile?.title}
 										clientImage={selectedProfile?.image_url}
 										on:save={async (e) => {
@@ -522,38 +511,28 @@
 										}}
 									/>
 								{/key}
-							{:else}
-								{#key message.parentId}
-									<CompareMessages
-										bind:history
-										{messages}
-										{readOnly}
-										{$chatId}
-										parentMessage={history.messages[message.parentId]}
-										{messageIdx}
-										{updateChatMessages}
-										{confirmEditResponseMessage}
-										{rateMessage}
-										copyToClipboard={copyToClipboardWithToast}
-										{continueGeneration}
-										{regenerateResponse}
-										on:change={async () => {
-											await updateChatById(localStorage.token, $chatId, {
-												messages: messages,
-												history: history
-											});
+                            {:else}
+                                <hr class="dark:border-gray-600 border-gray-700"/>
+                                <div class="flex justify-center text-sm mt-2 mb-4 dark:text-gray-500 text-gray-700">Conversation ended, you cannot send any more messages.</div>
+                                <div class="bg-sky-50 dark:bg-sky-950 p-5 rounded-lg">
+                                    <EvaluationMessage
+                                        {message}
+                                        siblings={history.messages[message.parentId]?.childrenIds ?? []}
+                                        {showPreviousMessage}
+                                        {showNextMessage}
+                                        {copyToClipboardWithToast}
+                                        on:save={async (e) => {
+                                            console.log('save', e);
 
-											if (autoScroll) {
-												const element = document.getElementById('messages-container');
-												autoScroll =
-													element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
-												setTimeout(() => {
-													scrollToBottom();
-												}, 100);
-											}
-										}}
-									/>
-								{/key}
+                                            const message = e.detail;
+                                            history.messages[message.id] = message;
+                                            await updateChatById(localStorage.token, $chatId, {
+                                                messages: messages,
+                                                history: history
+                                            });
+                                        }}
+                                    />
+                                </div>
 							{/if}
 						</div>
 					</div>

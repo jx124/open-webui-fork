@@ -16,6 +16,7 @@ from apps.webui.routers import (
     utils,
 )
 from config import (
+    ENV,
     WEBUI_BUILD_HASH,
     WEBUI_AUTH,
     DEFAULT_MODELS,
@@ -31,7 +32,9 @@ from config import (
     ENABLE_COMMUNITY_SHARING,
 )
 
-app = FastAPI()
+app = FastAPI(
+    docs_url="/docs" if ENV == "dev" else None
+)
 
 origins = ["*"]
 

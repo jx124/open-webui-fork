@@ -105,7 +105,8 @@ class EvaluationsTable:
 
     def insert_new_evaluation(self, form_data: EvaluationForm) -> Optional[EvaluationModel]:
         try:
-            result = Evaluation.create(title=form_data.title, content=form_data.content)
+            result: Evaluation = Evaluation.create(
+                    title=form_data.title, content=form_data.content, model_id=form_data.selected_model_id)
             if result:
                 return EvaluationModel(
                     id=result.id,

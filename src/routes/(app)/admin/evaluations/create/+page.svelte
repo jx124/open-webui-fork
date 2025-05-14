@@ -2,10 +2,12 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { user } from '$lib/stores';
+	import { user, models } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
 	import { createNewEvaluation, type EvaluationForm } from '$lib/apis/evaluations';
+	import { getModels } from '$lib/apis';
+	import ModelSelector from '$lib/components/admin/ModelSelector.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -15,7 +17,13 @@
         id: 0,
 		title: '',
 		content: '',
+        selected_model_id: '',
 	};
+
+	let modelItems: {
+		label: string;
+		value: string;
+	}[] = [];
 
 	const submitHandler = async () => {
 		loading = true;
@@ -36,6 +44,17 @@
 		if ($user?.role !== "admin") {
 			await goto("/admin");
 		}
+
+		$models = await getModels(localStorage.token).catch((error) => {
+			toast.error(error);
+		});
+
+		modelItems = $models.map((p) => {
+			return {
+				label: p.name,
+				value: p.id
+			};
+		});
 	});
 </script>
 
@@ -101,6 +120,18 @@
 				<div class="text-xs text-gray-400 dark:text-gray-500">
 					ⓘ This prompt will be sent along with the entire chat conversation to perform the evaluation.
 				</div>
+			</div>
+		</div>
+
+		<div class="my-2">
+			<div class=" text-sm font-semibold mb-1">Model*</div>
+			<ModelSelector
+				items={modelItems}
+				bind:value={form_data.selected_model_id}
+				externalLabel={form_data.selected_model_id}
+			/>
+			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+				Select the LLM model to be used.
 			</div>
 		</div>
 

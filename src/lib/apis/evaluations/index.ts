@@ -4,6 +4,7 @@ export type EvaluationForm = {
 	id: number,
     title: string,
     content: string,
+    selected_model_id: string,
 }
 
 export const createNewEvaluation = async (
