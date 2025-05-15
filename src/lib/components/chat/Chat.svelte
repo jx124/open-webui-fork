@@ -909,9 +909,6 @@
 					model: model.id,
 					stream: true,
 					profile_id: selectedProfile?.id,
-					stream_options: {
-						include_usage: model.info?.meta?.capabilities?.usage ?? true
-					},
 					messages: messages
 						.filter((message) => message?.content?.trim())
 						.map((message, idx, arr) => ({
@@ -1163,41 +1160,6 @@
 		}
 	};
 
-	const generateChatTitle = async (userPrompt) => {
-		if ($settings?.title?.auto ?? true) {
-			const model = $models.find((model) => model.id === selectedModels[0]);
-
-			const titleModelId =
-				model?.owned_by === 'openai' ?? false
-					? $settings?.title?.modelExternal ?? selectedModels[0]
-					: $settings?.title?.model ?? selectedModels[0];
-			const titleModel = $models.find((model) => model.id === titleModelId);
-
-			console.log(titleModel);
-			const {title, usage} = await generateTitle(
-				localStorage.token,
-				$settings?.title?.prompt ??
-					$i18n.t(
-						"Create a concise, 3-5 word phrase as a header for the following query, strictly adhering to the 3-5 word limit and avoiding the use of the word 'title':"
-					) + ' {{prompt}}',
-				titleModelId,
-				userPrompt,
-				$chatId,
-				titleModel?.owned_by === 'openai' ?? false
-					? `${OPENAI_API_BASE_URL}`
-					: `${OLLAMA_API_BASE_URL}/v1`
-			);
-
-			tokenUsage.prompt_tokens += usage.prompt_tokens;
-			tokenUsage.completion_tokens += usage.completion_tokens;
-			tokenUsage.total_tokens += usage.total_tokens;
-
-			return title;
-		} else {
-			return `${userPrompt}`;
-		}
-	};
-
 	const generateChatSearchQuery = async (modelId: string, prompt: string) => {
 		const model = $models.find((model) => model.id === modelId);
 		const taskModelId =
@@ -1228,7 +1190,7 @@
 
 		if ($settings.saveChatHistory ?? true) {
 			chat = await updateChatById(localStorage.token, _chatId, { title: _title, usage: tokenUsage });
-			await chats.set(await getChatList(localStorage.token));
+			chats.set(await getChatList(localStorage.token));
 		}
 	};
 
@@ -1388,9 +1350,6 @@
 					model: model.id,
 					stream: true,
 					evaluation_id: selectedProfile?.evaluation_id,
-					stream_options: {
-						include_usage: model.info?.meta?.capabilities?.usage ?? true
-					},
 					messages: [{
 						role: 'user',
 						content: combinedMessages,

@@ -296,7 +296,7 @@ async def get_all_models(raw: bool = False):
 @app.get("/models")
 @app.get("/models/{url_idx}")
 async def get_models(url_idx: Optional[int] = None, user=Depends(get_current_user)):
-    if url_idx == None:
+    if url_idx is None:
         models = await get_all_models()
         if app.state.config.ENABLE_MODEL_FILTER:
             if user.role != "admin":
@@ -444,7 +444,9 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             # Replace evaluation id with evaluation content so end users cannot see prompt
             if "evaluation_id" in payload:
                 profile_id = payload["evaluation_id"]
-                content = Evaluations.get_evaluation_content_by_id(profile_id)
+                evaluation = Evaluations.get_evaluation_by_id(profile_id)
+                content = evaluation.content
+                payload["model"] = evaluation.selected_model_id
                 payload["messages"].insert(
                     0,
                     {
@@ -516,7 +518,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             if response_data is not None and response_data.get("usage"):
                 count = response_data["usage"].get("total_tokens", 0)
                 Users.increment_user_token_count_by_id(user.id, count)
-                
+
             return response_data
     except Exception as e:
         log.exception(e)
@@ -536,13 +538,14 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 r.close()
             await session.close()
 
+
 async def stream_token_counter(stream, user_id):
     # reads stream and increments token count if usage found in stream
     async for line in stream:
         try:
             result = None
             if line.startswith(b"data: "):
-                result = json.loads(line.split(b" ")[1]) # strip "data: " at the front of response
+                result = json.loads(line.split(b" ")[1])  # strip "data: " at the front of response
 
             if result is not None and result.get("usage"):
                 count = result["usage"].get("total_tokens", 0)

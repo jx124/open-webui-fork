@@ -511,6 +511,10 @@
 										}}
 									/>
 								{/key}
+                                {#if chatDisabled && messageIdx === (messages.length - 1)}
+                                    <hr class="dark:border-gray-600 border-gray-700 mt-3"/>
+                                    <div class="flex justify-center text-sm mt-2 mb-4 dark:text-gray-500 text-gray-700">Conversation ended, you cannot send any more messages.</div>
+                                {/if}
                             {:else}
                                 <hr class="dark:border-gray-600 border-gray-700"/>
                                 <div class="flex justify-center text-sm mt-2 mb-4 dark:text-gray-500 text-gray-700">Conversation ended, you cannot send any more messages.</div>
@@ -537,6 +541,7 @@
 						</div>
 					</div>
 				{/each}
+
 
 				{#if bottomPadding}
 					<div class="  pb-20" />
