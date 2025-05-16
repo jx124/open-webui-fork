@@ -33,6 +33,8 @@
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import { updateUserSettings } from '$lib/apis/users';
+	import DocumentArrowUpSolid from '../icons/DocumentArrowUpSolid.svelte';
+	import DocumentDuplicate from '../icons/DocumentDuplicate.svelte';
 
 	const BREAKPOINT = 768;
 
@@ -101,7 +103,7 @@
 		});
 
 		showSidebar.set(window.innerWidth > BREAKPOINT);
-		await chats.set(await getChatList(localStorage.token));
+		chats.set(await getChatList(localStorage.token));
 
 		let touchstart;
 		let touchend;
@@ -156,7 +158,7 @@
 			await updateChatById(localStorage.token, id, {
 				title: _title
 			});
-			await chats.set(await getChatList(localStorage.token));
+			chats.set(await getChatList(localStorage.token));
 		}
 	};
 
@@ -174,7 +176,7 @@
 				goto('/');
 			}
 
-			await chats.set(await getChatList(localStorage.token));
+			chats.set(await getChatList(localStorage.token));
 		}
 	};
 
@@ -186,19 +188,19 @@
 
 		if (res) {
 			goto(`/c/${res.id}`);
-			await chats.set(await getChatList(localStorage.token));
+			chats.set(await getChatList(localStorage.token));
 		}
 	};
 
 	const saveSettings = async (updated) => {
-		await settings.set({ ...$settings, ...updated });
+		settings.set({ ...$settings, ...updated });
 		await updateUserSettings(localStorage.token, { ui: $settings });
 		location.href = '/';
 	};
 
 	const archiveChatHandler = async (id) => {
 		await archiveChatById(localStorage.token, id);
-		await chats.set(await getChatList(localStorage.token));
+		chats.set(await getChatList(localStorage.token));
 	};
 </script>
 
@@ -206,7 +208,7 @@
 <ArchivedChatsModal
 	bind:show={$showArchivedChats}
 	on:change={async () => {
-		await chats.set(await getChatList(localStorage.token));
+		chats.set(await getChatList(localStorage.token));
 	}}
 />
 
@@ -236,179 +238,80 @@
 			: 'invisible'}"
 	>
 		<div class="px-2.5 flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
-			{#if $user?.role === 'admin' || $user?.role === 'instructor'}
-				<a
-					id="sidebar-new-chat-button"
-					class="flex flex-1 justify-between rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-					href="/"
-					draggable="false"
-					on:click={async () => {
-						selectedChatId = null;
-						chatId.set('');
-						$selectedPromptCommand = "";
+            <div class="w-full">
+                <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
+                    <a
+                        id="home-button"
+                        class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+                        href="/classes/{$classId}"
+                        draggable="false"
+                        on:click={() => $chatId = ""}
+                    >
+                        <div class="self-center mx-1.5">
+                            <DocumentDuplicate />
+                        </div>
+                        <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                            View Assignments
+                        </div>
+                    </a>
+                </div>
+                <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
+                    <a
+                        id="home-button"
+                        class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+                        href="/classes/{$classId}/submissions"
+                        draggable="false"
+                        on:click={() => $chatId = ""}
+                    >
+                        <div class="self-center mx-1.5">
+                            <DocumentArrowUpSolid />
+                        </div>
+                        <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                            View Submissions
+                        </div>
+                    </a>
+                </div>
+                {#if $user?.role === 'admin' || $user?.role === 'instructor'}
+                    <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
+                        <a
+                            class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+                            href="/admin"
+                            on:click={() => {
+                                selectedChatId = null;
+                                chatId.set('');
+                            }}
+                            draggable="false"
+                        >
+                            <div class="self-center mx-1.5">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="size-[1.1rem]"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
+                                    />
+                                </svg>
+                            </div>
 
-						setTimeout(() => {
-							if ($mobile) {
-								showSidebar.set(false);
-							}
-						}, 0);
-					}}
-				>
-					<div class="self-center mx-1.5">
-						<img
-							crossorigin="anonymous"
-							src="{WEBUI_BASE_URL}/static/favicon.png"
-							class=" size-6 -translate-x-1.5 rounded-full"
-							alt="logo"
-						/>
-					</div>
-					<div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
-						{$i18n.t('New Chat')}
-					</div>
-					<div class="self-center ml-auto">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							class="size-5"
-						>
-							<path
-								d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"
-							/>
-							<path
-								d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"
-							/>
-						</svg>
-					</div>
-				</a>
-			{:else}
-				<div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
-					<a
-						id="home-button"
-						class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-						href="/classes/{$classId}"
-						draggable="false"
-						on:click={() => $chatId = ""}
-					>
-						<div class="self-center mx-1.5">
-							<img
-								crossorigin="anonymous"
-								src="{WEBUI_BASE_URL}/static/favicon.png"
-								class=" size-6 -translate-x-1.5 rounded-full"
-								alt="logo"
-							/>
-						</div>
-						<div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
-							View Assignments
-						</div>
-					</a>
-				</div>
-			{/if}
-
-			<button
-				class=" cursor-pointer px-2 py-2 flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition"
-				on:click={() => {
-					showSidebar.set(!$showSidebar);
-				}}
-			>
-				<div class=" m-auto self-center">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="2"
-						stroke="currentColor"
-						class="size-5"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-						/>
-					</svg>
-				</div>
-			</button>
+                            <div class="flex self-center">
+                                <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                                    Admin Panel
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {/if}
+            </div>
 		</div>
 
-		{#if $user?.role === 'admin' || $user?.role === 'instructor'}
-			<div class="px-2.5 flex justify-center text-gray-800 dark:text-gray-200">
-				<a
-					class="flex-grow flex space-x-3 rounded-xl px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-					href="/admin"
-					on:click={() => {
-						selectedChatId = null;
-						chatId.set('');
-					}}
-					draggable="false"
-				>
-					<div class="self-center">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke-width="2"
-							stroke="currentColor"
-							class="size-[1.1rem]"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
-							/>
-						</svg>
-					</div>
-
-					<div class="flex self-center">
-						<div class=" self-center font-medium text-sm">Admin Panel</div>
-					</div>
-				</a>
-			</div>
-		{/if}
 
 		<div class="relative flex flex-col flex-1 overflow-y-auto">
-			{#if !($settings.saveChatHistory ?? true)}
-				<div class="absolute z-40 w-full h-full bg-gray-50/90 dark:bg-black/90 flex justify-center">
-					<div class=" text-left px-5 py-2">
-						<div class=" font-medium">{$i18n.t('Chat History is off for this browser.')}</div>
-						<div class="text-xs mt-2">
-							{$i18n.t(
-								"When history is turned off, new chats on this browser won't appear in your history on any of your devices."
-							)}
-							<span class=" font-semibold"
-								>{$i18n.t('This setting does not sync across browsers or devices.')}</span
-							>
-						</div>
-
-						<div class="mt-3">
-							<button
-								class="flex justify-center items-center space-x-1.5 px-3 py-2.5 rounded-lg text-xs bg-gray-100 hover:bg-gray-200 transition text-gray-800 font-medium w-full"
-								type="button"
-								on:click={() => {
-									saveSettings({
-										saveChatHistory: true
-									});
-								}}
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 16 16"
-									fill="currentColor"
-									class="w-3 h-3"
-								>
-									<path
-										fill-rule="evenodd"
-										d="M8 1a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5A.75.75 0 0 1 8 1ZM4.11 3.05a.75.75 0 0 1 0 1.06 5.5 5.5 0 1 0 7.78 0 .75.75 0 0 1 1.06-1.06 7 7 0 1 1-9.9 0 .75.75 0 0 1 1.06 0Z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-
-								<div>{$i18n.t('Enable Chat History')}</div>
-							</button>
-						</div>
-					</div>
-				</div>
-			{/if}
-
 			<div class="px-2 mt-0.5 mb-2 flex justify-center space-x-2">
 				<div class="flex w-full rounded-xl" id="chat-search">
 					<div class="self-center pl-3 py-2 rounded-l-xl bg-transparent">
@@ -442,7 +345,7 @@
 					<button
 						class="px-2.5 text-xs font-medium bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition rounded-full"
 						on:click={async () => {
-							await chats.set(await getChatList(localStorage.token));
+							chats.set(await getChatList(localStorage.token));
 						}}
 					>
 						{$i18n.t('all')}
@@ -453,10 +356,10 @@
 							on:click={async () => {
 								let chatIds = await getChatListByTagName(localStorage.token, tag.name);
 								if (chatIds.length === 0) {
-									await tags.set(await getAllChatTags(localStorage.token));
+									tags.set(await getAllChatTags(localStorage.token));
 									chatIds = await getChatList(localStorage.token);
 								}
-								await chats.set(chatIds);
+								chats.set(chatIds);
 							}}
 						>
 							{tag.name}

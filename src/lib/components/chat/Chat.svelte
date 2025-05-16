@@ -1737,10 +1737,8 @@
 			: ''} w-full max-w-full flex flex-col"
 	>
 		<Navbar
-			bind:selectedModels
-			bind:showModelSelector
 			bind:className
-			shareEnabled={messages.length > 0}
+            bind:isSubmitted
 			{chat}
 		/>
 
@@ -1796,8 +1794,6 @@
 						bind:currentAssignment
 						bottomPadding={files.length > 0}
 						{sendPrompt}
-						{continueGeneration}
-						{regenerateResponse}
 					/>
 				</div>
 			</div>

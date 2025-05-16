@@ -960,6 +960,9 @@ class ClassPromptsTable:
             if assignment is None:
                 return False
 
+            if assignment.allow_submit_after_deadline:
+                return True
+
             unparsed_deadline: Optional[str | datetime.datetime] = assignment.deadline
             deadline: datetime.datetime
 

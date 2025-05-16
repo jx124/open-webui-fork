@@ -50,7 +50,7 @@
 		</div>
 
 		<div class="flex flex-row-reverse px-5 pb-4">
-			<button class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
+			<button class="px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100 transition rounded-lg"
 				on:click={evaluateChatHandler}>
 				End Chat
 			</button>

@@ -5,13 +5,17 @@
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getAssignmentSubmissions } from '$lib/apis/classes';
-	import { getChatList } from '$lib/apis/chats';
+	import { getAllChats, getChatList } from '$lib/apis/chats';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
 	import Pagination from '$lib/components/common/Pagination.svelte';
 
+	let currentClassId: number = parseInt($page.params.id);
 	let currentClass: Class;
+
+    let assignment;
+    const prompt_id = parseInt($page.params.prompt_id);
 
 	import dayjs from 'dayjs';
 
@@ -38,15 +42,7 @@
 
 	let sortAttribute = "status";
 	let ascending = true;
-    let promptIdSubmittedMap: {
-        [key: number]: boolean;
-    } = {};
-    let assignments = [];
-	
-    $: {
-        const class_ = $classes.find((c) => c.id === $classId);
-		currentClass = class_;
-    }
+    let attempts = [];
 
 	onMount(async () => {
 		if ($classes.length === 0) {
@@ -55,31 +51,34 @@
 		if ($prompts.length === 0) {
 			$prompts = await getPrompts(localStorage.token).catch((error) => toast.error(error));
 		}
-        $classId = parseInt($page.params.id)
+        $chats = await getAllChats(localStorage.token);
 
-		const class_ = $classes.find((c) => c.id === $classId);
+		const class_ = $classes.find((c) => c.id === currentClassId);
+
 		if (class_ === undefined) {
 			await goto("/classes");
 		} else {
 			currentClass = class_;
+            $classId = currentClassId;
 		}
 
-		promptIdSubmittedMap = await getAssignmentSubmissions(localStorage.token, parseInt($page.params.id)).catch((error) => toast.error(error));
+        assignment = currentClass.assignments.find((assignment) => assignment.prompt_id === prompt_id);
+		if (assignment === undefined) {
+			await goto("/classes");
+        }
 
-        assignments = currentClass.assignments;
-        for (let assignment of assignments) {
-            assignment.deadline = assignment.deadline ?? "";
-            if (promptIdSubmittedMap[assignment.prompt_id]) {
-                assignment.status = "Submitted";
+        attempts = $chats.filter((chat) => chat.prompt_id === prompt_id);
+
+        for (let attempt of attempts) {
+            if (attempt.is_submitted) {
+                attempt.status = "Submitted";
             } else {
                 if (assignment.allow_submit_after_deadline || (assignment.deadline && (new Date() <= new Date(assignment.deadline)))) {
-                    assignment.status = "Open";
+                    attempt.status = "In Progress"
                 } else {
-                    assignment.status = "Locked";
+                    attempt.status = "Locked"
                 }
             }
-
-            assignment.title = $prompts.find((prompt) => prompt.id === assignment.prompt_id)?.title;
         }
 
 		loaded = true;
@@ -88,7 +87,7 @@
 
 <svelte:head>
 	<title>
-		{currentClass?.name} Assignments | {$WEBUI_NAME}
+		{$prompts.find((prompt) => prompt.id === prompt_id)?.title} Attempts | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -96,7 +95,7 @@
     <div class="px-5 py-1">
         <div class="mt-0.5 mb-3 gap-1 flex flex-col md:flex-row justify-between">
             <div class="flex flex-col md:self-center text-lg font-medium px-0.5">
-                {currentClass?.name} Assignments
+                {$prompts.find((prompt) => prompt.id === prompt_id)?.title} Attempts
                 <input
                     class="w-full md:w-60 rounded-xl mt-3 mb-1 py-1.5 px-4 text-sm dark:text-gray-300 bg-gray-100 dark:bg-gray-850 outline-none"
                     placeholder={$i18n.t('Search')}
@@ -128,48 +127,49 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {#each assignments
-                        .filter((assignment) => {
+                    {#each attempts
+                        .filter((attempt) => {
                             if (search === '') {
                                 return true;
                             } else {
-                                let title = assignment.title.toLowerCase();
+                                let title = attempt.title.toLowerCase();
                                 const query = search.toLowerCase();
                                 return title.includes(query);
                             }
                         })
                         .sort(sortFactory(sortAttribute, ascending))
-                        .slice((pageNumber - 1) * 20, pageNumber * 20) as assignment}
+                        .slice((pageNumber - 1) * 20, pageNumber * 20) as attempt}
                         <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
                             <td class="px-3 py-2 w-32">
                                 <div class="flex">
-                                    {#if assignment.status === "Submitted"}
+                                    {#if attempt.status === "Submitted"}
                                         <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-green-200 dark:bg-green-800/50 text-green-900 dark:text-green-100">
                                             Submitted
                                         </div>
-                                    {:else if assignment.status === "Open"}
+                                    {:else if attempt.status === "In Progress"}
                                         <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-blue-200 dark:bg-blue-800/50 text-blue-900 dark:text-blue-100">
-                                            Open
+                                            In Progress
                                         </div>
                                     {:else}
                                         <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-red-200 dark:bg-red-800/50 text-red-900 dark:text-red-100">
-                                            Locked
+                                            In Progress
                                         </div>
                                     {/if}
                                 </div>
                             </td>
                             <td class="px-3 py-2 min-w-[7rem] w-2/5">
-                                {assignment.title}
+                                {attempt.title}
                             </td>
 
                             <td class=" px-3 py-2">
-                                {assignment.deadline ? dayjs(assignment.deadline).format($i18n.t('HH:mm, MMMM DD, YYYY')) : "-"}
+                                {attempt.deadline ? dayjs(attempt.deadline).format($i18n.t('HH:mm, MMMM DD, YYYY')) : "-"}
                             </td>
 
                             <td class=" px-3 py-2">
-                                <a href="/classes/{$classId}/attempts/{assignment.prompt_id}">
+                                <a href="/c/{attempt.id}">
                                     <button 
-                                        class="flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
+                                        class="flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 
+                                               dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
                                     >
                                         View
                                     </button>
@@ -181,6 +181,6 @@
             </table>
         </div>
 
-        <Pagination page={pageNumber} count={assignments.length} />
+        <Pagination page={pageNumber} count={attempts.length} />
     </div>
 {/if}

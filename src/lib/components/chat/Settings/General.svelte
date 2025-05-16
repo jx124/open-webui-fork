@@ -206,18 +206,6 @@
 		{#if $user?.role === 'admin'}
 			<hr class=" dark:border-gray-700 my-3" />
 
-			<div>
-				<div class=" my-2.5 text-sm font-medium">{$i18n.t('System Prompt')}</div>
-				<Tooltip content={$i18n.t('Disabled') + ', use "Prompt" dropdown menu'}>
-					<textarea
-						readonly={true}
-						value={$settings.system}
-						class="w-full rounded-lg p-4 text-sm dark:text-gray-600 dark:bg-gray-850 outline-none resize-none"
-						rows="4"
-					/>
-				</Tooltip>
-			</div>
-
 			<div class="mt-2 space-y-3 pr-1.5">
 				<div class="flex justify-between items-center text-sm">
 					<div class="  font-medium">{$i18n.t('Advanced Parameters')}</div>
@@ -300,7 +288,7 @@
 
 	<div class="flex justify-end pt-3 text-sm font-medium">
 		<button
-			class="  px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
+			class="  px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100 transition rounded-lg"
 			on:click={() => {
 				saveSettings({
 					system: system !== '' ? system : undefined,

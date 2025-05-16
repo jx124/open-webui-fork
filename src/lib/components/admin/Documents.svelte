@@ -192,7 +192,7 @@
 
 		<div>
 			<button
-				class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition"
+				class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 transition"
 				type="button"
 				on:click={() => {
 					showSettingsModal = !showSettingsModal;
@@ -559,7 +559,7 @@
 		/>
 
 		<button
-			class="flex text-xs items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
+			class="flex text-xs items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 transition"
 			on:click={() => {
 				documentsImportInputElement.click();
 			}}
@@ -583,7 +583,7 @@
 		</button>
 
 		<button
-			class="flex text-xs items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
+			class="flex text-xs items-center space-x-1 px-3 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 transition"
 			on:click={async () => {
 				let blob = new Blob([JSON.stringify($documents)], {
 					type: 'application/json'

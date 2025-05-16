@@ -375,7 +375,7 @@
 			<div class="pb-3">
 				{#if !loading}
 					<button
-						class="px-3 py-1.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-gray-50 transition rounded-lg"
+						class="px-3 py-1.5 text-sm font-medium bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100 transition rounded-lg"
 						on:click={() => {
 							submitHandler();
 						}}

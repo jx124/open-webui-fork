@@ -185,7 +185,7 @@
 			</div>
 			<div class="self-end">
 				<button
-					class=" text-sm px-3 py-1.5 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800 flex"
+					class=" text-sm px-3 py-1.5 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 flex"
 					on:click={() => {
 						selectedClass = 0;
 					}}

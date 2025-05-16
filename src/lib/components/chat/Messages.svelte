@@ -298,7 +298,7 @@
 				<div class="flex gap-2">
 					{#if $chatId !== '' && currentAssignment?.allow_multiple_attempts}
 						<button
-							class="text-sm px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+							class="text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
 							type="button"
 							on:click={() => {
 								$chatId = '';
@@ -316,9 +316,9 @@
 					{#if isSubmitted === false && $chatId !== '' && $classId !== null}
 						{#if chatDisabled && beforeDeadline}
 							<button
-								class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-emerald-700 hover:bg-emerald-800 text-gray-100
-									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 								type="button"
 								on:click={() => {
 									show = true;
@@ -330,9 +330,9 @@
 						{:else if !chatDisabled}
 							<Tooltip content="End the chat first">
 								<button
-									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-emerald-700 hover:bg-emerald-800 text-gray-100
-									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 									type="button"
 									disabled={true}
 								>
@@ -342,9 +342,9 @@
 						{:else if !beforeDeadline}
 							<Tooltip content="Submission deadline passed">
 								<button
-									class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-									bg-emerald-700 hover:bg-emerald-800 text-gray-100
-									disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 									type="button"
 									disabled={true}
 								>
@@ -355,9 +355,9 @@
 					{/if}
 					{#if isSubmitted}
 						<button
-							class="text-sm px-3 py-2 transition rounded-xl text-white disabled:pointer-events-none 
-							bg-emerald-700 hover:bg-emerald-800 text-gray-100
-							disabled:bg-emerald-700/50 disabled:text-gray-600 disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+							class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+							bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                            disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
 							type="button"
 							disabled={true}
 						>

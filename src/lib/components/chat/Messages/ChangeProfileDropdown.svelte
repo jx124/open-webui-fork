@@ -14,7 +14,7 @@
     bind:open={show}
 >
     <DropdownMenu.Trigger aria-label="add-student">
-        <button class="text-sm ml-2 px-3 py-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+        <button class="text-sm ml-2 px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
             type="button"
         >
             <div class="self-center text-sm font-medium text-nowrap">Change Profile</div>

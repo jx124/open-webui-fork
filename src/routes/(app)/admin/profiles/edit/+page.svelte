@@ -266,7 +266,7 @@
 
 				<div>
 					<button
-						class=" text-xs text-center text-gray-800 dark:text-gray-400 rounded-full px-4 py-0.5 bg-gray-100 dark:bg-gray-850"
+						class=" text-xs text-center bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 rounded-full px-4 py-0.5"
 						type="button"
 						on:click={async () => {
 							if (canvasPixelTest()) {
@@ -407,7 +407,7 @@
 					/>
 				</div>
 				<button
-					class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800"
+					class="text-sm px-3 py-2 mt-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
 					type="button"
 					on:click={() => {
 						showPreviewModal = !showPreviewModal;
@@ -439,7 +439,7 @@
 			<button
 				class=" text-sm px-3 py-2 transition rounded-xl {loading
 					? ' cursor-not-allowed bg-gray-100 dark:bg-gray-800'
-					: ' bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-800'} flex"
+					: ' bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900'} flex"
 				type="submit"
 				disabled={loading}
 			>

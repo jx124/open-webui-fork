@@ -200,7 +200,7 @@
 				</div>
 
 				<button
-					class=" self-center text-xs p-1 px-3 bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg flex flex-row space-x-1 items-center {scanDirLoading
+					class=" self-center text-xs p-1 px-3 bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 rounded-lg flex flex-row space-x-1 items-center {scanDirLoading
 						? ' cursor-not-allowed'
 						: ''}"
 					on:click={() => {
@@ -343,7 +343,7 @@
 
 					{#if embeddingEngine === ''}
 						<button
-							class="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
+							class="px-2.5 bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 rounded-lg transition"
 							on:click={() => {
 								embeddingModelUpdateHandler();
 							}}
@@ -565,7 +565,7 @@
 	</div>
 	<div class="flex justify-end pt-3 text-sm font-medium">
 		<button
-			class=" px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
+			class=" px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100 transition rounded-lg"
 			type="submit"
 		>
 			{$i18n.t('Save')}

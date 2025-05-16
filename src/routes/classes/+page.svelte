@@ -18,6 +18,8 @@
 		if ($chats.length === 0) {
             $chats = await getChatList(localStorage.token).catch((error) => toast.error(error));
         }
+
+        $classId = null;
 		loading = false;
 	});
 </script>
