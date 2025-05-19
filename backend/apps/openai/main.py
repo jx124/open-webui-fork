@@ -362,8 +362,39 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             body = json.loads(body)
 
             payload = {**body}
+            model_id: str
 
-            model_id = body.get("model")
+            # Replace prompt command with prompt content so end users cannot see prompt
+            if "profile_id" in payload:
+                profile_id = payload["profile_id"]
+                content = Prompts.get_prompt_content_by_id(profile_id)
+                model_id = Prompts.get_prompt_selected_model_by_id(profile_id)
+                payload["messages"].insert(
+                    0,
+                    {
+                        "role": "system",
+                        "content": content,
+                    },
+                )
+
+                del payload["profile_id"]
+
+            # Replace evaluation id with evaluation content so end users cannot see prompt
+            if "evaluation_id" in payload:
+                profile_id = payload["evaluation_id"]
+                evaluation = Evaluations.get_evaluation_by_id(profile_id)
+                content = evaluation.content
+                payload["model"] = evaluation.selected_model_id
+                payload["messages"].insert(
+                    0,
+                    {
+                        "role": "system",
+                        "content": content,
+                    },
+                )
+
+                del payload["evaluation_id"]
+
             model_info = Models.get_model_by_id(model_id)
 
             if model_info:
@@ -404,58 +435,8 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                             if model_info.params.get("stop", None)
                             else None
                         )
-
-                if model_info.params.get("system", None):
-                    # Check if the payload already has a system message
-                    # If not, add a system message to the payload
-                    if payload.get("messages"):
-                        for message in payload["messages"]:
-                            if message.get("role") == "system":
-                                message["content"] = (
-                                    model_info.params.get("system", None)
-                                    + message["content"]
-                                )
-                                break
-                        else:
-                            payload["messages"].insert(
-                                0,
-                                {
-                                    "role": "system",
-                                    "content": model_info.params.get("system", None),
-                                },
-                            )
             else:
                 pass
-
-            # Replace prompt command with prompt content so end users cannot see prompt
-            if "profile_id" in payload:
-                profile_id = payload["profile_id"]
-                content = Prompts.get_prompt_content_by_id(profile_id)
-                payload["messages"].insert(
-                    0,
-                    {
-                        "role": "system",
-                        "content": content,
-                    },
-                )
-
-                del payload["profile_id"]
-
-            # Replace evaluation id with evaluation content so end users cannot see prompt
-            if "evaluation_id" in payload:
-                profile_id = payload["evaluation_id"]
-                evaluation = Evaluations.get_evaluation_by_id(profile_id)
-                content = evaluation.content
-                payload["model"] = evaluation.selected_model_id
-                payload["messages"].insert(
-                    0,
-                    {
-                        "role": "system",
-                        "content": content,
-                    },
-                )
-
-                del payload["evaluation_id"]
 
             model = app.state.MODELS[payload.get("model")]
 

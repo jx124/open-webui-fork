@@ -165,6 +165,17 @@ class PromptsTable:
             log.exception(" Exception caught in model method.")
             return None
 
+    def get_prompt_selected_model_by_id(self, id: str) -> Optional[str]:
+        try:
+            prompt: PromptModel = Prompt.select(Prompt.content).where(Prompt.id == id).get_or_none()
+            if prompt:
+                return prompt.selected_model_id
+            return None
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
+
     def get_prompts(self, user_id: str, user_role: str) -> List[PromptModel]:
         try:
             query = None
