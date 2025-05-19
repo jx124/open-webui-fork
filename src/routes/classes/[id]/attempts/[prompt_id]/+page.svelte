@@ -74,6 +74,7 @@
         attempts = $chats.filter((chat) => chat.prompt_id === prompt_id);
 
         for (let attempt of attempts) {
+            attempt.deadline = assignment.deadline ?? "";
             if (attempt.is_submitted) {
                 attempt.status = "Submitted";
             } else {

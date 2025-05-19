@@ -97,7 +97,7 @@
             <table class="w-full text-sm text-left text-gray-800 dark:text-gray-400 table-auto max-w-full">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-850 dark:text-gray-400">
                     <tr>
-                        <th scope="col" class="px-3 py-2"> 
+                        <th scope="col" class="px-3 py-2 w-32"> 
                             <SortableHeader displayName={"Status"} attributeName="is_submitted"
                                 bind:currentAttribute={sortAttribute} bind:currentAscending={ascending}/>
                         </th>
