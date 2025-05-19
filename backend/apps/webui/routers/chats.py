@@ -322,7 +322,7 @@ async def update_chat_by_id(
     id: str, form_data: ChatForm, user: UserModel = Depends(get_current_user)
 ) -> Optional[ChatResponse]:
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
-    if chat:
+    if chat and not (chat.is_submitted or chat.is_disabled):
         updated_chat = {**json.loads(chat.chat), **form_data.chat}
 
         chat = Chats.update_chat_by_id(id, updated_chat)
