@@ -211,7 +211,7 @@
 
 		<div class="flex gap-1">
 			<input
-				class="w-full md:w-60 rounded-xl py-1.5 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
+				class="w-full md:w-60 rounded-xl py-1.5 px-4 text-sm dark:text-gray-300 bg-gray-100 dark:bg-gray-850 outline-none"
 				placeholder={$i18n.t('Search')}
 				bind:value={search}
 			/>
@@ -263,8 +263,8 @@
 	</div>
 
 	<div class="scrollbar-hidden relative whitespace-nowrap overflow-x-auto max-w-full">
-		<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full">
-			<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400">
+		<table class="w-full text-sm text-left text-gray-600 dark:text-gray-400 table-auto max-w-full">
+			<thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-850 dark:text-gray-400">
 				<tr>
 					<th scope="col" class="px-3 py-2">
 						<SortableHeader displayName={$i18n.t('Role')} attributeName="role"
@@ -446,7 +446,7 @@
 		</table>
 	</div>
 
-	<div class=" text-gray-500 text-xs mt-2 text-left">
+	<div class=" text-gray-600 dark:text-gray-500 text-xs mt-2 text-left">
 		ⓘ Click on the user role button to change a user's role. <br />
 		ⓘ Statistics are estimates and do not include usage before tracking was enabled.  <br />
 		ⓘ To enable tracking, go to Admin Panel > Models, select the model, check "Usage" under "Capabilities", and save the configuration.

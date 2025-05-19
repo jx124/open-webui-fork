@@ -326,7 +326,7 @@
 				/>
 			</div>
 
-			<div class="text-xs text-gray-400 dark:text-gray-500">
+			<div class="text-xs text-gray-600 dark:text-gray-500">
 				{$i18n.t('Only')}
 				<span class=" text-gray-600 dark:text-gray-300 font-medium"
 					>{$i18n.t('alphanumeric characters and hyphens')}</span
@@ -351,30 +351,13 @@
 						required
 					/>
 				</div>
-
-				<div class="text-xs text-gray-400 dark:text-gray-500">
-					ⓘ {$i18n.t('Format your variables using square brackets like this:')}&nbsp;<span
-						class=" text-gray-600 dark:text-gray-300 font-medium">[{$i18n.t('variable')}]</span
-					>.
-					{$i18n.t('Make sure to enclose them with')}
-					<span class=" text-gray-600 dark:text-gray-300 font-medium">'['</span>
-					{$i18n.t('and')}
-					<span class=" text-gray-600 dark:text-gray-300 font-medium">']'</span>.
-				</div>
-
-				<div class="text-xs text-gray-400 dark:text-gray-500">
-					{$i18n.t('Utilize')}<span class=" text-gray-600 dark:text-gray-300 font-medium">
-						{` {{CLIPBOARD}}`}</span
-					>
-					{$i18n.t('variable to have them replaced with clipboard content.')}
-				</div>
 			</div>
 		</div>
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Evaluation</div>
 			<EvaluationSelector items={evaluationItems} bind:value={form_data.evaluation_id} />
-			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+			<div class="text-xs text-gray-600 dark:text-gray-500 mt-1">
 				Select an evaluation to apply to the chat transcript after ending the chat. If none is selected, chat ends immediately
 				without an evaluation.
 			</div>
@@ -387,7 +370,7 @@
 				bind:value={form_data.selected_model_id}
 				externalLabel={form_data.selected_model_id}
 			/>
-			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+			<div class="text-xs text-gray-600 dark:text-gray-500 mt-1">
 				Select the LLM model to be used.
 			</div>
 		</div>

@@ -129,7 +129,7 @@
 					/>
 				</div>
 
-				<div class="text-xs text-gray-400 dark:text-gray-500">
+				<div class="text-xs text-gray-600 dark:text-gray-500">
 					ⓘ This prompt will be sent along with the entire chat conversation to perform the
 					evaluation.
 				</div>
@@ -143,7 +143,7 @@
 				bind:value={form_data.selected_model_id}
 				externalLabel={form_data.selected_model_id}
 			/>
-			<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+			<div class="text-xs text-gray-600 dark:text-gray-500 mt-1">
 				Select the LLM model to be used.
 			</div>
 		</div>

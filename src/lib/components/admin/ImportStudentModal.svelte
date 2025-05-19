@@ -133,7 +133,7 @@
 									</button>
 								</div>
 
-								<div class=" text-xs text-gray-500">
+								<div class=" text-xs text-gray-600 dark:text-gray-500">
 									ⓘ Ensure your Excel file includes the "Email" column. <br />
 									ⓘ This file can be obtained by exporting from Canvas.
 								</div>

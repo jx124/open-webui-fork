@@ -384,7 +384,7 @@
 			<div class="mt-2">
 				<div class="mb-2">
 					<div class="mb-1.5 text-xs font-semibold mb-2">Chat Termination Sequence</div>
-					<div class="text-xs text-gray-400 dark:text-gray-500">
+					<div class="text-xs text-gray-600 dark:text-gray-500">
 						Disables the chat input interface when the LLM responds with the following sequence.
 					</div>
 					<textarea
@@ -565,7 +565,7 @@
 			</div>
 		</div>
 
-		<div class="my-2 text-gray-300 dark:text-gray-700">
+		<div class="my-2 text-gray-500 dark:text-gray-700">
 			<div class="flex w-full justify-between mb-2">
 				<div class=" self-center text-sm font-semibold">{$i18n.t('JSON Preview')}</div>
 

@@ -274,7 +274,7 @@
 		>
 			<a
 				class=" flex flex-1 space-x-3.5 cursor-pointer w-full"
-				href={`/?models=${encodeURIComponent(model.id)}`}
+				href={`/admin/models/edit?id=${encodeURIComponent(model.id)}`}
 			>
 				<div class=" self-start w-8 pt-0.5">
 					<div

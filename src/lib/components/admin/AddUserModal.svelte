@@ -216,7 +216,7 @@
 						>
 
 						<button
-							class="w-full rounded-lg p-1 {tab === 'import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"
+							class="w-full rounded-lg p-1 {tab === 'csv_import' ? 'bg-gray-50 dark:bg-gray-850' : ''}"
 							type="button"
 							on:click={() => {
 								tab = 'csv_import';
@@ -226,7 +226,7 @@
 					<div class="px-1">
 						{#if tab === ''}
 							<div class="flex flex-col w-full">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Role')}</div>
+								<div class=" mb-1 text-xs text-gray-600 dark:text-gray-500">{$i18n.t('Role')}</div>
 
 								<div class="flex-1">
 									<select
@@ -243,7 +243,7 @@
 							</div>
 
 							<div class="flex flex-col w-full mt-2">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Name')}</div>
+								<div class=" mb-1 text-xs text-gray-600 dark:text-gray-500">{$i18n.t('Name')}</div>
 
 								<div class="flex-1">
 									<input
@@ -260,7 +260,7 @@
 							<hr class=" dark:border-gray-800 my-3 w-full" />
 
 							<div class="flex flex-col w-full">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Email')}</div>
+								<div class=" mb-1 text-xs text-gray-600 dark:text-gray-500">{$i18n.t('Email')}</div>
 
 								<div class="flex-1">
 									<input
@@ -275,7 +275,7 @@
 							</div>
 
 							<div class="flex flex-col w-full mt-2">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Password')}</div>
+								<div class=" mb-1 text-xs text-gray-600 dark:text-gray-500">{$i18n.t('Password')}</div>
 
 								<div class="flex-1">
 									<input
@@ -315,7 +315,7 @@
 									</button>
 								</div>
 
-								<div class=" text-xs text-gray-500">
+								<div class=" text-xs text-gray-600 dark:text-gray-500">
 									ⓘ Ensure your Excel file includes these 3 columns: Name, Email, Role. <br />
 									ⓘ This file can be obtained by exporting from Canvas. <br />
 									ⓘ Users successfully imported will be emailed their login details.
@@ -349,7 +349,7 @@
 									</button>
 								</div>
 
-								<div class=" text-xs text-gray-500">
+								<div class=" text-xs text-gray-600 dark:text-gray-500">
 									ⓘ {$i18n.t(
 										'Ensure your CSV file includes 4 columns in this order: Name, Email, Password, Role.'
 									)}

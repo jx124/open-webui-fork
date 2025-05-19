@@ -75,14 +75,14 @@
                                     class="rounded-full h-12 w-12 object-cover"
                                 />
                                 <div class=" flex-1 self-center pl-3">
-                                    <div class=" font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
+                                    <div class="text-gray-900 dark:text-white font-bold">{(prompt.is_visible ? "" : "[Draft] ") + prompt.title}</div>
                                     {#each selectedAssignments.filter((item) => item.prompt_id === prompt.id) as assignment}
                                         {#if assignment.deadline}
-                                            <div class="text-xs text-gray-400 dark:text-gray-500">
+                                            <div class="text-xs text-gray-600 dark:text-gray-500">
                                                 Due: {new Date(assignment.deadline).toString()}
                                             </div>
                                         {/if}
-                                        <div class="text-xs text-gray-400 dark:text-gray-500">
+                                        <div class="text-xs text-gray-600 dark:text-gray-500">
                                             {assignment.allow_multiple_attempts ? "Allow multiple attempts." : "Allow single attempt."}
                                             {assignment.deadline 
                                                 ? (assignment.allow_submit_after_deadline 
