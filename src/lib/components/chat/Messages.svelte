@@ -14,7 +14,6 @@
 	import sanitizeHtml from 'sanitize-html';
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
-	import ChangeProfileDropdown from './Messages/ChangeProfileDropdown.svelte';
 	import { goto } from '$app/navigation';
 	import { type Assignment } from '$lib/apis/classes';
 	import Tooltip from '../common/Tooltip.svelte';
@@ -291,9 +290,6 @@
 			<div class="flex flex-row items-center justify-between mb-2">
 				<div class="flex text-2xl font-semibold items-center">
 					Client Profile
-					{#if assignedPrompts?.length > 0}
-						<ChangeProfileDropdown profiles={assignedPrompts} bind:selectedProfile />
-					{/if}
 				</div>
 				<div class="flex gap-2">
 					{#if $chatId !== '' && currentAssignment?.allow_multiple_attempts}
@@ -354,15 +350,17 @@
 						{/if}
 					{/if}
 					{#if isSubmitted}
-						<button
-							class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
-							bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
-                            disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
-							type="button"
-							disabled={true}
-						>
-							<div class="self-center text-sm font-medium text-nowrap">Submitted</div>
-						</button>
+                        <Tooltip content="Assignment already submitted">
+                            <button
+                                class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                type="button"
+                                disabled={true}
+                            >
+                                <div class="self-center text-sm font-medium text-nowrap">Submitted</div>
+                            </button>
+                        </Tooltip>
 					{/if}
 				</div>
 			</div>

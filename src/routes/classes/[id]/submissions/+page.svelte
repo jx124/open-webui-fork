@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { WEBUI_NAME, classId, chats, showSidebar } from '$lib/stores';
+	import { WEBUI_NAME, classId, classes, chats, showSidebar } from '$lib/stores';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { onMount, getContext } from 'svelte';
 
 	import dayjs from 'dayjs';
@@ -44,11 +45,28 @@
 
     let chatsInCurrentClass = [];
 
+	let currentClass: Class;
+    $: {
+        const class_ = $classes.find((c) => c.id === $classId);
+		currentClass = class_;
+    }
+
 	onMount(async () => {
 		promptIdSubmittedMap = await getAssignmentSubmissions(localStorage.token, parseInt($page.params.id)).catch((error) => toast.error(error));
         $chats = await getAllChats(localStorage.token);
 
-        chatsInCurrentClass = $chats .filter((chat) => chat.class_id === $classId);
+        $classId = parseInt($page.params.id)
+        localStorage.setItem("classId", $classId.toString());
+
+		const class_ = $classes.find((c) => c.id === $classId);
+		if (class_ === undefined) {
+            toast.error("Class not found");
+			await goto("/classes");
+		} else {
+			currentClass = class_;
+		}
+
+        chatsInCurrentClass = $chats.filter((chat) => chat.class_id === $classId);
 
         $showSidebar = true;
 		
@@ -58,7 +76,7 @@
 
 <svelte:head>
 	<title>
-		Submissions | {$WEBUI_NAME}
+		{currentClass?.name} Submissions | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -66,7 +84,7 @@
     <div class="px-5 py-1">
         <div class="mt-0.5 mb-3 gap-1 flex flex-col md:flex-row justify-between">
             <div class="flex flex-col md:self-center text-lg font-medium px-0.5">
-                Submissions
+                {currentClass?.name} Submissions
                 <input
                     class="w-full md:w-60 rounded-xl mt-3 mb-1 py-1.5 px-4 text-sm dark:text-gray-300 bg-gray-100 dark:bg-gray-850 outline-none"
                     placeholder={$i18n.t('Search')}
@@ -130,7 +148,7 @@
                             <td class=" px-3 py-2">
                                 <a href="/c/{chat.id}">
                                     <button 
-                                        class="flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 
+                                        class="flex w-16 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 
                                                dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
                                     >
                                         View

@@ -2,6 +2,7 @@
 	import {
 		chatId,
         classId,
+        classes,
 		prompts,
 		selectedPromptCommand,
 		settings,
@@ -21,7 +22,6 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
 	export let chat;
-	export let className: string = "";
 	export let isSubmitted: boolean;
 
 	$: inChatInstance = $chatId !== '';
@@ -30,7 +30,9 @@
 		// Selecting prompt from main interface
 		let prompt = $prompts.find((prompt) => prompt.command === $selectedPromptCommand)?.content;
 		$settings = {...$settings, system: prompt};
-	} 
+	}
+
+    $: className = $classes.find((c) => c.id === $classId)?.name ?? "";
 </script>
 
 <nav id="nav" class=" sticky py-2.5 top-0 flex flex-row justify-center z-30">
@@ -82,7 +84,7 @@
                     <a class="dark:text-gray-500 text-gray-500 dark:text-gray-700 hover:dark:text-gray-200 hover:text-gray-700" href="/classes/{$classId}">
                         {className}
                     </a>
-                    {#if isSubmitted || $page.url.pathname.split("/").at(-1) === "submissions"}
+                    {#if $page.url.pathname.split("/").at(-1) === "submissions"}
                         <ChevronRight className="w-3 h-3 mx-2" />
                         <a class="dark:text-gray-500 text-gray-500 dark:text-gray-700 hover:dark:text-gray-200 hover:text-gray-700" href="/classes/{$classId}/submissions">
                             Submissions
@@ -92,6 +94,13 @@
                         <a class="dark:text-gray-500 text-gray-500 dark:text-gray-700 hover:dark:text-gray-200 hover:text-gray-700" href="/classes/{$classId}">
                             Assignments
                         </a>
+
+                        {#if $page.params.prompt_id}
+                            <ChevronRight className="w-3 h-3 mx-2" />
+                            <a class="dark:text-gray-500 text-gray-500 dark:text-gray-700 hover:dark:text-gray-200 hover:text-gray-700" href="/classes/{$classId}/attempts/{$page.params.prompt_id}">
+                                {$prompts.find((prompt) => prompt.id === parseInt($page.params.prompt_id))?.title} Attempts
+                            </a>
+                        {/if}
                     {/if}
                     {#if inChatInstance && chat}
                         <ChevronRight className="w-3 h-3 mx-2" />

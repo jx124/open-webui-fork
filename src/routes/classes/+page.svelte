@@ -44,6 +44,7 @@
                             <a href={`/classes/${encodeURIComponent(class_.id)}`}
                                 on:click={() => {
                                     $classId = class_.id;
+                                    localStorage.setItem("classId", $classId.toString());
                                 }}>
                                 <div class="flex items-center">
                                     <img

@@ -10,7 +10,10 @@
 
 	let className: string = "";
 
-	$: className = $classes.find((c) => c.id === $classId)?.name ?? "";
+    $: className = $classes.find((c) => c.id === $classId)?.name ?? "";
+    onMount(() => {
+	    className = $classes.find((c) => c.id === $classId)?.name ?? "";
+    })
 </script>
 
 <svelte:head>
@@ -34,7 +37,6 @@
         {/if}
 		<div class="min-h-[calc(100dvh)] max-h-[calc(100dvh)] w-full max-w-full flex flex-col">
             <Navbar 
-                bind:className
                 isSubmitted={false}
                 chat={undefined}
             />

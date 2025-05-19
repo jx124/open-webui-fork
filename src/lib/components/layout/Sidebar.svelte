@@ -1,95 +1,40 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import {
 		user,
 		chats,
-		settings,
 		chatId,
-		tags,
 		showSidebar,
 		mobile,
 		showArchivedChats,
-		selectedPromptCommand,
-		classId
-	} from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
+		classId,
 
-	const i18n = getContext('i18n');
+		classes
+
+	} from '$lib/stores';
+	import { onMount } from 'svelte';
 
 	import {
-		deleteChatById,
 		getChatList,
-		getChatListByTagName,
-		updateChatById,
-		getAllChatTags,
-		archiveChatById,
-		cloneChatById,
-		getAllChats
 	} from '$lib/apis/chats';
-	import { toast } from 'svelte-sonner';
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import ChatMenu from './Sidebar/ChatMenu.svelte';
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
-	import { updateUserSettings } from '$lib/apis/users';
 	import DocumentArrowUpSolid from '../icons/DocumentArrowUpSolid.svelte';
 	import DocumentDuplicate from '../icons/DocumentDuplicate.svelte';
+	import ChatBubbles from '../icons/ChatBubbles.svelte';
 
 	const BREAKPOINT = 768;
 
 	let navElement;
 
-	let title: string = 'UI';
-	let search = '';
-
+    let className = "";
 	let shareChatId = null;
-
 	let selectedChatId = null;
-
-	let chatDeleteId = null;
-	let chatTitleEditId = null;
-	let chatTitle = '';
 
 	let showShareChatModal = false;
 	let showDropdown = false;
 
-	let filteredChatList = [];
-
-	$: filteredChatList = $chats
-		.filter((chat) => {
-			if ($user?.role === "admin" || $user?.role === "instructor" || $classId === null) {
-				return true;
-			} else {
-				return chat.class_id === $classId;
-			}
-		})
-		.filter((chat) => {
-			if (search === '') {
-				return true;
-			} else {
-				let title = chat.title.toLowerCase();
-				const query = search.toLowerCase();
-
-				let contentMatches = false;
-				// Access the messages within chat.chat.messages
-				if (chat.chat && chat.chat.messages && Array.isArray(chat.chat.messages)) {
-					contentMatches = chat.chat.messages.some((message) => {
-						// Check if message.content exists and includes the search query
-						return message.content && message.content.toLowerCase().includes(query);
-					});
-				}
-
-				return title.includes(query) || contentMatches;
-			}
-		});
-
 	mobile;
-	const onResize = () => {
-		if ($showSidebar && window.innerWidth < BREAKPOINT) {
-			showSidebar.set(false);
-		}
-	};
 
 	onMount(async () => {
 		mobile.subscribe((e) => {
@@ -134,74 +79,18 @@
 		window.addEventListener('touchstart', onTouchStart);
 		window.addEventListener('touchend', onTouchEnd);
 
+        if ($classId === null) {
+            $classId = parseInt(localStorage.getItem("classId") ?? "0");
+        }
+
+        className = $classes.find((cls) => cls.id === $classId)?.name;
+
 		return () => {
 			window.removeEventListener('touchstart', onTouchStart);
 			window.removeEventListener('touchend', onTouchEnd);
 		};
 	});
 
-	// Helper function to fetch and add chat content to each chat
-	const enrichChatsWithContent = async () => {
-		chats.set(await getAllChats(localStorage.token));
-	};
-
-	const loadChat = async (id) => {
-		goto(`/c/${id}`);
-	};
-
-	const editChatTitle = async (id, _title) => {
-		if (_title === '') {
-			toast.error($i18n.t('Title cannot be an empty string.'));
-		} else {
-			title = _title;
-
-			await updateChatById(localStorage.token, id, {
-				title: _title
-			});
-			chats.set(await getChatList(localStorage.token));
-		}
-	};
-
-	const deleteChat = async (id) => {
-		const res = await deleteChatById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			chatDeleteId = null;
-
-			return null;
-		});
-
-		if (res) {
-			if ($chatId === id) {
-				$chatId = "";
-				goto('/');
-			}
-
-			chats.set(await getChatList(localStorage.token));
-		}
-	};
-
-	const cloneChatHandler = async (id) => {
-		const res = await cloneChatById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-
-		if (res) {
-			goto(`/c/${res.id}`);
-			chats.set(await getChatList(localStorage.token));
-		}
-	};
-
-	const saveSettings = async (updated) => {
-		settings.set({ ...$settings, ...updated });
-		await updateUserSettings(localStorage.token, { ui: $settings });
-		location.href = '/';
-	};
-
-	const archiveChatHandler = async (id) => {
-		await archiveChatById(localStorage.token, id);
-		chats.set(await getChatList(localStorage.token));
-	};
 </script>
 
 <ShareChatModal bind:show={showShareChatModal} chatId={shareChatId} />
@@ -239,9 +128,28 @@
 	>
 		<div class="px-2.5 flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
             <div class="w-full">
+                <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400 mb-4">
+                    <a
+                        id="assignment-button"
+                        class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
+                        href="/classes/"
+                        draggable="false"
+                        on:click={() => {
+                            $chatId = ""
+                            $classId = null;
+                        }}
+                    >
+                        <div class="self-center ml-1 mr-2 p-1 rounded-md text-gray-100 bg-gray-900 dark:text-gray-900 dark:bg-gray-100">
+                            <ChatBubbles className={"size-5 stroke-current"} strokeWidth={"1.3"} />
+                        </div>
+                        <div class=" self-center text-gray-850 dark:text-white line-clamp-2 overflow-hidden text-ellipsis">
+                            {className}
+                        </div>
+                    </a>
+                </div>
                 <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
                     <a
-                        id="home-button"
+                        id="assignment-button"
                         class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
                         href="/classes/{$classId}"
                         draggable="false"
@@ -250,14 +158,14 @@
                         <div class="self-center mx-1.5">
                             <DocumentDuplicate />
                         </div>
-                        <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                        <div class=" self-center text-sm text-gray-850 dark:text-white">
                             View Assignments
                         </div>
                     </a>
                 </div>
                 <div class="flex justify-between w-full space-x-1 text-gray-600 dark:text-gray-400">
                     <a
-                        id="home-button"
+                        id="submission-button"
                         class="flex flex-1 rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-850 transition"
                         href="/classes/{$classId}/submissions"
                         draggable="false"
@@ -266,7 +174,7 @@
                         <div class="self-center mx-1.5">
                             <DocumentArrowUpSolid />
                         </div>
-                        <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                        <div class=" self-center text-sm text-gray-850 dark:text-white">
                             View Submissions
                         </div>
                     </a>
@@ -300,7 +208,7 @@
                             </div>
 
                             <div class="flex self-center">
-                                <div class=" self-center font-medium text-sm text-gray-850 dark:text-white">
+                                <div class=" self-center text-sm text-gray-850 dark:text-white">
                                     Admin Panel
                                 </div>
                             </div>
@@ -308,299 +216,6 @@
                     </div>
                 {/if}
             </div>
-		</div>
-
-
-		<div class="relative flex flex-col flex-1 overflow-y-auto">
-			<div class="px-2 mt-0.5 mb-2 flex justify-center space-x-2">
-				<div class="flex w-full rounded-xl" id="chat-search">
-					<div class="self-center pl-3 py-2 rounded-l-xl bg-transparent">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							class="w-4 h-4"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</div>
-
-					<input
-						class="w-full rounded-r-xl py-1.5 pl-2.5 pr-4 text-sm bg-transparent dark:text-gray-300 outline-none"
-						placeholder={$i18n.t('Search')}
-						bind:value={search}
-						on:focus={() => {
-							enrichChatsWithContent();
-						}}
-					/>
-				</div>
-			</div>
-
-			{#if $tags.length > 0}
-				<div class="px-2.5 mb-2 flex gap-1 flex-wrap">
-					<button
-						class="px-2.5 text-xs font-medium bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition rounded-full"
-						on:click={async () => {
-							chats.set(await getChatList(localStorage.token));
-						}}
-					>
-						{$i18n.t('all')}
-					</button>
-					{#each $tags as tag}
-						<button
-							class="px-2.5 text-xs font-medium bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition rounded-full"
-							on:click={async () => {
-								let chatIds = await getChatListByTagName(localStorage.token, tag.name);
-								if (chatIds.length === 0) {
-									tags.set(await getAllChatTags(localStorage.token));
-									chatIds = await getChatList(localStorage.token);
-								}
-								chats.set(chatIds);
-							}}
-						>
-							{tag.name}
-						</button>
-					{/each}
-				</div>
-			{/if}
-
-			<div class="pl-2 my-2 flex-1 flex flex-col space-y-1 overflow-y-auto scrollbar-hidden">
-				{#each filteredChatList as chat, idx}
-					{#if idx === 0 || (idx > 0 && chat.time_range !== filteredChatList[idx - 1].time_range)}
-						<div
-							class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium {idx === 0
-								? ''
-								: 'pt-5'} pb-0.5"
-						>
-							{$i18n.t(chat.time_range)}
-							<!-- localisation keys for time_range to be recognized from the i18next parser (so they don't get automatically removed):
-							{$i18n.t('Today')}
-							{$i18n.t('Yesterday')}
-							{$i18n.t('Previous 7 days')}
-							{$i18n.t('Previous 30 days')}
-							{$i18n.t('January')}
-							{$i18n.t('February')}
-							{$i18n.t('March')}
-							{$i18n.t('April')}
-							{$i18n.t('May')}
-							{$i18n.t('June')}
-							{$i18n.t('July')}
-							{$i18n.t('August')}
-							{$i18n.t('September')}
-							{$i18n.t('October')}
-							{$i18n.t('November')}
-							{$i18n.t('December')}
-							-->
-						</div>
-					{/if}
-
-					<div class=" w-full pr-2 relative group">
-						{#if chatTitleEditId === chat.id}
-							<div
-								class=" w-full flex justify-between rounded-xl px-3 py-2 {chat.id === $chatId ||
-								chat.id === chatTitleEditId ||
-								chat.id === chatDeleteId
-									? 'bg-gray-200 dark:bg-gray-900'
-									: chat.id === selectedChatId
-									? 'bg-gray-100 dark:bg-gray-950'
-									: 'group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
-							>
-								<input bind:value={chatTitle} class=" bg-transparent w-full outline-none mr-10" />
-							</div>
-						{:else}
-							<a
-								class=" w-full flex justify-between rounded-xl px-3 py-2 {chat.id === $chatId ||
-								chat.id === chatTitleEditId ||
-								chat.id === chatDeleteId
-									? 'bg-gray-200 dark:bg-gray-900'
-									: chat.id === selectedChatId
-									? 'bg-gray-100 dark:bg-gray-950'
-									: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
-								href="/c/{chat.id}"
-								on:click={() => {
-									selectedChatId = chat.id;
-									if ($mobile) {
-										showSidebar.set(false);
-									}
-								}}
-								draggable="false"
-							>
-								<div class=" flex self-center flex-1 w-full">
-									<div class=" text-left self-center overflow-hidden w-full h-[20px]">
-										{chat.title}
-									</div>
-								</div>
-							</a>
-						{/if}
-
-						<div
-							class="
-
-							{chat.id === $chatId || chat.id === chatTitleEditId || chat.id === chatDeleteId
-								? 'from-gray-200 dark:from-gray-900'
-								: chat.id === selectedChatId
-								? 'from-gray-100 dark:from-gray-950'
-								: 'invisible group-hover:visible from-gray-100 dark:from-gray-950'}
-								absolute right-[10px] top-[10px] pr-2 pl-5 bg-gradient-to-l from-80%
-
-								  to-transparent"
-						>
-							{#if chatTitleEditId === chat.id}
-								<div class="flex self-center space-x-1.5 z-10">
-									<button
-										class=" self-center dark:hover:text-white transition"
-										on:click={() => {
-											editChatTitle(chat.id, chatTitle);
-											chatTitleEditId = null;
-											chatTitle = '';
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												fill-rule="evenodd"
-												d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</button>
-									<button
-										class=" self-center dark:hover:text-white transition"
-										on:click={() => {
-											chatTitleEditId = null;
-											chatTitle = '';
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-											/>
-										</svg>
-									</button>
-								</div>
-							{:else if chatDeleteId === chat.id}
-								<div class="flex self-center space-x-1.5 z-10">
-									<button
-										class=" self-center dark:hover:text-white transition"
-										on:click={() => {
-											deleteChat(chat.id);
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												fill-rule="evenodd"
-												d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</button>
-									<button
-										class=" self-center dark:hover:text-white transition"
-										on:click={() => {
-											chatDeleteId = null;
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											class="w-4 h-4"
-										>
-											<path
-												d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-											/>
-										</svg>
-									</button>
-								</div>
-							{:else}
-								<div class="flex self-center space-x-1 z-10">
-									<ChatMenu
-										chatId={chat.id}
-										cloneChatHandler={() => {
-											cloneChatHandler(chat.id);
-										}}
-										shareHandler={() => {
-											shareChatId = selectedChatId;
-											showShareChatModal = true;
-										}}
-										archiveChatHandler={() => {
-											archiveChatHandler(chat.id);
-										}}
-										renameHandler={() => {
-											chatTitle = chat.title;
-											chatTitleEditId = chat.id;
-										}}
-										deleteHandler={() => {
-											chatDeleteId = chat.id;
-										}}
-										onClose={() => {
-											selectedChatId = null;
-										}}
-									>
-										<button
-											aria-label="Chat Menu"
-											class=" self-center dark:hover:text-white transition"
-											on:click={() => {
-												selectedChatId = chat.id;
-											}}
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 16 16"
-												fill="currentColor"
-												class="w-4 h-4"
-											>
-												<path
-													d="M2 8a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM6.5 8a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM12.5 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"
-												/>
-											</svg>
-										</button>
-									</ChatMenu>
-
-									{#if chat.id === $chatId}
-										<button
-											id="delete-chat-button"
-											class="hidden"
-											on:click={() => {
-												chatDeleteId = chat.id;
-											}}
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 16 16"
-												fill="currentColor"
-												class="w-4 h-4"
-											>
-												<path
-													d="M2 8a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM6.5 8a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM12.5 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"
-												/>
-											</svg>
-										</button>
-									{/if}
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
 		</div>
 
 		<div class="px-2.5">
@@ -636,43 +251,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- <div
-		id="sidebar-handle"
-		class=" hidden md:fixed left-0 top-[50dvh] -translate-y-1/2 transition-transform translate-x-[255px] md:translate-x-[260px] rotate-0"
-	>
-		<Tooltip
-			placement="right"
-			content={`${$showSidebar ? $i18n.t('Close') : $i18n.t('Open')} ${$i18n.t('sidebar')}`}
-			touch={false}
-		>
-			<button
-				id="sidebar-toggle-button"
-				class=" group"
-				on:click={() => {
-					showSidebar.set(!$showSidebar);
-				}}
-				><span class="" data-state="closed"
-					><div
-						class="flex h-[72px] w-8 items-center justify-center opacity-50 group-hover:opacity-100 transition"
-					>
-						<div class="flex h-6 w-6 flex-col items-center">
-							<div
-								class="h-3 w-1 rounded-full bg-[#0f0f0f] dark:bg-white rotate-0 translate-y-[0.15rem] {$showSidebar
-									? 'group-hover:rotate-[15deg]'
-									: 'group-hover:rotate-[-15deg]'}"
-							/>
-							<div
-								class="h-3 w-1 rounded-full bg-[#0f0f0f] dark:bg-white rotate-0 translate-y-[-0.15rem] {$showSidebar
-									? 'group-hover:rotate-[-15deg]'
-									: 'group-hover:rotate-[15deg]'}"
-							/>
-						</div>
-					</div>
-				</span>
-			</button>
-		</Tooltip>
-	</div> -->
 </div>
 
 <style>

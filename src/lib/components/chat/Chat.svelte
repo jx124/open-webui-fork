@@ -206,15 +206,6 @@
 			selectedModels = [''];
 		}
 
-		if ($page.url.searchParams.get('q')) {
-			prompt = $page.url.searchParams.get('q') ?? '';
-
-			if (prompt) {
-				await tick();
-				submitPrompt(prompt);
-			}
-		}
-
 		const profile = $page.url.searchParams.get("profile") ?? "";
 		selectedProfile = $prompts.find((prompt) => {
 			return prompt.command === profile;
@@ -1737,7 +1728,6 @@
 			: ''} w-full max-w-full flex flex-col"
 	>
 		<Navbar
-			bind:className
             bind:isSubmitted
 			{chat}
 		/>

@@ -56,7 +56,9 @@
 		const class_ = $classes.find((c) => c.id === currentClassId);
 
 		if (class_ === undefined) {
+            toast.error("Class not found");
 			await goto("/classes");
+            return;
 		} else {
 			currentClass = class_;
             $classId = currentClassId;
@@ -64,7 +66,9 @@
 
         assignment = currentClass.assignments.find((assignment) => assignment.prompt_id === prompt_id);
 		if (assignment === undefined) {
-			await goto("/classes");
+            toast.error("Assignment not found");
+			await goto("/classes/" + $classId);
+            return;
         }
 
         attempts = $chats.filter((chat) => chat.prompt_id === prompt_id);
@@ -147,12 +151,12 @@
                                             Submitted
                                         </div>
                                     {:else if attempt.status === "In Progress"}
-                                        <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-blue-200 dark:bg-blue-800/50 text-blue-900 dark:text-blue-100">
+                                        <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-yellow-200 dark:bg-yellow-400/50 text-yellow-900 dark:text-yellow-100">
                                             In Progress
                                         </div>
                                     {:else}
                                         <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-red-200 dark:bg-red-800/50 text-red-900 dark:text-red-100">
-                                            In Progress
+                                            Locked
                                         </div>
                                     {/if}
                                 </div>
@@ -168,7 +172,7 @@
                             <td class=" px-3 py-2">
                                 <a href="/c/{attempt.id}">
                                     <button 
-                                        class="flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 
+                                        class="flex w-16 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 
                                                dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
                                     >
                                         View

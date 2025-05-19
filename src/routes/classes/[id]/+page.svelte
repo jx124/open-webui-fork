@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { type Class, classes, classId, chats, prompts, WEBUI_NAME } from '$lib/stores';
+	import { type Class, chats, classes, classId, prompts, WEBUI_NAME } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 	import { getClassList } from '$lib/apis/classes';
 	import { toast } from 'svelte-sonner';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getAssignmentSubmissions } from '$lib/apis/classes';
-	import { getChatList } from '$lib/apis/chats';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
@@ -42,11 +41,8 @@
         [key: number]: boolean;
     } = {};
     let assignments = [];
-	
-    $: {
-        const class_ = $classes.find((c) => c.id === $classId);
-		currentClass = class_;
-    }
+
+    let promptIdAttempted = new Set<number>();
 
 	onMount(async () => {
 		if ($classes.length === 0) {
@@ -56,15 +52,27 @@
 			$prompts = await getPrompts(localStorage.token).catch((error) => toast.error(error));
 		}
         $classId = parseInt($page.params.id)
+        localStorage.setItem("classId", $classId.toString());
 
 		const class_ = $classes.find((c) => c.id === $classId);
 		if (class_ === undefined) {
+            toast.error("Class not found");
 			await goto("/classes");
+            return;
 		} else {
 			currentClass = class_;
 		}
 
 		promptIdSubmittedMap = await getAssignmentSubmissions(localStorage.token, parseInt($page.params.id)).catch((error) => toast.error(error));
+
+        for (let chat of $chats) {
+            if (chat.class_id === null || chat.class_id !== $classId) {
+                continue;
+            }
+            if (!promptIdAttempted.has(chat.prompt_id)) {
+                promptIdAttempted.add(chat.prompt_id);
+            }
+        }
 
         assignments = currentClass.assignments;
         for (let assignment of assignments) {
@@ -79,7 +87,10 @@
                 }
             }
 
-            assignment.title = $prompts.find((prompt) => prompt.id === assignment.prompt_id)?.title;
+            let p = $prompts.find((prompt) => prompt.id === assignment.prompt_id);
+            assignment.title = p?.title;
+            assignment.command = p?.command;
+            assignment.selected_model_id = p?.selected_model_id;
         }
 
 		loaded = true;
@@ -148,9 +159,15 @@
                                             Submitted
                                         </div>
                                     {:else if assignment.status === "Open"}
-                                        <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-blue-200 dark:bg-blue-800/50 text-blue-900 dark:text-blue-100">
-                                            Open
-                                        </div>
+                                        {#if promptIdAttempted.has(assignment.prompt_id)}
+                                            <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-yellow-200 dark:bg-yellow-400/50 text-yellow-900 dark:text-yellow-100">
+                                                In Progress
+                                            </div>
+                                        {:else}
+                                            <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-blue-200 dark:bg-blue-800/50 text-blue-900 dark:text-blue-100">
+                                                Open
+                                            </div>
+                                        {/if}
                                     {:else}
                                         <div class="flex w-20 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-red-200 dark:bg-red-800/50 text-red-900 dark:text-red-100">
                                             Locked
@@ -167,13 +184,23 @@
                             </td>
 
                             <td class=" px-3 py-2">
-                                <a href="/classes/{$classId}/attempts/{assignment.prompt_id}">
-                                    <button 
-                                        class="flex items-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
-                                    >
-                                        View
-                                    </button>
-                                </a>
+                                {#if promptIdAttempted.has(assignment.prompt_id)}
+                                    <a href="/classes/{$classId}/attempts/{assignment.prompt_id}">
+                                        <button
+                                            class="flex w-16 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
+                                        >
+                                            View
+                                        </button>
+                                    </a>
+                                {:else}
+                                    <a href="/c/?profile={encodeURIComponent(assignment.command)}&model={encodeURIComponent(assignment.selected_model_id)}&class={$classId}">
+                                        <button 
+                                            class="flex w-16 items-center justify-center gap-2 text-xs px-3 py-0.5 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-800 dark:text-gray-100 text-gray-900"
+                                        >
+                                            Attempt
+                                        </button>
+                                    </a>
+                                {/if}
                             </td>
                         </tr>
                     {/each}

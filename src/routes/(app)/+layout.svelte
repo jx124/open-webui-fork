@@ -143,9 +143,14 @@
 
 			await tick();
 
-			if (!['admin', 'instructor'].includes($user?.role ?? '') && !$page.url.pathname.startsWith("/c/")) {
-				await goto('/classes');
-			}
+			if (['admin', 'instructor'].includes($user?.role ?? '')) {
+                if ($classes.length === 0) {
+                    await goto("/admin")
+                }
+			} 
+            if (!$page.url.pathname.startsWith("/c/") && !$page.url.pathname.startsWith("/admin")) {
+                await goto('/classes');
+            }
 		}
 
 		loaded = true;
