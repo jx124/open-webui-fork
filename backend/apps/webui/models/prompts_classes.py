@@ -169,7 +169,7 @@ class PromptsTable:
         try:
             prompt: PromptModel = Prompt.select(Prompt.content).where(Prompt.id == id).get_or_none()
             if prompt:
-                return prompt.selected_model_id
+                return prompt.model_id
             return None
 
         except Exception:

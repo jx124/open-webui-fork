@@ -384,6 +384,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 profile_id = payload["evaluation_id"]
                 evaluation = Evaluations.get_evaluation_by_id(profile_id)
                 content = evaluation.content
+                model_id = evaluation.selected_model_id
                 payload["model"] = evaluation.selected_model_id
                 payload["messages"].insert(
                     0,
