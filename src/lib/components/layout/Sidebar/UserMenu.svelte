@@ -63,7 +63,7 @@
 						/>
 					</svg>
 				</div>
-				<div class=" self-center font-medium">{$i18n.t('Settings')}</div>
+				<div class=" self-center">{$i18n.t('Settings')}</div>
 			</button>
 
 			<button
@@ -76,7 +76,7 @@
 				<div class=" self-center mr-3">
 					<ArchiveBox className="size-5" strokeWidth="1.5" />
 				</div>
-				<div class=" self-center font-medium">{$i18n.t('Archived Chats')}</div>
+				<div class=" self-center">{$i18n.t('Archived Chats')}</div>
 			</button>
 
 			{#if role === 'admin'}
@@ -103,7 +103,7 @@
 							/>
 						</svg>
 					</div>
-					<div class=" self-center font-medium">{$i18n.t('Admin Panel')}</div>
+					<div class=" self-center">{$i18n.t('Admin Panel')}</div>
 				</button>
 			{/if}
 
@@ -113,6 +113,7 @@
 				class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
 				on:click={() => {
 					localStorage.removeItem('token');
+					localStorage.removeItem('classId');
 					location.href = '/auth';
 					show = false;
 				}}
@@ -136,7 +137,7 @@
 						/>
 					</svg>
 				</div>
-				<div class=" self-center font-medium">{$i18n.t('Sign Out')}</div>
+				<div class=" self-center">{$i18n.t('Sign Out')}</div>
 			</button>
 
 			<!-- <DropdownMenu.Item class="flex items-center px-3 py-2 text-sm  font-medium">
