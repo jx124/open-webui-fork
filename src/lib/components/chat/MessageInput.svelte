@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { onMount, tick, getContext } from 'svelte';
-	import { type Model, mobile, settings, showSidebar, models, config } from '$lib/stores';
+	import { type Model, type Prompt, mobile, settings, showSidebar, models, chatId, classId, selectedPromptCommand } from '$lib/stores';
 	import { blobToFile, calculateSHA256, findWordIndices } from '$lib/utils';
+	import { goto } from '$app/navigation';
 
 	import {
 		uploadDocToVectorDB,
@@ -13,15 +14,14 @@
 
 	import { transcribeAudio } from '$lib/apis/audio';
 
-	import Prompts from './MessageInput/PromptCommands.svelte';
-	import Suggestions from './MessageInput/Suggestions.svelte';
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import Documents from './MessageInput/Documents.svelte';
-	import Models from './MessageInput/Models.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import InputMenu from './MessageInput/InputMenu.svelte';
-	import { t } from 'i18next';
+	import { type Assignment } from '$lib/apis/classes';
+	import SubmitChatModal from './SubmitChatModal.svelte';
+	import { submitChatById } from '$lib/apis/chats';
 
 	const i18n = getContext('i18n');
 
@@ -36,9 +36,7 @@
 	let chatTextAreaElement: HTMLTextAreaElement;
 	let filesInputElement;
 
-	let promptsElement;
 	let documentsElement;
-	let modelsElement;
 
 	let inputFiles;
 	let dragged = false;
@@ -352,6 +350,32 @@
 		}
 	};
 
+	const submitChatHandler = async () => {
+		await submitChatById(localStorage.token, $chatId)
+			.then(() => {
+				isSubmitted = true;
+				show = false;
+			})
+			.catch((err) => {
+				isSubmitted = false;
+				toast.error(err);
+			});
+	}
+
+	export let currentAssignment: Assignment | null = null;
+	export let selectedProfile: Prompt | undefined;
+	export let isSubmitted = false;
+
+    let show = false;
+	let beforeDeadline = true;
+    let assignmentName = "";
+
+	$: if (currentAssignment) {
+		beforeDeadline = currentAssignment.deadline === null 
+			|| currentAssignment.allow_submit_after_deadline
+			|| (new Date() <= new Date(currentAssignment.deadline));
+	}
+
 	onMount(() => {
 		window.setTimeout(() => chatTextAreaElement?.focus(), 0);
 
@@ -437,6 +461,8 @@
 		};
 	});
 </script>
+
+<SubmitChatModal bind:show bind:assignmentName {submitChatHandler} />
 
 {#if dragged}
 	<div
@@ -566,30 +592,81 @@
 	<div class="bg-white dark:bg-gray-900">
 		<div class="max-w-6xl px-2.5 md:px-6 mx-auto inset-x-0">
 			<div class=" pb-2">
-				{#if chatDisabled}
-					<div class="flex flex-row-reverse my-2">
-						<Tooltip content="Provide feedback">
-							<button class="bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900
-                                    transition rounded-xl px-4 py-2 self-center"
-								type="button"
-								id="provide-feedback-button"
-								on:click={() => { showFeedbackModal = true; }}
-							>Feedback</button>
-						</Tooltip>
-					</div>
-				{:else}
-					<div class="flex flex-row-reverse my-2">
-						<Tooltip content="End the current chat">
-							<button class="{messages.length !== 0
-								? 'bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900'
-								: 'hidden'} transition rounded-xl px-4 py-2 self-center"
-								type="button"
-								id="evaluate-chat-button"
-								on:click={() => { showEvaluationModal = true; }}
-							>End Chat</button>
-						</Tooltip>
-					</div>
+                <div class="flex flex-row-reverse my-2">
+                    <div class="flex gap-2 h-10">
+                        {#if $chatId !== '' && currentAssignment?.allow_multiple_attempts}
+                            <button
+                                class="text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
+                                type="button"
+                                on:click={() => {
+                                    $chatId = '';
+                                    $selectedPromptCommand = selectedProfile?.command ?? "";
+                                    goto(
+                                        `/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
+                                            `&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
+                                            `&class=${$classId}`
+                                    );
+                                }}
+                            >
+                                <div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
+                            </button>
+                        {/if}
+                        {#if isSubmitted === false && $chatId !== '' && $classId !== null}
+                            {#if chatDisabled && beforeDeadline}
+                                <button
+                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                    type="button"
+                                    on:click={() => {
+                                        show = true;
+                                        assignmentName = selectedProfile.title;
+                                        showEvaluationModal = true;
+                                    }}
+                                >
+                                    <div class="self-center text-sm font-medium text-nowrap">Submit</div>
+                                </button>
+                            {:else if !chatDisabled}
+                                <Tooltip content="End the current chat">
+                                    <button class="{messages.length !== 0
+                                        ? 'bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900'
+                                        : 'hidden'} transition rounded-xl px-4 py-2 self-center"
+                                        type="button"
+                                        id="evaluate-chat-button"
+                                        on:click={() => { showEvaluationModal = true; }}
+                                    >End Chat</button>
+                                </Tooltip>
+                            {:else if !beforeDeadline}
+                                <Tooltip content="Submission deadline passed">
+                                    <button
+                                        class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                        bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                        disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                        type="button"
+                                        disabled={true}
+                                    >
+                                        <div class="self-center text-sm font-medium text-nowrap">Submit</div>
+                                    </button>
+                                </Tooltip>
+                            {/if}
+                        {/if}
+                        {#if isSubmitted}
+                            <Tooltip content="Assignment already submitted">
+                                <button
+                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
+                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
+                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
+                                    type="button"
+                                    disabled={true}
+                                >
+                                    <div class="self-center text-sm font-medium text-nowrap">Submitted</div>
+                                </button>
+                            </Tooltip>
+                        {/if}
+                    </div>
+                </div>
 
+				{#if !chatDisabled}
 					<input
 						bind:this={filesInputElement}
 						bind:files={inputFiles}
@@ -1149,6 +1226,9 @@
 
 				<div class="mt-1.5 text-xs text-gray-500 text-center">
 					{$i18n.t('LLMs can make mistakes. Verify important information.')}
+                    <button class="underline hover:dark:text-gray-200 hover:text-gray-700"
+					    on:click={() => { showFeedbackModal = true; }}
+                    >Provide Feedback</button>.
 				</div>
 			</div>
 		</div>

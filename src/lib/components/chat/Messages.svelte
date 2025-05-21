@@ -14,9 +14,7 @@
 	import sanitizeHtml from 'sanitize-html';
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
-	import { goto } from '$app/navigation';
 	import { type Assignment } from '$lib/apis/classes';
-	import Tooltip from '../common/Tooltip.svelte';
 	import SubmitChatModal from './SubmitChatModal.svelte';
 
 	const i18n = getContext('i18n');
@@ -244,43 +242,7 @@
 			history: history
 		});
 	};
-
-	const submitChatHandler = async () => {
-		await submitChatById(localStorage.token, $chatId)
-			.then(() => {
-				isSubmitted = true;
-				show = false;
-			})
-			.catch((err) => {
-				isSubmitted = false;
-				toast.error(err);
-			});
-	}
-
-	let assignedPrompts: Prompt[] = [];
-	let beforeDeadline = true;
-
-	let show = false;
-	let assignmentName = "";
-
-	$: if (currentAssignment) {
-		beforeDeadline = currentAssignment.deadline === null 
-			|| currentAssignment.allow_submit_after_deadline
-			|| (new Date() <= new Date(currentAssignment.deadline));
-	}
-
-	$: {
-		if (['admin', 'instructor'].includes($_user?.role ?? '')) {
-			assignedPrompts = $prompts;
-		} else {
-			const currentClass = $classes.find((c) => c.id === $classId);
-			const assignedPromptIds = new Set<number>(currentClass?.assignments.map(a => a.prompt_id) ?? []);
-			assignedPrompts = $prompts.filter((p) => assignedPromptIds.has(p.id));
-		}
-	}
 </script>
-
-<SubmitChatModal bind:show bind:assignmentName {submitChatHandler} />
 
 <div class="h-full flex flex-col">
 	{#if selectedProfile}
@@ -290,78 +252,6 @@
 			<div class="flex flex-row items-center justify-between mb-2">
 				<div class="flex text-2xl font-semibold items-center">
 					Client Profile
-				</div>
-				<div class="flex gap-2">
-					{#if $chatId !== '' && currentAssignment?.allow_multiple_attempts}
-						<button
-							class="text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
-							type="button"
-							on:click={() => {
-								$chatId = '';
-								$selectedPromptCommand = selectedProfile?.command ?? "";
-								goto(
-									`/c/?profile=${encodeURIComponent(selectedProfile.command)}` +
-										`&model=${selectedProfile.selected_model_id ? encodeURIComponent(selectedProfile.selected_model_id) : "gpt-4o"}` +
-										`&class=${$classId}`
-								);
-							}}
-						>
-							<div class="self-center text-sm font-medium text-nowrap">Restart Conversation</div>
-						</button>
-					{/if}
-					{#if isSubmitted === false && $chatId !== '' && $classId !== null}
-						{#if chatDisabled && beforeDeadline}
-							<button
-                                class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
-                                bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
-                                disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
-								type="button"
-								on:click={() => {
-									show = true;
-									assignmentName = selectedProfile.title;
-								}}
-							>
-								<div class="self-center text-sm font-medium text-nowrap">Submit</div>
-							</button>
-						{:else if !chatDisabled}
-							<Tooltip content="End the chat first">
-								<button
-                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
-                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
-                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
-									type="button"
-									disabled={true}
-								>
-									<div class="self-center text-sm font-medium text-nowrap">Submit</div>
-								</button>
-							</Tooltip>
-						{:else if !beforeDeadline}
-							<Tooltip content="Submission deadline passed">
-								<button
-                                    class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
-                                    bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
-                                    disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
-									type="button"
-									disabled={true}
-								>
-									<div class="self-center text-sm font-medium text-nowrap">Submit</div>
-								</button>
-							</Tooltip>
-						{/if}
-					{/if}
-					{#if isSubmitted}
-                        <Tooltip content="Assignment already submitted">
-                            <button
-                                class="text-sm px-3 py-2 transition rounded-xl disabled:cursor-not-allowed
-                                bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100
-                                disabled:bg-emerald-500 disabled:text-white disabled:dark:bg-emerald-700/50 disabled:dark:text-gray-500"
-                                type="button"
-                                disabled={true}
-                            >
-                                <div class="self-center text-sm font-medium text-nowrap">Submitted</div>
-                            </button>
-                        </Tooltip>
-					{/if}
 				</div>
 			</div>
 

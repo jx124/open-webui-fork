@@ -1797,6 +1797,9 @@
 				bind:showFeedbackModal
 				bind:messages
 				bind:chatDisabled={isDisabled}
+				bind:currentAssignment
+				bind:selectedProfile
+				bind:isSubmitted
 				{selectedModels}
 				{submitPrompt}
 				{stopResponse}
