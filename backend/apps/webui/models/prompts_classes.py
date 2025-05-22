@@ -544,6 +544,15 @@ class ClassesTable:
             log.exception(" Exception caught in model method.")
             return None
 
+    def get_class_count_by_instructor_id(self, instructor_id: str) -> Optional[int]:
+        try:
+            count = Class.select().where(Class.instructor == instructor_id).count()
+            return count
+
+        except Exception:
+            log.exception(" Exception caught in model method.")
+            return None
+
     # Chat methods placed here to prevent circular dependencies
     def get_chat_list_by_user_id_and_instructor(
         self,

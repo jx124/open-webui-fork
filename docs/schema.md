@@ -124,6 +124,7 @@ Table evaluation {
   id integer [primary key]
   title varchar [not null, unique]
   content text [default: ""]
+  model_id text [default: ""]
 }
 
 Table studentclass {

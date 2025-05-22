@@ -26,6 +26,7 @@ from apps.webui.models.users import (
 from apps.webui.models.auths import Auths
 from apps.webui.models.chats import Chats
 from apps.webui.models.roles import Roles
+from apps.webui.models.prompts_classes import Classes, StudentClasses
 
 from utils.misc import validate_email_format
 from utils.utils import get_admin_or_instructor, get_verified_user, get_password_hash, get_admin_user
@@ -256,6 +257,14 @@ async def update_user_by_id(
 @router.delete("/{user_id}", response_model=bool)
 async def delete_user_by_id(user_id: str, user: UserModel = Depends(get_admin_user)) -> bool:
     if user.id != user_id:
+        if Classes.get_class_count_by_instructor_id(user_id) != 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=ERROR_MESSAGES.USER_IS_INSTRUCTOR,
+            )
+
+        StudentClasses.delete_student_classes_by_student(user_id)
+        Chats.delete_chats_by_user_id(user_id)
         result = Auths.delete_auth_by_id(user_id)
 
         if result:

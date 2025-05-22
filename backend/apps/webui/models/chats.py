@@ -480,9 +480,9 @@ class ChatTable:
             self.delete_shared_chats_by_user_id(user_id)
 
             query = Chat.delete().where(Chat.user_id == user_id)
-            result: int = query.execute()  # Remove the rows, return number of rows removed.
+            query.execute()  # Remove the rows, return number of rows removed.
 
-            return result != 0
+            return True
 
         except Exception:
             log.exception(" Exception caught in model method.")
@@ -495,10 +495,11 @@ class ChatTable:
                 for chat in Chat.select().where(Chat.user_id == user_id)
             ]
 
-            query = Chat.delete().where(Chat.share_id == shared_chat_ids)
-            result: int = query.execute()  # Remove the rows, return number of rows removed.
+            for shared_id in shared_chat_ids:
+                query = Chat.delete().where(Chat.share_id == shared_id)
+                query.execute()  # Remove the rows, return number of rows removed.
 
-            return result != 0
+            return True
 
         except Exception:
             log.exception(" Exception caught in model method.")

@@ -106,3 +106,5 @@ class ERROR_MESSAGES(str, Enum):
     INVALID_EVAL_TITLE = "Evaluation titles must be at most 255 characters long."
     EVAL_TITLE_TAKEN = lambda name="": f"The evaluation title {name} is already taken."
     INVALID_EVAL_DELETION = lambda profiles=[]: f"This evaluation cannot be deleted as the profile{'s' if len(profiles) > 1 else ''} {', '.join(profiles)} {'are' if len(profiles) > 1 else 'is'} assigned to it."
+
+    USER_IS_INSTRUCTOR = "User is an instructor of a class and cannot be deleted. Reassign the instructor and retry."

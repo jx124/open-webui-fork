@@ -325,18 +325,10 @@ class UsersTable:
 
     def delete_user_by_id(self, id: str) -> bool:
         try:
-            with self.db.atomic():
-                # Delete User Chats
-                result = Chats.delete_chats_by_user_id(id)
+            query = User.delete().where(User.id == id)
+            delete_result: int = query.execute()  # Remove the rows, return number of rows removed.
 
-                if result:
-                    # Delete User
-                    query = User.delete().where(User.id == id)
-                    delete_result: int = query.execute()  # Remove the rows, return number of rows removed.
-
-                    return delete_result != 0
-                else:
-                    return False
+            return delete_result != 0
 
         except Exception:
             log.exception(" Exception caught in model method.")
