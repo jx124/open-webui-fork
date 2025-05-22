@@ -377,7 +377,7 @@
 
 		<div class="my-2">
 			<div class="flex w-full justify-between">
-				<div class=" self-center text-sm font-semibold">Additional Client Information</div>
+				<div class=" self-center text-sm font-semibold">Client Descriptor</div>
 			</div>
 
 			<div class="mt-2">

@@ -87,36 +87,18 @@
 			await goto("/admin/profiles");
 		}
 		
-		window.addEventListener('message', async (event) => {
-			if (
-				!['https://openwebui.com', 'https://www.openwebui.com', 'http://localhost:5173'].includes(
-					event.origin
-				)
-			)
-				return;
-			const prompt = JSON.parse(event.data);
-			console.log(prompt);
-
-			form_data.title = prompt.title;
-			await tick();
-			form_data.content = prompt.content;
-			form_data.command = prompt.command;
-			form_data.is_visible = prompt.is_visible;
-		});
-
-		if (window.opener ?? false) {
-			window.opener.postMessage('loaded', '*');
-		}
-
 		if (sessionStorage.prompt) {
 			const prompt = JSON.parse(sessionStorage.prompt);
-
-			console.log(prompt);
+            console.log("saved prompt", prompt);
 			form_data.title = prompt.title;
-			await tick();
+			//form_data.command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
 			form_data.content = prompt.content;
-			form_data.command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
 			form_data.is_visible = prompt.is_visible;
+			form_data.additional_info = prompt.additional_info;
+			form_data.image_url = prompt.image_url;
+			await tick();
+			form_data.evaluation_id = prompt.evaluation_id;
+			form_data.selected_model_id = prompt.selected_model_id;
 
 			sessionStorage.removeItem('prompt');
 		}
@@ -374,7 +356,10 @@
 
 		<div class="my-2">
 			<div class=" text-sm font-semibold mb-1">Model*</div>
-			<ModelSelector items={modelItems} bind:value={form_data.selected_model_id} />
+			<ModelSelector
+                items={modelItems}
+				externalLabel={form_data.selected_model_id}
+                bind:value={form_data.selected_model_id} />
 			<div class="text-xs text-gray-600 dark:text-gray-500 mt-1">
 				Select the LLM model to be used.
 			</div>
@@ -382,7 +367,7 @@
 
 		<div class="my-2">
 			<div class="flex w-full justify-between">
-				<div class=" self-center text-sm font-semibold">Additional Client Information</div>
+				<div class=" self-center text-sm font-semibold">Client Descriptor</div>
 			</div>
 
 			<div class="mt-2">

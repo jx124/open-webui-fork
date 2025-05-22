@@ -7,6 +7,9 @@
 	import { WEBUI_NAME, prompts, selectedPromptCommand, user } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
 	import DeleteModal from '../DeleteModal.svelte';
+	import DocumentDuplicate from '../icons/DocumentDuplicate.svelte';
+	import Tooltip from '../common/Tooltip.svelte';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -22,6 +25,20 @@
 			toast.error(err);
 		});
 		$prompts = await getPrompts(localStorage.token);
+	};
+
+	const clonePromptHandler = async (command) => {
+        let prompt = $prompts.find(p => p.command === command);
+        if (!prompt) {
+            toast.error("Cannot duplicate profile.");
+            return;
+        }
+
+        sessionStorage.prompt = JSON.stringify({
+            ...prompt,
+            title: `${prompt.title} Copy`,
+        });
+        goto('/admin/profiles/create');
 	};
 
 	onMount(async () => {
@@ -90,9 +107,10 @@
 <hr class=" dark:border-gray-850 my-2.5" />
 
 <div class="my-2 mb-5" id="profile-list">
-	{#each $prompts.filter((p) => query === '' || p.title.toLowerCase().includes(query) || p.command
-				.toLowerCase()
-				.includes(query)) as prompt}
+	{#each $prompts.filter((p) => query === '' 
+        || p.title.toLowerCase().includes(query) 
+        || p.command.toLowerCase().includes(query))
+        .sort((a, b) => b.timestamp - a.timestamp) as prompt}
 		<div
 			class=" flex space-x-4 w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-xl"
 		>
@@ -134,6 +152,14 @@
 						</svg>
 					</a>
 
+                    <Tooltip content="Duplicate Profile">
+                        <button
+                            class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+                            on:click={() => clonePromptHandler(prompt.command) }
+                        >
+                            <DocumentDuplicate />
+                        </button>
+                    </Tooltip>
 					<button
 						class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 						type="button"

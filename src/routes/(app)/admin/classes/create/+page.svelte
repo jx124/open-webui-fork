@@ -148,7 +148,7 @@
 		>
 			<ProfileImageEditor bind:image_url={form_data.image_url} bind:initialsSource={form_data.name}/>
 			<div class="my-2">
-				<div class=" text-sm font-semibold mb-2">{$i18n.t('Name')}*</div>
+				<div class=" text-sm font-semibold mb-2">Class Name*</div>
 
 				<div>
 					<input
