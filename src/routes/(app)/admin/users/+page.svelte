@@ -17,13 +17,13 @@
 	import ChatBubbles from '$lib/components/icons/ChatBubbles.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import UserChatsModal from '$lib/components/admin/UserChatsModal.svelte';
-	import AddUserModal from '$lib/components/admin/AddUserModal.svelte';
 	import DeleteModal from '$lib/components/DeleteModal.svelte';
 	import RoleSelector from '$lib/components/admin/RoleSelector.svelte';
 	import { getRoles } from '$lib/apis/roles';
 	import { approximateToHumanReadable } from '$lib/utils';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
 	import ClassSearchbar from '$lib/components/admin/ClassSearchbar.svelte';
+	import NewAddUserModal from '$lib/components/admin/NewAddUserModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -155,8 +155,10 @@
 	/>
 {/key}
 
-<AddUserModal
+<NewAddUserModal 
 	bind:show={showAddUserModal}
+    bind:users={users}
+    selectedUsers={[]}
 	on:save={async () => {
 		const temp_users = await getUsers(localStorage.token);
 		userStatistics = await getUserStatistics(localStorage.token);

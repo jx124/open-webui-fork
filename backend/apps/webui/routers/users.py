@@ -19,6 +19,7 @@ from apps.webui.models.users import (
     UserProfile,
     UserStatistics,
     UserUpdateForm,
+    UserImportForm,
     UserRoleUpdateForm,
     UserSettings,
     Users,
@@ -282,51 +283,28 @@ async def delete_user_by_id(user_id: str, user: UserModel = Depends(get_admin_us
 
 
 ############################
-# ImportUsersByExcel
+# ImportUsers
 ############################
 
 background_tasks = set()
 
 
 @router.post("/import", response_model=List[UserModel])
-async def import_users_by_excel(
-        request: Request, user: UserModel = Depends(get_admin_or_instructor)) -> List[UserModel]:
-    users = None
-
-    try:
-        recv_bytes = await request.body()
-        users = pd.read_excel(io.BytesIO(recv_bytes))
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.INVALID_IMPORT_FILE
-        )
-
-    if len(users) == 0:
-        return []
-
-    required_columns = set(["Name", "Email", "Role"])
-
-    if not required_columns.issubset(users.columns):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.MISSING_COLUMNS_IMPORT(required_columns.difference(users.columns))
-        )
-
-    users = users[["Name", "Email", "Role"]]
-
-    available_roles = set([role.name for role in Roles.get_roles()])
-    user_roles = set([role.strip() for role in users["Role"]])
-
-    if not user_roles.issubset(available_roles):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.MISSING_ROLES(user_roles.difference(available_roles))
-        )
+async def import_users(
+        form_data: List[UserImportForm], user: UserModel = Depends(get_admin_or_instructor)) -> List[UserModel]:
+    print("User import", form_data)
 
     existing_emails = set(Auths.get_emails())
-    user_emails = set([email.lower() for email in users["Email"]]) - existing_emails
+    user_emails = set([entry.email.lower() for entry in form_data])
 
+    # repeat or duplicate emails
+    if (len(existing_emails.intersection(user_emails)) > 0 or len(user_emails) != len(form_data)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.INVALID_EMAILS
+        )
+
+    # invalid email formats
     for email in user_emails:
         if not validate_email_format(email):
             raise HTTPException(
@@ -334,64 +312,64 @@ async def import_users_by_excel(
                 detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT(email)
             )
 
-    # only create accounts for new users
-    users = users.loc[users["Email"].isin(user_emails)]
+    available_roles = set([role.name for role in Roles.get_roles()])
+    user_roles = set([entry.role.strip() for entry in form_data])
 
-    users.insert(2, "Password", [secrets.token_urlsafe(10) for _ in range(len(users))])
+    # missing roles
+    if not user_roles.issubset(available_roles):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.MISSING_ROLES(user_roles.difference(available_roles))
+        )
 
-    task = asyncio.create_task(email_user_account_details(users))
+    for entry in form_data:
+        entry.password = secrets.token_urlsafe(10)
+
+    task = asyncio.create_task(email_user_account_details(form_data))
 
     # save reference to prevent garbage collection
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
 
-    new_users = []
-
-    for user in users.itertuples():
-        _, name, email, password, role = user
-
-        hashed = get_password_hash(password)
-        result = Auths.insert_new_auth(
-            email.lower(),
+    for entry in form_data:
+        hashed = get_password_hash(entry.password)
+        Auths.insert_new_auth(
+            entry.email.lower(),
             hashed,
-            name,
+            entry.name,
             "/user.png",
-            role,
+            entry.role,
         )
-        if result is not None:
-            new_users.append(result)
 
-    return new_users
+    return Users.get_users()
 
 
 # TODO: set daily limits
-async def email_user_account_details(users) -> None:
+async def email_user_account_details(users: List[UserImportForm]) -> None:
     smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     smtp_server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
 
     start = time.time()
 
-    for user in users.itertuples():
-        id, name, email, password, role = user
-
+    for user in users:
         text = (
-            f"Dear {name},\n\n"
+            f"Dear {user.name},\n\n"
             f"Your account has been registered for the SWAT:RolePlay tool, an AI-powered "
             f"tool designed to help social worker and students practice their skills through "
             f"role-playing scenarios. Your login details are:\n\n"
-            f"Email: {email}\n"
-            f"Password: {password}\n\n"
+            f"Email: {user.email}\n"
+            f"Password: {user.password}\n\n"
             f"The site can be accessed from {SITE_LINK} > Login Here."
         )
 
         msg = MIMEText(text)
         msg["Subject"] = "SWAT:RolePlay Registration"
-        msg["To"] = email
+        msg["To"] = user.email
         msg["From"] = GMAIL_ADDRESS
 
         try:
-            smtp_server.sendmail(msg["From"], email, msg.as_string())
-            print(f"[{time.time() - start:.4f}] Sent email to {email}")
+            smtp_server.sendmail(msg["From"], user.email, msg.as_string())
+            print(f"[{time.time() - start:.4f}] Sent email to {user.email}")
         except Exception as e:
             print(f"[{time.time() - start:.4f}] SMTP error {e}")
 

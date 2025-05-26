@@ -67,11 +67,11 @@ async def update_roles(roles: List[RoleForm], user: UserModel = Depends(get_admi
                 detail=ERROR_MESSAGES.INVALID_ROLE_FORMAT,
             )
         if role.name in ["pending", "admin", "instructor"]:
-
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.INVALID_ROLE_CHANGE,
             )
+
         if role.id == 0:
             Roles.insert_new_role(role.name)
         else:

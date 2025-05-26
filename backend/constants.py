@@ -61,8 +61,9 @@ class ERROR_MESSAGES(str, Enum):
 
     FILE_NOT_SENT = "FILE_NOT_SENT"
     FILE_NOT_SUPPORTED = "Oops! It seems like the file format you're trying to upload is not supported. Please upload a file with a supported format (e.g., JPG, PNG, PDF, TXT) and try again."
-    
+
     INVALID_IMPORT_FILE = "The file cannot be opened."
+    INVALID_EMAILS = "There are repeated emails or emails that are already taken."
     MISSING_COLUMNS_IMPORT = lambda cols: f"Missing columns: {', '.join(cols)}"
     MISSING_ROLES = lambda roles: f"These roles do not exist: {', '.join(roles)}. Please create the roles before importing new users."
     MISSING_EMAILS = lambda emails: f"These emails do not exist: {', '.join(emails)}. Please import these users first via Admin Panel > Add Users."

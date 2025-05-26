@@ -234,6 +234,43 @@ export const addUser = async (
 	return res;
 };
 
+type Entry = {
+    name: string;
+    email: string;
+    role: string;
+}
+
+export const importUsers = async (
+	token: string,
+    users: Entry[]
+) => {
+	let error = null;
+
+	const res = await fetch(`${WEBUI_API_BASE_URL}/users/import`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify(users)
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const importUsersExcel = async (
 	token: string,
 	xlsx: ArrayBuffer

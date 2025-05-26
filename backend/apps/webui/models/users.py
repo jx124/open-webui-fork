@@ -90,6 +90,13 @@ class UserUpdateForm(BaseModel):
     password: Optional[str] = None
 
 
+class UserImportForm(BaseModel):
+    name: str
+    email: str
+    role: str
+    password: Optional[str] = None
+
+
 def user_to_usermodel(user: User) -> UserModel:
     # flattens the user dict so "role" is visible to UserModel
     user_dict = model_to_dict(user)

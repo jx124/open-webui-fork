@@ -14,6 +14,7 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import Search from '../icons/Search.svelte';
 	import ImportStudentModal from './ImportStudentModal.svelte';
+	import NewAddUserModal from './NewAddUserModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -66,9 +67,12 @@
         loaded = true;
 	});
 
+    let selectedUsersSet = new Set(selectedUsers);
+
     $: if (selectedUsers) {
-        _selectedUsers = users.filter((user) => selectedUsers.includes(user.id));
-        _unselectedUsers = users.filter((user) => !selectedUsers.includes(user.id));
+        selectedUsersSet = new Set(selectedUsers);
+        _selectedUsers = users.filter((user) => selectedUsersSet.has(user.id));
+        _unselectedUsers = users.filter((user) => !selectedUsersSet.has(user.id));
     };
 
     $: filteredUsers = searchValue
@@ -76,9 +80,11 @@
 		: _unselectedUsers;
 </script>
 
-<ImportStudentModal 
+<NewAddUserModal
     bind:show
-    on:save={saveHandler}/>
+    bind:users
+    inClass={true}
+    bind:selectedUsers />
 
 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full">
     <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-850 dark:text-gray-400">
@@ -147,7 +153,15 @@
 
 <Pagination bind:page count={users.length} perPage={10} />
 
-<div class="flex flex-row">
+<div class="flex flex-row gap-2">
+    <button
+        class="text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 flex"
+        type="button"
+        on:click={() => show = !show}
+    >
+        <div class="self-center font-medium">Import Students</div>
+    </button>
+
     <DropdownMenu.Root
         bind:open={studentShow}
         onOpenChange={async () => {
@@ -233,14 +247,6 @@
             </slot>
         </DropdownMenu.Content>
     </DropdownMenu.Root>
-
-    <button
-        class="ml-2 text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 flex"
-        type="button"
-        on:click={() => show = !show}
-    >
-        <div class="self-center font-medium">Import Students</div>
-    </button>
 </div>
 
 <style>
