@@ -4,7 +4,7 @@
 	import mermaid from 'mermaid';
 
 	import { getContext, onMount, tick } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	import {
@@ -171,6 +171,18 @@
 			}
 		}
 	});
+
+    // reload page when restarting conversation since onMount wont rerun
+	afterNavigate(async () => {
+		if (!$chatId) {
+			await initNewChat();
+		} else {
+			if (!($settings.saveChatHistory ?? true)) {
+				await goto('/c/');
+			}
+		}
+	});
+
 
 	//////////////////////////
 	// Web functions
@@ -376,8 +388,6 @@
 	//////////////////////////
 
 	const submitPrompt = async (userPrompt, _user = null) => {
-		console.log('submitPrompt', $chatId);
-
 		selectedModels = selectedModels.map((modelId) =>
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
