@@ -621,7 +621,6 @@
                                     on:click={() => {
                                         show = true;
                                         assignmentName = selectedProfile.title;
-                                        showEvaluationModal = true;
                                     }}
                                 >
                                     <div class="self-center text-sm font-medium text-nowrap">Submit</div>

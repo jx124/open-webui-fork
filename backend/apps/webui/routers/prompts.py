@@ -111,8 +111,8 @@ async def delete_prompt_by_command(command: str, user: UserModel = Depends(get_a
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    count: int = Chats.count_chats_by_prompt_id(prompt_id)
-    if count > 0:
+    deleted_chat = Chats.delete_chats_by_prompt_id(prompt_id)
+    if not deleted_chat:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.PROFILE_EXISTING_CHATS,

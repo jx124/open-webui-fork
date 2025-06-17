@@ -3,17 +3,6 @@
 
 	export let evaluateChatHandler: () => void;
 	export let show: boolean;
-	
-	const selectedEvalMethod: string = "Motivational Interviewing";
-	const selectedEvalSkills: string[] = [
-		"Affirmation",
-		"Emphasizing Autonomy",
-		"Open Questions",
-		"Closed Questions",
-		"Persuasion (with Permission)",
-		"Reflection",
-		"Seeking Collaboration"
-	];
 </script>
 
 <Modal bind:show size="sm">
@@ -50,7 +39,7 @@
 		</div>
 
 		<div class="flex flex-row-reverse px-5 pb-4">
-			<button class="px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-black dark:bg-emerald-700 dark:hover:bg-emerald-800 dark:text-gray-100 transition rounded-lg"
+			<button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 transition rounded-lg"
 				on:click={evaluateChatHandler}>
 				End Chat
 			</button>

@@ -14,7 +14,7 @@
 
 <DropdownMenu.Root>
     <DropdownMenu.Trigger
-        class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-850 text-gray-400 dark:text-gray-700 hover:text-gray-700 hover:dark:text-gray-200 rounded-xl"
+        class="flex gap-1 items-center text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900"
     >
         <svg
             xmlns="http://www.w3.org/2000/svg"

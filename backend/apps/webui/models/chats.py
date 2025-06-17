@@ -445,9 +445,12 @@ class ChatTable:
             log.exception(" Exception caught in model method.")
             return []
 
-    def count_chats_by_prompt_id(self, prompt_id: int) -> int:
+    def delete_chats_by_prompt_id(self, prompt_id: int) -> int:
         try:
-            return len(Chat.select(Chat.id).where(Chat.prompt_id == prompt_id))
+            query = Chat.delete().where(Chat.prompt_id == prompt_id)
+            result = query.execute()
+
+            return result != 0
 
         except Exception:
             log.exception(" Exception caught in model method.")

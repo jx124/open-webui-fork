@@ -31,11 +31,11 @@
 		</div>
 		
 		<div class="flex flex-col pb-2 px-5">
-			<div class="self-center text-sm font-normal mr-auto">Are you sure you want to delete {deleteMessage}?</div>
+			<div class="self-center text-sm font-normal mr-auto">Are you sure you want to delete {deleteMessage}? <br> <strong>All chats using this profile will also be deleted.</strong></div>
 		</div>
 		
 		<div class="flex flex-row-reverse px-5 pb-4">
-			<button class="px-4 py-2 bg-red-700 hover:bg-red-800 text-gray-100 transition rounded-lg"
+			<button class="px-4 py-2 bg-red-200 hover:bg-red-300 dark:hover:bg-red-700 dark:bg-red-800 dark:text-gray-100 text-gray-900 transition rounded-lg"
 				on:click={deleteHandler(deleteArgs)}>
 				Delete
 			</button>
