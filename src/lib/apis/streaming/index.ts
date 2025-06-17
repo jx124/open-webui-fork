@@ -80,6 +80,71 @@ async function* openAIStreamToIterator(
 	}
 }
 
+// createClaudeTextStream takes a responseBody with a SSE response,
+// and returns an async generator that emits delta updates with large deltas chunked into random sized chunks
+export async function createClaudeTextStream(
+	responseBody: ReadableStream<Uint8Array>,
+	splitLargeDeltas: boolean
+): Promise<AsyncGenerator<TextStreamUpdate>> {
+	const eventStream = responseBody
+		.pipeThrough(new TextDecoderStream())
+		.pipeThrough(new EventSourceParserStream())
+		.getReader();
+	let iterator = claudeStreamToIterator(eventStream);
+	if (splitLargeDeltas) {
+		iterator = streamLargeDeltasAsRandomChunks(iterator);
+	}
+	return iterator;
+}
+
+async function* claudeStreamToIterator(
+	reader: ReadableStreamDefaultReader<ParsedEvent>
+): AsyncGenerator<TextStreamUpdate> {
+	while (true) {
+		const { value, done } = await reader.read();
+		if (done) {
+			yield { done: true, value: '' };
+			break;
+		}
+		if (!value) {
+			continue;
+		}
+		const dataChunk = value.data;
+        for (const data of dataChunk.split('\n')) {
+            if (data.startsWith('[DONE]')) {
+                yield { done: true, value: '' };
+                break;
+            }
+
+            try {
+                const parsedData = JSON.parse(data);
+
+                if (parsedData.error) {
+                    yield { done: true, value: '', error: parsedData.error };
+                    break;
+                }
+
+                if (parsedData.citations) {
+                    yield { done: false, value: '', citations: parsedData.citations };
+                    continue;
+                }
+
+                if (parsedData.type === "ping") {
+                    continue;
+                }
+
+                yield {
+                    done: false,
+                    value: parsedData.choices?.[0]?.delta?.content ?? '',
+                    usage: parsedData.usage
+                };
+            } catch (e) {
+                console.error('Error extracting delta from SSE event:', e);
+            }
+        }
+	}
+}
+
 // streamLargeDeltasAsRandomChunks will chunk large deltas (length > 5) into random sized chunks between 1-3 characters
 // This is to simulate a more fluid streaming, even though some providers may send large chunks of text at once
 async function* streamLargeDeltasAsRandomChunks(

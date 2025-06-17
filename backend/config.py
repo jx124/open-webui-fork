@@ -64,6 +64,7 @@ log_sources = [
     "MODELS",
     "OLLAMA",
     "OPENAI",
+    "CLAUDE",
     "RAG",
     "WEBHOOK",
 ]
@@ -491,6 +492,58 @@ except:
     pass
 
 OPENAI_API_BASE_URL = "https://api.openai.com/v1"
+
+
+####################################
+# CLAUDE_API
+####################################
+
+
+ENABLE_CLAUDE_API = PersistentConfig(
+    "ENABLE_CLAUDE_API",
+    "claude.enable",
+    os.environ.get("ENABLE_CLAUDE_API", "True").lower() == "true",
+)
+
+
+CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY", "")
+CLAUDE_API_BASE_URL = os.environ.get("CLAUDE_API_BASE_URL", "")
+
+
+if CLAUDE_API_BASE_URL == "":
+    CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1"
+
+CLAUDE_API_KEYS = os.environ.get("CLAUDE_API_KEYS", "")
+CLAUDE_API_KEYS = CLAUDE_API_KEYS if CLAUDE_API_KEYS != "" else CLAUDE_API_KEY
+
+CLAUDE_API_KEYS = [url.strip() for url in CLAUDE_API_KEYS.split(";")]
+CLAUDE_API_KEYS = PersistentConfig(
+    "CLAUDE_API_KEYS", "claude.api_keys", CLAUDE_API_KEYS
+)
+
+CLAUDE_API_BASE_URLS = os.environ.get("CLAUDE_API_BASE_URLS", "")
+CLAUDE_API_BASE_URLS = (
+    CLAUDE_API_BASE_URLS if CLAUDE_API_BASE_URLS != "" else CLAUDE_API_BASE_URL
+)
+
+CLAUDE_API_BASE_URLS = [
+    url.strip() if url != "" else "https://api.anthropic.com/v1"
+    for url in CLAUDE_API_BASE_URLS.split(";")
+]
+CLAUDE_API_BASE_URLS = PersistentConfig(
+    "CLAUDE_API_BASE_URLS", "claude.api_base_urls", CLAUDE_API_BASE_URLS
+)
+
+CLAUDE_API_KEY = ""
+
+try:
+    CLAUDE_API_KEY = CLAUDE_API_KEYS.value[
+        CLAUDE_API_BASE_URLS.value.index("https://api.anthropic.com/v1")
+    ]
+except:
+    pass
+
+CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1"
 
 ####################################
 # WEBUI

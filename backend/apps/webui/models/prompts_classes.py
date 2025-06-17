@@ -55,6 +55,7 @@ class PromptModel(BaseModel):
     image_url: str = ""
     evaluation_id: Optional[int]
     selected_model_id: str = ""  # prevent namespace collision
+    evaluation_model_id: str = ""
 
 
 def prompt_to_promptmodel(prompt: Prompt, is_admin: bool) -> PromptModel:
@@ -62,11 +63,13 @@ def prompt_to_promptmodel(prompt: Prompt, is_admin: bool) -> PromptModel:
     if not is_admin:
         prompt_dict["content"] = ""
     evaluation_id = None if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("id")
+    evaluation_model = "" if prompt_dict.get("evaluation") is None else prompt_dict.get("evaluation", {}).get("model_id")
     model_id = prompt_dict.get("model_id")
 
     return PromptModel(**prompt_dict,
                        evaluation_id=evaluation_id,
-                       selected_model_id=model_id)
+                       selected_model_id=model_id,
+                       evaluation_model_id=evaluation_model)
 
 
 ####################

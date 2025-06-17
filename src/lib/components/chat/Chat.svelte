@@ -48,14 +48,14 @@
 	import {
 		generateOpenAIChatCompletion,
 		generateSearchQuery,
-		generateTitle
 	} from '$lib/apis/openai';
+    import { generateClaudeChatCompletion } from '$lib/apis/claude'
 
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/layout/Navbar.svelte';
-	import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
-	import { createOpenAITextStream } from '$lib/apis/streaming';
+	import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL, CLAUDE_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
+	import { createOpenAITextStream, createClaudeTextStream } from '$lib/apis/streaming';
 	import type { ResponseUsage } from '$lib/apis/streaming';
 	import { queryMemory } from '$lib/apis/memories';
 	import type { Writable } from 'svelte/store';
@@ -567,6 +567,8 @@
 					
 					if (model?.owned_by === 'openai') {
 						await sendPromptOpenAI(model, prompt, responseMessageId, _chatId);
+                    } else if (model?.owned_by === 'anthropic') {
+						await sendPromptClaude(model, prompt, responseMessageId, _chatId);
 					} else if (model) {
 						await sendPromptOllama(model, prompt, responseMessageId, _chatId);
 					}
@@ -1109,6 +1111,188 @@
 		messages = messages;
 	};
 
+	const sendPromptClaude = async (model, userPrompt, responseMessageId, _chatId) => {
+		const responseMessage = history.messages[responseMessageId];
+
+		const docs = messages
+			.filter((message) => message?.files ?? null)
+			.map((message) =>
+				message.files.filter((item) =>
+					['doc', 'collection', 'web_search_results'].includes(item.type)
+				)
+			)
+			.flat(1);
+
+		console.log(docs);
+
+		scrollToBottom();
+
+		try {
+			const [res, controller] = await generateClaudeChatCompletion(
+				localStorage.token,
+				{
+					model: model.id,
+					stream: true,
+					profile_id: selectedProfile?.id,
+					messages: messages
+						.filter((message) => message?.content?.trim())
+						.map((message, idx, arr) => ({
+							role: message.role,
+							...((message.files?.filter((file) => file.type === 'image').length > 0 ?? false) &&
+							message.role === 'user'
+								? {
+										content: [
+											{
+												type: 'text',
+												text:
+													arr.length - 1 !== idx
+														? message.content
+														: message?.raContent ?? message.content
+											},
+											...message.files
+												.filter((file) => file.type === 'image')
+												.map((file) => ({
+													type: 'image_url',
+													image_url: {
+														url: file.url
+													}
+												}))
+										]
+								  }
+								: {
+										content:
+											arr.length - 1 !== idx
+												? message.content
+												: message?.raContent ?? message.content
+								  })
+						})),
+					stop:
+						$settings?.params?.stop ?? undefined
+							? $settings.params.stop.map((str) =>
+									decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
+							  )
+							: undefined,
+					temperature: $settings?.params?.temperature ?? undefined,
+					top_p: $settings?.params?.top_p ?? undefined,
+					max_tokens: $settings?.params?.max_tokens ?? undefined,
+					docs: docs.length > 0 ? docs : undefined,
+					citations: docs.length > 0,
+					chat_id: $chatId
+				},
+				`${CLAUDE_API_BASE_URL}`
+			);
+
+			// Wait until history/message have been updated
+			await tick();
+
+			scrollToBottom();
+
+			if (res && res.ok && res.body) {
+				const textStream = await createClaudeTextStream(res.body, $settings.splitLargeChunks);
+				let lastUsage = null;
+
+				for await (const update of textStream) {
+					const { value, done, citations, error, usage } = update;
+					if (error) {
+						await handleOpenAIError(error, null, model, responseMessage);
+						break;
+					}
+					if (done || stopResponseFlag || _chatId !== $chatId) {
+						responseMessage.done = true;
+						messages = messages;
+
+						if (stopResponseFlag) {
+							controller.abort('User: Stop Response');
+						} else {
+							const messages = createMessagesList(responseMessageId);
+
+							await chatCompletedHandler(model.id, messages);
+						}
+
+						break;
+					}
+
+					if (usage) {
+						lastUsage = usage;
+					}
+
+					if (citations) {
+						responseMessage.citations = citations;
+						continue;
+					}
+
+					if (responseMessage.content == '' && value == '\n') {
+						continue;
+					} else {
+						responseMessage.content += value;
+						messages = messages;
+					}
+
+					if (autoScroll) {
+						scrollToBottom();
+					}
+				}
+
+				if ($settings.notificationEnabled && !document.hasFocus()) {
+					const notification = new Notification(`Claude ${model}`, {
+						body: responseMessage.content,
+						icon: `${WEBUI_BASE_URL}/static/favicon.png`
+					});
+				}
+
+				if ($settings.responseAutoCopy) {
+					copyToClipboard(responseMessage.content);
+				}
+
+				if ($settings.responseAutoPlayback) {
+					await tick();
+					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
+				}
+
+				if (lastUsage) {
+					responseMessage.info = { ...lastUsage, openai: true };
+					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
+					tokenUsage.completion_tokens += lastUsage.completion_tokens;
+					tokenUsage.total_tokens += lastUsage.total_tokens;
+				}
+
+				// save response message back into history
+				history.messages[responseMessageId] = responseMessage;
+
+				if ($chatId == _chatId) {
+					if ($settings.saveChatHistory ?? true) {
+						chat = await updateChatById(localStorage.token, _chatId, {
+							models: selectedModels,
+							messages: messages,
+							history: history,
+							usage: tokenUsage
+						});
+						chats.set(await getChatList(localStorage.token));
+					}
+				}
+			} else {
+				await handleOpenAIError(null, res, model, responseMessage);
+			}
+		} catch (error) {
+			await handleOpenAIError(error, null, model, responseMessage);
+		}
+		messages = messages;
+
+		stopResponseFlag = false;
+		await tick();
+
+		if (autoScroll) {
+			scrollToBottom();
+		}
+
+		if (messages.length == 2) {
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+			const _title = generateUniqueTitle($selectedPromptCommand);
+			await setChatTitle(_chatId, _title);
+		}
+	};
+
+
 	const stopResponse = () => {
 		stopResponseFlag = true;
 		console.log('stopResponse');
@@ -1236,9 +1420,9 @@
 		}
 
 		await Promise.all(
-			selectedModels
+			[selectedProfile.evaluation_model_id]
 			.map(async (modelId) => {
-				console.log('modelId', modelId);
+				console.log('eval modelId', modelId);
 				const model = $models.filter((m) => m.id === modelId).at(0);
 
 				if (model) {
@@ -1283,6 +1467,8 @@
 
 					if (model?.owned_by === 'openai') {
 						await sendEvaluationOpenAI(model, prompt, responseMessageId, _chatId);
+					} else if (model?.owned_by === 'anthropic') {
+						await sendEvaluationClaude(model, prompt, responseMessageId, _chatId);
 					} else if (model) {
 						await sendEvaluationOllama(model, prompt, responseMessageId, _chatId);
 					}
@@ -1426,6 +1612,188 @@
 
 				if ($settings.notificationEnabled && !document.hasFocus()) {
 					const notification = new Notification(`OpenAI ${model}`, {
+						body: responseMessage.content,
+						icon: `${WEBUI_BASE_URL}/static/favicon.png`
+					});
+				}
+
+				if ($settings.responseAutoCopy) {
+					copyToClipboard(responseMessage.content);
+				}
+
+				if ($settings.responseAutoPlayback) {
+					await tick();
+					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
+				}
+
+				if (lastUsage) {
+					responseMessage.info = { ...lastUsage, openai: true };
+					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
+					tokenUsage.completion_tokens += lastUsage.completion_tokens;
+					tokenUsage.total_tokens += lastUsage.total_tokens;
+				}
+
+				// save response message back into history
+				history.messages[responseMessageId] = responseMessage;
+
+				if ($chatId == _chatId) {
+					if ($settings.saveChatHistory ?? true) {
+						chat = await updateChatById(localStorage.token, _chatId, {
+							models: selectedModels,
+							messages: messages,
+							history: history,
+							usage: tokenUsage
+						});
+						chats.set(await getChatList(localStorage.token));
+					}
+				}
+			} else {
+				await handleOpenAIError(null, res, model, responseMessage);
+			}
+		} catch (error) {
+			await handleOpenAIError(error, null, model, responseMessage);
+		}
+		messages = messages;
+
+		stopResponseFlag = false;
+		await tick();
+
+		if (autoScroll) {
+			scrollToBottom();
+		}
+	};
+
+	const sendEvaluationClaude = async (model, userPrompt, responseMessageId, _chatId) => {
+		const responseMessage = history.messages[responseMessageId];
+
+		const docs = messages
+			.filter((message) => message?.files ?? null)
+			.map((message) =>
+				message.files.filter((item) =>
+					['doc', 'collection', 'web_search_results'].includes(item.type)
+				)
+			)
+			.flat(1);
+
+		console.log(docs);
+
+		const combinedMessages = messages
+			.filter((message) => message?.content?.trim())
+			.map((message, idx, arr) => ({
+				role: message.role,
+				...((message.files?.filter((file) => file.type === 'image').length > 0 ?? false) &&
+				message.role === 'user'
+					? {
+							content: [
+								{
+									type: 'text',
+									text:
+										arr.length - 1 !== idx
+											? message.content
+											: message?.raContent ?? message.content
+								},
+								...message.files
+									.filter((file) => file.type === 'image')
+									.map((file) => ({
+										type: 'image_url',
+										image_url: {
+											url: file.url
+										}
+									}))
+							]
+						}
+					: {
+							content:
+								arr.length - 1 !== idx
+									? message.content
+									: message?.raContent ?? message.content
+						})
+			}))
+			.map((message) => (message.role === "user" ? "Social Worker" : "Client") + ': "' + message.content + '"')
+			.join("\n");
+
+		scrollToBottom();
+
+		try {
+			const [res, controller] = await generateClaudeChatCompletion(
+				localStorage.token,
+				{
+					model: model.id,
+					stream: true,
+					evaluation_id: selectedProfile?.evaluation_id,
+					messages: [{
+						role: 'user',
+						content: combinedMessages,
+					}],
+					stop:
+						$settings?.params?.stop ?? undefined
+							? $settings.params.stop.map((str) =>
+									decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
+							  )
+							: undefined,
+					temperature: $settings?.params?.temperature ?? undefined,
+					top_p: $settings?.params?.top_p ?? undefined,
+					max_tokens: $settings?.params?.max_tokens ?? undefined,
+					docs: docs.length > 0 ? docs : undefined,
+					citations: docs.length > 0,
+					chat_id: $chatId
+				},
+				`${CLAUDE_API_BASE_URL}`
+			);
+
+			// Wait until history/message have been updated
+			await tick();
+
+			scrollToBottom();
+
+			if (res && res.ok && res.body) {
+				const textStream = await createClaudeTextStream(res.body, $settings.splitLargeChunks);
+				let lastUsage = null;
+
+				for await (const update of textStream) {
+					const { value, done, citations, error, usage } = update;
+					if (error) {
+						await handleOpenAIError(error, null, model, responseMessage);
+						break;
+					}
+					if (done || stopResponseFlag || _chatId !== $chatId) {
+						responseMessage.done = true;
+						messages = messages;
+
+						if (stopResponseFlag) {
+							controller.abort('User: Stop Response');
+						} else {
+							const messages = createMessagesList(responseMessageId);
+
+							await chatCompletedHandler(model.id, messages);
+						}
+
+						break;
+					}
+
+					if (usage) {
+						lastUsage = usage;
+					}
+
+					if (citations) {
+						responseMessage.citations = citations;
+						continue;
+					}
+
+					if (responseMessage.content == '' && value == '\n') {
+						continue;
+					} else {
+						responseMessage.content += value;
+						messages = messages;
+					}
+
+					if (autoScroll) {
+						scrollToBottom();
+					}
+				}
+
+				if ($settings.notificationEnabled && !document.hasFocus()) {
+					const notification = new Notification(`Claude ${model}`, {
 						body: responseMessage.content,
 						icon: `${WEBUI_BASE_URL}/static/favicon.png`
 					});

@@ -142,6 +142,7 @@ export type Prompt = {
 	image_url: string;
     evaluation_id: number | null;
     selected_model_id: string;
+    evaluation_model_id: string;
 
 	assigned_classes: number[];
 };

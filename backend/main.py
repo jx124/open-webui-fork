@@ -22,6 +22,7 @@ from starlette.responses import StreamingResponse, Response
 
 from apps.ollama.main import app as ollama_app, get_all_models as get_ollama_models
 from apps.openai.main import app as openai_app, get_all_models as get_openai_models
+from apps.claude.main import app as claude_app, get_all_models as get_claude_models
 
 from apps.audio.main import app as audio_app
 from apps.images.main import app as images_app
@@ -54,6 +55,7 @@ from config import (
     STATIC_DIR,
     ENABLE_OPENAI_API,
     ENABLE_OLLAMA_API,
+    ENABLE_CLAUDE_API,
     ENABLE_MODEL_FILTER,
     MODEL_FILTER_LIST,
     GLOBAL_LOG_LEVEL,
@@ -111,6 +113,7 @@ app.state.config = AppConfig()
 
 app.state.config.ENABLE_OPENAI_API = ENABLE_OPENAI_API
 app.state.config.ENABLE_OLLAMA_API = ENABLE_OLLAMA_API
+app.state.config.ENABLE_CLAUDE_API = ENABLE_CLAUDE_API
 
 app.state.config.ENABLE_MODEL_FILTER = ENABLE_MODEL_FILTER
 app.state.config.MODEL_FILTER_LIST = MODEL_FILTER_LIST
@@ -402,6 +405,7 @@ async def update_embedding_function(request: Request, call_next):
 
 app.mount("/ollama", ollama_app)
 app.mount("/openai", openai_app)
+app.mount("/claude", claude_app)
 
 app.mount("/images/api/v1", images_app)
 app.mount("/audio/api/v1", audio_app)
@@ -415,6 +419,7 @@ webui_app.state.EMBEDDING_FUNCTION = rag_app.state.EMBEDDING_FUNCTION
 async def get_all_models():
     openai_models = []
     ollama_models = []
+    claude_models = []
 
     if app.state.config.ENABLE_OPENAI_API:
         openai_models = await get_openai_models()
@@ -436,7 +441,12 @@ async def get_all_models():
             for model in ollama_models["models"]
         ]
 
-    models = openai_models + ollama_models
+    if app.state.config.ENABLE_CLAUDE_API:
+        claude_models = await get_claude_models()
+
+        claude_models = claude_models["data"]
+
+    models = openai_models + ollama_models + claude_models
     custom_models = Models.get_all_models()
 
     for custom_model in custom_models:

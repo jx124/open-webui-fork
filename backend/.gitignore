@@ -12,5 +12,5 @@ Pipfile
 /data/litellm/*
 !data/litellm/config.yaml
 
-!data/config.json
+data/config.json
 .webui_secret_key
