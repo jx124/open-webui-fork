@@ -46,7 +46,8 @@
 
 	const getWebAPIVoices = () => {
 		const getVoicesLoop = setInterval(async () => {
-			voices = await speechSynthesis.getVoices();
+			voices = speechSynthesis.getVoices();
+            console.log(voices);
 
 			// do your loop
 			if (voices.length > 0) {
@@ -113,6 +114,7 @@
 			getOpenAIVoicesModel();
 		} else {
 			getWebAPIVoices();
+            console.log("getWebAPIVoices");
 		}
 
 		if ($user.role === 'admin') {
