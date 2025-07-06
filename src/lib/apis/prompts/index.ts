@@ -1,4 +1,5 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
+import type { AudioSettings } from '$lib/stores';
 
 export type PromptForm = {
 	command: string,
@@ -10,6 +11,7 @@ export type PromptForm = {
     image_url: string,
     evaluation_id: number | null,
     selected_model_id: string,
+    audio: AudioSettings | null,
 }
 
 export const createNewPrompt = async (
@@ -75,7 +77,10 @@ export const getPrompts = async (token: string = '') => {
 		throw error;
 	}
 
-	return res;
+	return res.map(result => ({
+        ...result,
+        audio: result.audio ? JSON.parse(result.audio) : null
+    }));
 };
 
 export const getPromptTitles = async (token: string = '') => {

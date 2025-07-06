@@ -1,4 +1,5 @@
 import os
+import aiohttp
 import logging
 from fastapi import (
     FastAPI,
@@ -45,6 +46,8 @@ from config import (
     AUDIO_OPENAI_API_KEY,
     AUDIO_OPENAI_API_MODEL,
     AUDIO_OPENAI_API_VOICE,
+    ELEVENLABS_API_KEY,
+    ELEVENLABS_API_BASE_URL,
     AppConfig,
 )
 
@@ -91,6 +94,36 @@ async def get_openai_config(user=Depends(get_admin_user)):
     }
 
 
+@app.get("/voices")
+async def get_audio_voices(user=Depends(get_admin_user)):
+    # get elevenlabs audio voices. TODO: add other services.
+    timeout = aiohttp.ClientTimeout(total=5)
+    try:
+        headers = {"xi-api-key": ELEVENLABS_API_KEY}
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(f"{ELEVENLABS_API_BASE_URL}/v2/voices?page_size=100", headers=headers) as response:
+                return await response.json()
+    except Exception as e:
+        # Handle connection error here
+        log.error(f"Connection error: {e}")
+        return None
+
+
+@app.get("/models")
+async def get_audio_models(user=Depends(get_admin_user)):
+    # get elevenlabs audio models. TODO: add other services.
+    timeout = aiohttp.ClientTimeout(total=5)
+    try:
+        headers = {"xi-api-key": ELEVENLABS_API_KEY}
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(f"{ELEVENLABS_API_BASE_URL}/v1/models", headers=headers) as response:
+                return await response.json()
+    except Exception as e:
+        # Handle connection error here
+        log.error(f"Connection error: {e}")
+        return None
+
+
 @app.post("/config/update")
 async def update_openai_config(
     form_data: OpenAIConfigUpdateForm, user=Depends(get_admin_user)
@@ -112,11 +145,12 @@ async def update_openai_config(
     }
 
 
-@app.post("/speech")
-async def speech(request: Request, user=Depends(get_verified_user)):
+@app.post("/speech/openai")
+async def openai_speech(request: Request, user=Depends(get_verified_user)):
     body = await request.body()
     name = hashlib.sha256(body).hexdigest()
 
+    # For now, just save every request to cache. TODO: delete least recently used files to not exceed cache size.
     file_path = SPEECH_CACHE_DIR.joinpath(f"{name}.mp3")
     file_body_path = SPEECH_CACHE_DIR.joinpath(f"{name}.json")
 
@@ -146,6 +180,65 @@ async def speech(request: Request, user=Depends(get_verified_user)):
 
         with open(file_body_path, "w") as f:
             json.dump(json.loads(body.decode("utf-8")), f)
+
+        # Return the saved file
+        return FileResponse(file_path)
+
+    except Exception as e:
+        log.exception(e)
+        error_detail = "Open WebUI: Server Connection Error"
+        if r is not None:
+            try:
+                res = r.json()
+                if "error" in res:
+                    error_detail = f"External: {res['error']['message']}"
+            except:
+                error_detail = f"External: {e}"
+
+        raise HTTPException(
+            status_code=r.status_code if r != None else 500,
+            detail=error_detail,
+        )
+
+
+@app.post("/speech/elevenlabs")
+async def elevenlabs_speech(request: Request, user=Depends(get_verified_user)):
+    body = await request.json()
+    name = hashlib.sha256(json.dumps(body).encode()).hexdigest()
+
+    # For now, just save every request to cache. TODO: delete least recently used files to not exceed cache size.
+    file_path = SPEECH_CACHE_DIR.joinpath(f"{name}.mp3")
+    file_body_path = SPEECH_CACHE_DIR.joinpath(f"{name}.json")
+
+    # Check if the file already exists in the cache
+    if file_path.is_file():
+        return FileResponse(file_path)
+
+    headers = {}
+    headers["xi-api-key"] = ELEVENLABS_API_KEY
+    headers["Content-Type"] = "application/json"
+
+    r = None
+    try:
+        voice_id = body['voice_id']
+        del body['voice_id']
+
+        r = requests.post(
+            url=f"{ELEVENLABS_API_BASE_URL}/v1/text-to-speech/{voice_id}/stream?output_format=mp3_22050_32",
+            data=json.dumps(body).encode(),
+            headers=headers,
+        )
+
+        r.raise_for_status()
+
+        # Save the streaming content to a file
+        with open(file_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        body['voice_id'] = voice_id
+        with open(file_body_path, "w") as f:
+            json.dump(body, f)
 
         # Return the saved file
         return FileResponse(file_path)

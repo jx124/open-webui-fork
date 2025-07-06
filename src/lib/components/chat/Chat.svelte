@@ -170,6 +170,7 @@
 				await goto('/c/');
 			}
 		}
+        console.log("selectedProfile", selectedProfile);
 	});
 
     // reload page when restarting conversation since onMount wont rerun

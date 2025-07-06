@@ -4,7 +4,7 @@
 	import { getContext } from 'svelte';
 	import Name from './Name.svelte';
 	import ProfileImage from './ProfileImage.svelte';
-	import { models, settings } from '$lib/stores';
+	import { models, settings, type AudioSettings } from '$lib/stores';
 
 	import { user as _user } from '$lib/stores';
 
@@ -13,6 +13,7 @@
 	export let user;
 	export let message;
 	export let siblings;
+    export let audio: AudioSettings | null;
 
 	export let confirmEditMessage: Function;
 	export let showPreviousMessage: Function;

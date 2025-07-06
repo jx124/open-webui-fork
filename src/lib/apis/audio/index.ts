@@ -102,7 +102,7 @@ export const synthesizeOpenAISpeech = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${AUDIO_API_BASE_URL}/speech`, {
+	const res = await fetch(`${AUDIO_API_BASE_URL}/speech/openai`, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -131,3 +131,98 @@ export const synthesizeOpenAISpeech = async (
 
 	return res;
 };
+
+
+export const synthesizeElevenLabsSpeech = async (
+	token: string = '',
+	speaker: string = '',
+	text: string = '',
+	model: string = ''
+) => {
+	let error = null;
+
+	const res = await fetch(`${AUDIO_API_BASE_URL}/speech/elevenlabs`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			model_id: model,
+			text: text,
+			voice_id: speaker
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res;
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.log(err);
+
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+
+export const getAudioVoices = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${AUDIO_API_BASE_URL}/voices`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+}
+
+
+export const getAudioModels = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${AUDIO_API_BASE_URL}/models`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+}

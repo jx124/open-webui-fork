@@ -450,7 +450,7 @@ class ChatTable:
             query = Chat.delete().where(Chat.prompt_id == prompt_id)
             result = query.execute()
 
-            return result != 0
+            return result
 
         except Exception:
             log.exception(" Exception caught in model method.")

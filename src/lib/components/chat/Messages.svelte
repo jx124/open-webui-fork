@@ -369,6 +369,7 @@
 									on:delete={() => messageDeleteHandler(message.id)}
 									{user}
 									{message}
+                                    audio={selectedProfile?.audio ?? null}
 									siblings={message.parentId !== null
 										? history.messages[message.parentId]?.childrenIds ?? []
 										: Object.values(history.messages)
@@ -387,6 +388,7 @@
 										{showNextMessage}
 										clientName={selectedProfile?.title}
 										clientImage={selectedProfile?.image_url}
+                                        audio={selectedProfile?.audio ?? null}
 										on:save={async (e) => {
 											console.log('save', e);
 

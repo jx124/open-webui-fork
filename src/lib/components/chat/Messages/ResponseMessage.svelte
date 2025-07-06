@@ -14,7 +14,7 @@
 
 	const dispatch = createEventDispatcher();
 
-	import { models, settings } from '$lib/stores';
+	import { models, settings, type AudioSettings } from '$lib/stores';
 	import {
 		approximateToHumanReadable,
 		revertSanitizedResponseContent,
@@ -32,7 +32,7 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import WebSearchResults from './ResponseMessage/WebSearchResults.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import { synthesizeOpenAISpeech } from '$lib/apis/audio';
+	import { synthesizeOpenAISpeech, synthesizeElevenLabsSpeech } from '$lib/apis/audio';
 
 	export let message;
 	export let siblings;
@@ -44,6 +44,7 @@
 	export let clientImage;
 
     export let isLastMessage = true;
+    export let audio: AudioSettings | null;
 
 	let loadingSpeech = false;
 	let sentencesAudio = {};
@@ -198,7 +199,7 @@
 		} else {
 			speaking = true;
 
-			if ($settings?.audio?.TTSEngine === 'openai') {
+			if (audio?.TTSEngine === 'openai') {
 				loadingSpeech = true;
 
 				const sentences = extractSentences(message.content).reduce((mergedTexts, currentText) => {
@@ -223,16 +224,15 @@
 					a[i] = null;
 					return a;
 				}, {});
-                console.log("openai sentenceAudio", sentencesAudio, speakingIdx);
 
 				let lastPlayedAudioPromise = Promise.resolve(); // Initialize a promise that resolves immediately
 
 				for (const [idx, sentence] of sentences.entries()) {
 					const res = await synthesizeOpenAISpeech(
 						localStorage.token,
-						$settings?.audio?.speaker,
+						audio?.speaker,
 						sentence,
-						$settings?.audio?.model
+						audio?.model
 					).catch((error) => {
 						toast.error(error);
 
@@ -251,6 +251,32 @@
 						lastPlayedAudioPromise = lastPlayedAudioPromise.then(() => playAudio(idx));
 					}
 				}
+            } else if (audio?.TTSEngine === "elevenlabs") {
+                sentencesAudio[0] = null;
+				let lastPlayedAudioPromise = Promise.resolve(); // Initialize a promise that resolves immediately
+
+                const res = await synthesizeElevenLabsSpeech(
+                    localStorage.token,
+                    audio?.speaker,
+                    message.content,
+                    audio?.model
+                ).catch((error) => {
+                    toast.error(error);
+
+                    speaking = false;
+                    loadingSpeech = false;
+
+                    return null;
+                });
+
+                if (res) {
+                    const blob = await res.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const audio = new Audio(blobUrl);
+                    sentencesAudio[0] = audio;
+                    loadingSpeech = false;
+                    lastPlayedAudioPromise = lastPlayedAudioPromise.then(() => playAudio(0));
+                }
 			} else {
 				let voices = [];
 				const getVoicesLoop = setInterval(async () => {
@@ -259,7 +285,7 @@
 						clearInterval(getVoicesLoop);
 
 						const voice =
-							voices?.filter((v) => v.name === $settings?.audio?.speaker)?.at(0) ?? undefined;
+							voices?.filter((v) => v.name === audio?.speaker)?.at(0) ?? undefined;
 
 						const speak = new SpeechSynthesisUtterance(message.content);
 
@@ -510,7 +536,7 @@
                                     </div>
                                 {/if}
 
-                                {#if false}
+                                {#if message.done && audio}
                                     <Tooltip content={$i18n.t('Read Aloud')} placement="bottom">
                                         <button
                                             id="speak-button-{message.id}"

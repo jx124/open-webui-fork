@@ -23,6 +23,7 @@
 	export let className = 'w-[24rem]';
 
     export let externalLabel = "";
+    export let noResultsString = "No results found, add more models under Admin Panel > Models.";
 
     $: if (externalLabel) {
         label = externalLabel
@@ -103,7 +104,7 @@
                         </button>
                     {:else}
                         <div class="block px-3 py-2 text-sm text-gray-700 dark:text-gray-100">
-                            No results found, add more models under Admin Panel > Models.
+                            {noResultsString}
                         </div>
                     {/each}
                 </div>

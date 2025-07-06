@@ -545,6 +545,16 @@ except:
 
 CLAUDE_API_BASE_URL = "https://api.anthropic.com/v1"
 
+
+####################################
+# ELEVENLABS
+####################################
+
+
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+ELEVENLABS_API_BASE_URL = "https://api.elevenlabs.io"
+
+
 ####################################
 # WEBUI
 ####################################

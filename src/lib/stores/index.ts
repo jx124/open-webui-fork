@@ -115,7 +115,7 @@ type ModelOptions = {
 	stop?: boolean;
 };
 
-type AudioSettings = {
+export type AudioSettings = {
 	STTEngine?: string;
 	TTSEngine?: string;
 	speaker?: string;
@@ -143,6 +143,7 @@ export type Prompt = {
     evaluation_id: number | null;
     selected_model_id: string;
     evaluation_model_id: string;
+    audio: AudioSettings | null;
 
 	assigned_classes: number[];
 };

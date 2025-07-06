@@ -37,9 +37,17 @@ class Prompt(pw.Model):
     image_url = pw.TextField(default="")
     evaluation = pw.ForeignKeyField(Evaluation, null=True)
     model_id = pw.TextField(default="")
+    audio = pw.TextField(null=True, default=None)
 
     class Meta:
         database = DB
+
+
+class AudioSettings(BaseModel):
+    STTEngine: str
+    TTSEngine: str
+    speaker: str
+    model: str
 
 
 class PromptModel(BaseModel):
@@ -56,6 +64,7 @@ class PromptModel(BaseModel):
     evaluation_id: Optional[int]
     selected_model_id: str = ""  # prevent namespace collision
     evaluation_model_id: str = ""
+    audio: Optional[str] = None  # string is json of AudioSettings
 
 
 def prompt_to_promptmodel(prompt: Prompt, is_admin: bool) -> PromptModel:
@@ -88,6 +97,8 @@ class PromptForm(BaseModel):
     evaluation_id: Optional[int]
     selected_model_id: str
 
+    audio: Optional[AudioSettings] = None
+
 
 class PromptsTable:
 
@@ -111,6 +122,7 @@ class PromptsTable:
                     "image_url": form_data.image_url,
                     "evaluation_id": form_data.evaluation_id,
                     "selected_model_id": form_data.selected_model_id,
+                    "audio": None if form_data.audio is None else form_data.audio.model_dump_json(),
                 }
             )
 
@@ -256,6 +268,7 @@ class PromptsTable:
                     "image_url": form_data.image_url,
                     "evaluation_id": form_data.evaluation_id,
                     "selected_model_id": form_data.selected_model_id,
+                    "audio": None if form_data.audio is None else form_data.audio.model_dump_json(),
                 }
             )
 
@@ -263,7 +276,7 @@ class PromptsTable:
             if prompt_id is None:
                 return False
 
-            excluded_columns = {"id", "user_id", "selected_model_id"}
+            excluded_columns = {"id", "user_id", "selected_model_id", "evaluation_model_id"}
 
             query = Prompt.update(**prompt.model_dump(exclude=excluded_columns),
                                   model_id=form_data.selected_model_id)\

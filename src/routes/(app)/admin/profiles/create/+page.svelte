@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { goto } from '$app/navigation';
-	import { evaluations, models, prompts, user } from '$lib/stores';
+	import { evaluations, models, prompts, user, type AudioSettings } from '$lib/stores';
 	import { onMount, tick, getContext } from 'svelte';
 
 	import { createNewPrompt, getPrompts, type PromptForm } from '$lib/apis/prompts';
@@ -11,6 +11,7 @@
 	import { getModels } from '$lib/apis';
 	import ModelSelector from '$lib/components/admin/ModelSelector.svelte';
 	import EvaluationSelector from '$lib/components/admin/EvaluationSelector.svelte';
+	import { getAudioModels, getAudioVoices } from '$lib/apis/audio';
 
 	const i18n = getContext('i18n');
 
@@ -26,13 +27,68 @@
 		image_url: '/user.png',
 		evaluation_id: null,
 		selected_model_id: '',
+        audio: null,
 	};
+
+    const audio_form: AudioSettings = {
+        STTEngine: '',
+        TTSEngine: '',
+        speaker: '',
+        model: '',
+    }
+
+	let voices: {
+        [key: string]: {
+            label: string;
+            value: string;
+        }[];
+    } = {
+        "webapi": [],
+        "elevenlabs": [],
+        //"openai": [],
+    };
+	let voiceModels: {
+        [key: string]: {
+            label: string;
+            value: string;
+        }[];
+    } = {
+        "webapi": [],
+        "elevenlabs": [],
+        //"openai": [],
+    };
+
+    //voices["openai"] = [
+    //    { label: 'alloy',  value: 'alloy' },
+    //    { label: 'echo',  value: 'echo' },
+    //    { label: 'fable',  value: 'fable' },
+    //    { label: 'onyx',  value: 'onyx' },
+    //    { label: 'nova',  value: 'nova' },
+    //    { label: 'shimmer',  value: 'shimmer' }
+    //];
+	//voiceModels["openai"] = [
+    //    { label: 'tts-1',  value: 'tts-1' },
+    //    { label: 'tts-1-hd', value: 'tts-1-hd' }
+    //];
+	voiceModels["webapi"] = [
+        { label: 'Default',  value: 'default' },
+    ];
+
+    let enableAudio = false;
 
 	let showPreviewModal = false;
 
 	$: form_data.command =
 		form_data.title !== '' ? `${form_data.title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
+    let previousEngine = "";
+
+    $: if (form_data?.audio?.TTSEngine && form_data.audio.TTSEngine !== previousEngine) {
+        previousEngine = form_data.audio.TTSEngine;
+        form_data.audio.model = '';
+        form_data.audio.speaker = '';
+    }
+    
 	let profileImageInputElement: HTMLInputElement;
 
 	let modelItems: {
@@ -45,6 +101,15 @@
 		value: number | null;
 	}[] = [];
 
+	let TTSItems: {
+		label: string;
+		value: string;
+	}[] = [
+        { label: "Default (Web API)", value: 'webapi' },
+        { label: "ElevenLabs", value: 'elevenlabs' },
+        //{ label: "OpenAI", value: 'openai' },
+    ];
+
 	const submitHandler = async () => {
 		loading = true;
 
@@ -54,6 +119,12 @@
 			return null;
 		}
 
+        if (form_data.audio && (form_data.audio.TTSEngine === "" || form_data.audio.model === "" || form_data.audio.speaker === "")) {
+            toast.error("Voice mode enabled. Please select a TTS engine, model, and speaker");
+            loading = false;
+            return null;
+        }
+
 		if (validateCommandString(form_data.command)) {
 			const prompt = await createNewPrompt(localStorage.token, form_data).catch((error) => {
 				toast.error(error);
@@ -62,7 +133,7 @@
 			});
 
 			if (prompt) {
-				await prompts.set(await getPrompts(localStorage.token));
+				prompts.set(await getPrompts(localStorage.token));
 				await goto('/admin/profiles');
 			}
 		} else {
@@ -89,16 +160,15 @@
 		
 		if (sessionStorage.prompt) {
 			const prompt = JSON.parse(sessionStorage.prompt);
-            console.log("saved prompt", prompt);
 			form_data.title = prompt.title;
-			//form_data.command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
 			form_data.content = prompt.content;
 			form_data.is_visible = prompt.is_visible;
 			form_data.additional_info = prompt.additional_info;
 			form_data.image_url = prompt.image_url;
-			await tick();
 			form_data.evaluation_id = prompt.evaluation_id;
 			form_data.selected_model_id = prompt.selected_model_id;
+            form_data.audio = prompt.audio;
+			await tick();
 
 			sessionStorage.removeItem('prompt');
 		}
@@ -120,6 +190,16 @@
 				value: p.id
 			};
 		});
+
+        voiceModels["elevenlabs"] = await getAudioModels(localStorage.token)
+            .then(res => {
+                return res.map(model => { return { label: model.model_id, value: model.model_id }}) 
+            });
+        voices["elevenlabs"] = await getAudioVoices(localStorage.token)
+            .then(res => {
+                return res.voices.map(voice => { return { label: voice.name, value: voice.voice_id }}) 
+            });
+        voices["webapi"] = speechSynthesis.getVoices().map(voice => { return { label: voice.name, value: voice.voiceURI }});
 	});
 </script>
 
@@ -335,7 +415,7 @@
 			<div class="mt-2">
 				<div>
 					<textarea
-						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 rounded-lg"
 						placeholder={'Write your prompt here.'}
 						rows="6"
 						bind:value={form_data.content}
@@ -367,13 +447,71 @@
 
 		<div class="my-2">
 			<div class="flex w-full justify-between">
+				<div class=" self-center text-sm font-semibold">Voice</div>
+			</div>
+            <label
+                class="dark:bg-gray-900 w-fit rounded py-1 text-xs bg-transparent outline-none text-left"
+            >
+                <input
+                    type="checkbox"
+                    on:change={() => {
+                        enableAudio = !enableAudio;
+                        if (enableAudio) {
+                            form_data.audio = audio_form;
+                        } else {
+                            form_data.audio = null;
+                        }
+                    }}
+                    checked={enableAudio}
+                />
+                Enable voice mode.
+
+                {#if enableAudio}
+                    <div class=" py-0.5 flex w-full">
+			            <div class=" text-xs font-semibold mb-1">{$i18n.t('Text-to-Speech Engine')}*</div>
+                    </div>
+                    <ModelSelector
+                        placeholder="Select a TTS engine"
+                        searchPlaceholder="Search TTS engines"
+                        items={TTSItems}
+                        bind:value={form_data.audio.TTSEngine} />
+
+                    {#if form_data.audio.TTSEngine}
+                        <div class="pt-2 pb-0.5 flex w-full">
+                            <div class=" text-xs font-semibold mb-1">Voice Model*</div>
+                        </div>
+                        {#key form_data.audio.TTSEngine}
+                            <ModelSelector
+                                placeholder="Select a voice model"
+                                searchPlaceholder="Search voice models"
+                                noResultsString="No voice model found."
+                                items={voiceModels[form_data.audio.TTSEngine]}
+                                bind:value={form_data.audio.model} />
+
+                            <div class="pt-2 pb-0.5 flex w-full">
+                                <div class=" text-xs font-semibold mb-1">Voice*</div>
+                            </div>
+                            <ModelSelector
+                                placeholder="Select a voice"
+                                searchPlaceholder="Search voices"
+                                noResultsString="No voice found."
+                                items={voices[form_data.audio.TTSEngine]}
+                                bind:value={form_data.audio.speaker} />
+                        {/key}
+                    {/if}
+                {/if}
+            </label>
+		</div>
+
+		<div class="my-2">
+			<div class="flex w-full justify-between">
 				<div class=" self-center text-sm font-semibold">Client Descriptor</div>
 			</div>
 
 			<div class="mt-2">
 				<div>
 					<textarea
-						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg"
+						class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 rounded-lg"
 						placeholder="Include additional information for the user to refer to in the client information card. This supports HTML."
 						rows="6"
 						bind:value={form_data.additional_info}
