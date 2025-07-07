@@ -44,6 +44,13 @@
 		if ($user?.role !== "admin") {
 			await goto("/admin");
 		}
+		if (sessionStorage.evaluation) {
+            const evaluation = JSON.parse(sessionStorage.evaluation);
+            form_data.title = evaluation.title;
+            form_data.content = evaluation.content;
+            form_data.selected_model_id = evaluation.selected_model_id;
+            sessionStorage.removeItem('evaluation');
+        }
 
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);

@@ -36,8 +36,6 @@
 
         sessionStorage.prompt = JSON.stringify({
             ...prompt,
-            content: encodeURIComponent(prompt.content),
-            additional_info: encodeURIComponent(prompt.additional_info),
             title: `${prompt.title} Copy`,
         });
         goto('/admin/profiles/create');

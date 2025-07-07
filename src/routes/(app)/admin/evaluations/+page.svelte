@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { deleteEvaluationById, type EvaluationForm, getEvaluations } from '$lib/apis/evaluations';
+	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import DeleteModal from '$lib/components/DeleteModal.svelte';
+	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
 	import { evaluations, WEBUI_NAME } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -14,6 +17,19 @@
 		showDeleteModal = false;
 		$evaluations = await getEvaluations(localStorage.token);
 	}
+
+	const cloneEvalHandler = async (evaluation) => {
+        if (!evaluation) {
+            toast.error("Cannot duplicate evaluation.");
+            return;
+        }
+
+        sessionStorage.evaluation = JSON.stringify({
+            ...evaluation,
+            title: `${evaluation.title} Copy`,
+        });
+        goto('/admin/evaluations/create');
+	};
 
 	onMount(async () => {
 		$evaluations = await getEvaluations(localStorage.token);
@@ -117,6 +133,14 @@
 					</svg>
 				</a>
 
+                <Tooltip content="Duplicate Evaluation">
+                    <button
+                        class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
+                        on:click={() => cloneEvalHandler(evaluation) }
+                    >
+                        <DocumentDuplicate />
+                    </button>
+                </Tooltip>
 				<button
 					class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 					type="button"

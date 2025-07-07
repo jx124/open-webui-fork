@@ -162,9 +162,9 @@
 		if (sessionStorage.prompt) {
 			let prompt = JSON.parse(sessionStorage.prompt);
 			form_data.title = prompt.title;
-			form_data.content = decodeURIComponent(prompt.content);
+			form_data.content = prompt.content;
 			form_data.is_visible = prompt.is_visible;
-			form_data.additional_info = decodeURIComponent(prompt.additional_info);
+			form_data.additional_info = prompt.additional_info;
 			form_data.image_url = prompt.image_url;
 			form_data.evaluation_id = prompt.evaluation_id;
 			form_data.selected_model_id = prompt.selected_model_id;
