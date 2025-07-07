@@ -16,6 +16,7 @@
 	const i18n = getContext('i18n');
 
 	let loading = false;
+	let fieldsLoading = false;
 
 	let form_data: PromptForm = {
 		command: '',
@@ -159,17 +160,21 @@
 		}
 		
 		if (sessionStorage.prompt) {
-			const prompt = JSON.parse(sessionStorage.prompt);
+			let prompt = JSON.parse(sessionStorage.prompt);
 			form_data.title = prompt.title;
-			form_data.content = prompt.content;
+			form_data.content = decodeURIComponent(prompt.content);
 			form_data.is_visible = prompt.is_visible;
-			form_data.additional_info = prompt.additional_info;
+			form_data.additional_info = decodeURIComponent(prompt.additional_info);
 			form_data.image_url = prompt.image_url;
 			form_data.evaluation_id = prompt.evaluation_id;
 			form_data.selected_model_id = prompt.selected_model_id;
             form_data.audio = prompt.audio;
-			await tick();
+            if (form_data.audio) {
+                enableAudio = true;
+            }
 
+            // prevent audio fields from being reset as if TTSEngine is changed
+            previousEngine = form_data.audio?.TTSEngine ?? "";
 			sessionStorage.removeItem('prompt');
 		}
 
@@ -180,6 +185,7 @@
 			}
 		})];
 
+        fieldsLoading = true;
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);
 		});
@@ -200,6 +206,7 @@
                 return res.voices.map(voice => { return { label: voice.name, value: voice.voice_id }}) 
             });
         voices["webapi"] = speechSynthesis.getVoices().map(voice => { return { label: voice.name, value: voice.voiceURI }});
+        fieldsLoading = false;
 	});
 </script>
 
@@ -474,6 +481,7 @@
                         placeholder="Select a TTS engine"
                         searchPlaceholder="Search TTS engines"
                         items={TTSItems}
+                        externalLabel={TTSItems.find(model => model.value === form_data.audio.TTSEngine)?.label}
                         bind:value={form_data.audio.TTSEngine} />
 
                     {#if form_data.audio.TTSEngine}
@@ -485,6 +493,7 @@
                                 placeholder="Select a voice model"
                                 searchPlaceholder="Search voice models"
                                 noResultsString="No voice model found."
+                                externalLabel={form_data.audio.model}
                                 items={voiceModels[form_data.audio.TTSEngine]}
                                 bind:value={form_data.audio.model} />
 
@@ -495,6 +504,7 @@
                                 placeholder="Select a voice"
                                 searchPlaceholder="Search voices"
                                 noResultsString="No voice found."
+                                externalLabel={fieldsLoading ? "Loading..." : voices[form_data.audio.TTSEngine].find(voice => voice.value === form_data.audio.speaker)?.label}
                                 items={voices[form_data.audio.TTSEngine]}
                                 bind:value={form_data.audio.speaker} />
                         {/key}

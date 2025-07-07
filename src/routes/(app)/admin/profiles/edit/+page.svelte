@@ -15,8 +15,10 @@
 	import { getModels } from '$lib/apis';
 	import EvaluationSelector from '$lib/components/admin/EvaluationSelector.svelte';
 	import { getAudioModels, getAudioVoices } from '$lib/apis/audio';
+	import { getEvaluations } from '$lib/apis/evaluations';
 
 	let loading = false;
+	let fieldsLoading = false;
 
 	let form_data: PromptForm = {
 		command: '',
@@ -177,6 +179,10 @@
 			goto('/admin/profiles');
 		}
 
+        if ($evaluations.length === 0) {
+            $evaluations = await getEvaluations(localStorage.token);
+        }
+
 		evaluationItems = [{ label: "None", value: null }, ...$evaluations.map((e) => {
 			return {
 				label: e.title,
@@ -184,6 +190,7 @@
 			}
 		})];
 
+        fieldsLoading = true;
 		$models = await getModels(localStorage.token).catch((error) => {
 			toast.error(error);
 		});
@@ -204,6 +211,7 @@
                 return res.voices.map(voice => { return { label: voice.name, value: voice.voice_id }}) 
             });
         voices["webapi"] = speechSynthesis.getVoices().map(voice => { return { label: voice.name, value: voice.voiceURI }});
+        fieldsLoading = false;
 	});
 </script>
 
@@ -444,7 +452,7 @@
 			<ModelSelector
 				items={modelItems}
 				bind:value={form_data.selected_model_id}
-				externalLabel={modelItems.find(model => model.value === form_data.selected_model_id)?.label}
+				externalLabel={fieldsLoading ? "Loading..." : modelItems.find(model => model.value === form_data.selected_model_id)?.label}
 			/>
 			<div class="text-xs text-gray-600 dark:text-gray-500 mt-1">
 				Select the LLM model to be used.
@@ -503,7 +511,7 @@
                                 placeholder="Select a voice"
                                 searchPlaceholder="Search voices"
                                 noResultsString="No voice found."
-                                externalLabel={voices[form_data.audio.TTSEngine].find(voice => voice.value === form_data.audio.speaker)?.label}
+                                externalLabel={fieldsLoading ? "Loading..." : voices[form_data.audio.TTSEngine].find(voice => voice.value === form_data.audio.speaker)?.label}
                                 items={voices[form_data.audio.TTSEngine]}
                                 bind:value={form_data.audio.speaker} />
                         {/key}
