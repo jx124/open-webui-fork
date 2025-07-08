@@ -102,6 +102,14 @@
 		value: number | null;
 	}[] = [];
 
+	let STTItems: {
+		label: string;
+		value: string;
+	}[] = [
+        { label: "Default (Web API)", value: 'webapi' },
+        { label: "Whisper (Local)", value: 'whisper-local' },
+    ];
+
 	let TTSItems: {
 		label: string;
 		value: string;
@@ -120,8 +128,8 @@
 			return null;
 		}
 
-        if (form_data.audio && (form_data.audio.TTSEngine === "" || form_data.audio.model === "" || form_data.audio.speaker === "")) {
-            toast.error("Voice mode enabled. Please select a TTS engine, model, and speaker");
+        if (form_data.audio && (form_data.audio.STTEngine === "" || form_data.audio.TTSEngine === "" || form_data.audio.model === "" || form_data.audio.speaker === "")) {
+            toast.error("Voice mode enabled. Please select a STT engine, TTS engine, model, and speaker");
             loading = false;
             return null;
         }
@@ -200,11 +208,13 @@
         voiceModels["elevenlabs"] = await getAudioModels(localStorage.token)
             .then(res => {
                 return res.map(model => { return { label: model.model_id, value: model.model_id }}) 
-            });
+            })
+            .catch(err => toast.error(err));
         voices["elevenlabs"] = await getAudioVoices(localStorage.token)
             .then(res => {
                 return res.voices.map(voice => { return { label: voice.name, value: voice.voice_id }}) 
-            });
+            })
+            .catch(err => toast.error(err));
         voices["webapi"] = speechSynthesis.getVoices().map(voice => { return { label: voice.name, value: voice.voiceURI }});
         fieldsLoading = false;
 	});
@@ -475,6 +485,16 @@
 
                 {#if enableAudio}
                     <div class=" py-0.5 flex w-full">
+			            <div class=" text-xs font-semibold mb-1">{$i18n.t('Speech-to-Text Engine')}*</div>
+                    </div>
+                    <ModelSelector
+                        placeholder="Select a STT engine"
+                        searchPlaceholder="Search STT engines"
+                        items={STTItems}
+                        externalLabel={STTItems.find(model => model.value === form_data.audio.STTEngine)?.label}
+                        bind:value={form_data.audio.STTEngine} />
+
+                    <div class="pt-2 pb-0.5 flex w-full">
 			            <div class=" text-xs font-semibold mb-1">{$i18n.t('Text-to-Speech Engine')}*</div>
                     </div>
                     <ModelSelector

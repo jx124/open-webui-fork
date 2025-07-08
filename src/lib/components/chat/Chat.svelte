@@ -170,7 +170,6 @@
 				await goto('/c/');
 			}
 		}
-        console.log("selectedProfile", selectedProfile);
 	});
 
     // reload page when restarting conversation since onMount wont rerun
@@ -821,7 +820,7 @@
 									copyToClipboard(responseMessage.content);
 								}
 
-								if ($settings.responseAutoPlayback) {
+								if (selectedProfile.audio) {
 									await tick();
 									document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 								}
@@ -1025,7 +1024,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if ($settings.responseAutoPlayback) {
+				if (selectedProfile.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1245,7 +1244,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if ($settings.responseAutoPlayback) {
+				if (selectedProfile.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1622,7 +1621,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if ($settings.responseAutoPlayback) {
+				if (selectedProfile.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1804,7 +1803,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if ($settings.responseAutoPlayback) {
+				if (selectedProfile.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -2021,7 +2020,7 @@
 									copyToClipboard(responseMessage.content);
 								}
 
-								if ($settings.responseAutoPlayback) {
+								if (selectedProfile.audio) {
 									await tick();
 									document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 								}
