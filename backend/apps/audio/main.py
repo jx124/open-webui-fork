@@ -260,8 +260,8 @@ async def elevenlabs_speech(request: Request, user=Depends(get_verified_user)):
         )
 
 
-@app.post("/transcriptions")
-def transcribe(
+@app.post("/transcription/whisper")
+def transcribe_whisper(
     file: UploadFile = File(...),
     user=Depends(get_current_user),
 ):
@@ -302,13 +302,64 @@ def transcribe(
 
         segments, info = model.transcribe(file_path, beam_size=5)
         log.info(
-            "Detected language '%s' with probability %f"
+            "Whisper speech-to-text: detected language '%s' with probability %f"
             % (info.language, info.language_probability)
         )
 
         transcript = "".join([segment.text for segment in list(segments)])
+        log.info(f"Whisper speech-to-text: {transcript.strip()}")
 
         return {"text": transcript.strip()}
+
+    except Exception as e:
+        log.exception(e)
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT(e),
+        )
+
+
+@app.post("/transcription/elevenlabs")
+def transcribe_elevenlabs(
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
+):
+    if file.content_type not in ["audio/mpeg", "audio/wav"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.FILE_NOT_SUPPORTED,
+        )
+
+    try:
+        filename = file.filename
+        contents = file.file.read()
+
+        headers = {}
+        headers["xi-api-key"] = ELEVENLABS_API_KEY
+
+        r = requests.post(
+            url=f"{ELEVENLABS_API_BASE_URL}/v1/speech-to-text",
+            headers=headers,
+            data={
+                "model_id": "scribe_v1"
+            },
+            files={
+                "file": (filename, contents)
+            }
+        )
+
+        r.raise_for_status()
+
+        response = r.json()
+
+        log.info(
+            "ElevenLabs speech-to-text: detected language '%s' with probability %f"
+            % (response['language_code'], response['language_probability'])
+        )
+        log.info(f"ElevenLabs speech-to-text: {response['text']}")
+
+        return {"text": response['text']}
 
     except Exception as e:
         log.exception(e)

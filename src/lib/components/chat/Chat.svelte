@@ -820,7 +820,7 @@
 									copyToClipboard(responseMessage.content);
 								}
 
-								if (selectedProfile.audio) {
+								if (selectedProfile?.audio) {
 									await tick();
 									document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 								}
@@ -1024,7 +1024,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if (selectedProfile.audio) {
+				if (selectedProfile?.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1244,7 +1244,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if (selectedProfile.audio) {
+				if (selectedProfile?.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1621,7 +1621,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if (selectedProfile.audio) {
+				if (selectedProfile?.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -1803,7 +1803,7 @@
 					copyToClipboard(responseMessage.content);
 				}
 
-				if (selectedProfile.audio) {
+				if (selectedProfile?.audio) {
 					await tick();
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
@@ -2020,7 +2020,7 @@
 									copyToClipboard(responseMessage.content);
 								}
 
-								if (selectedProfile.audio) {
+								if (selectedProfile?.audio) {
 									await tick();
 									document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 								}

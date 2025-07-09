@@ -64,12 +64,43 @@ export const updateAudioConfig = async (token: string, payload: OpenAIConfigForm
 	return res;
 };
 
-export const transcribeAudio = async (token: string, file: File) => {
+export const transcribeAudioWhisper = async (token: string, file: File) => {
 	const data = new FormData();
 	data.append('file', file);
 
 	let error = null;
-	const res = await fetch(`${AUDIO_API_BASE_URL}/transcriptions`, {
+	const res = await fetch(`${AUDIO_API_BASE_URL}/transcription/whisper`, {
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			authorization: `Bearer ${token}`
+		},
+		body: data
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			error = err.detail;
+			console.log(err);
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+
+export const transcribeAudioElevenLabs = async (token: string, file: File) => {
+	const data = new FormData();
+	data.append('file', file);
+
+	let error = null;
+	const res = await fetch(`${AUDIO_API_BASE_URL}/transcription/elevenlabs`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',

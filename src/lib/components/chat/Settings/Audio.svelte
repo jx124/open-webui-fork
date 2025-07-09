@@ -192,7 +192,7 @@
 						}}
 					>
 						<option value="">{$i18n.t('Default (Web API)')}</option>
-						<option value="whisper-local">{$i18n.t('Whisper (Local)')}</option>
+						<option value="whisper">{$i18n.t('Whisper (Local)')}</option>
 					</select>
 				</div>
 			</div>

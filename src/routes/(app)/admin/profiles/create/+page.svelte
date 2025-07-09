@@ -106,16 +106,17 @@
 		label: string;
 		value: string;
 	}[] = [
+        { label: "ElevenLabs (scribe_v1)", value: 'elevenlabs' },
+        { label: "Whisper (Local)", value: 'whisper' },
         { label: "Default (Web API)", value: 'webapi' },
-        { label: "Whisper (Local)", value: 'whisper-local' },
     ];
 
 	let TTSItems: {
 		label: string;
 		value: string;
 	}[] = [
-        { label: "Default (Web API)", value: 'webapi' },
         { label: "ElevenLabs", value: 'elevenlabs' },
+        { label: "Default (Web API)", value: 'webapi' },
         //{ label: "OpenAI", value: 'openai' },
     ];
 

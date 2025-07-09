@@ -12,7 +12,7 @@
 	} from '$lib/apis/rag';
 	import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS, WEBUI_BASE_URL } from '$lib/constants';
 
-	import { transcribeAudio } from '$lib/apis/audio';
+	import { transcribeAudioWhisper, transcribeAudioElevenLabs } from '$lib/apis/audio';
 
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import Documents from './MessageInput/Documents.svelte';
@@ -86,6 +86,7 @@
 	let mediaRecorder;
 	let audioChunks = [];
 	let isRecording = false;
+	let isTranscribing = false;
 	const MIN_DECIBELS = -45;
 
 	const scrollToBottom = () => {
@@ -104,16 +105,30 @@
 		mediaRecorder.onstop = async () => {
 			isRecording = false;
 			console.log('Recording stopped');
+            isTranscribing = true;
 
 			// Create a blob from the audio chunks
 			const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
 
 			const file = blobToFile(audioBlob, 'recording.wav');
 
-			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
-				toast.error(error);
-				return null;
-			});
+            let res;
+
+            if (selectedProfile?.audio?.STTEngine === "whisper") {
+                res = await transcribeAudioWhisper(localStorage.token, file).catch((error) => {
+                    toast.error(error);
+                    return null;
+                });
+            } else if (selectedProfile?.audio?.STTEngine === "elevenlabs") {
+			    res = await transcribeAudioElevenLabs(localStorage.token, file).catch((error) => {
+                    toast.error(error);
+                    return null;
+                });
+            } else {
+                toast.error("Speech-to-text engine not found.");
+            }
+
+            isTranscribing = false;
 
 			if (res) {
 				prompt = res.text;
@@ -206,6 +221,8 @@
 					const inactivityTimeout = 3000; // 3 seconds
 
 					let timeoutId;
+                    isTranscribing = true;
+
 					// Start recognition
 					speechRecognition.start();
 
@@ -246,6 +263,7 @@
 						toast.error($i18n.t(`Speech recognition error: {{error}}`, { error: event.error }));
 						isRecording = false;
 					};
+                    isTranscribing = false;
 				} else {
 					toast.error($i18n.t('SpeechRecognition API is not supported in this browser.'));
 				}
@@ -268,10 +286,21 @@
 			files = [...files, doc];
 
 			if (['audio/mpeg', 'audio/wav'].includes(file['type'])) {
-				const res = await transcribeAudio(localStorage.token, file).catch((error) => {
-					toast.error(error);
-					return null;
-				});
+                let res;
+
+                if (selectedProfile?.audio?.STTEngine === "whisper") {
+                    res = await transcribeAudioWhisper(localStorage.token, file).catch((error) => {
+                        toast.error(error);
+                        return null;
+                    });
+                } else if (selectedProfile?.audio?.STTEngine === "elevenlabs") {
+                    res = await transcribeAudioElevenLabs(localStorage.token, file).catch((error) => {
+                        toast.error(error);
+                        return null;
+                    });
+                } else {
+                    toast.error("Speech-to-text engine not found.");
+                }
 
 				if (res) {
 					console.log(res);
@@ -926,6 +955,8 @@
 									? chatInputPlaceholder
 									: isRecording
 									? $i18n.t('Listening...')
+									: isTranscribing
+                                    ? "Transcribing..."
 									: chatDisabled
 									? "Chat is disabled"
 									: disableChat
