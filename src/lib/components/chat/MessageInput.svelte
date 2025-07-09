@@ -1138,7 +1138,7 @@
 
 							<div class="self-end mb-2 flex space-x-1 mr-1">
 								{#if messages.length == 0 || messages.at(-1).done == true}
-                                    {#if selectedProfile.audio}
+                                    {#if selectedProfile?.audio}
                                         <Tooltip content={$i18n.t('Record voice')}>
                                             {#if speechRecognitionEnabled}
                                                 <button
