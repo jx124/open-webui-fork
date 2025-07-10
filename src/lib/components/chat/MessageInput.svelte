@@ -135,7 +135,8 @@
 				await tick();
 				chatTextAreaElement?.focus();
 
-				if (prompt !== '' && $settings?.speechAutoSend === true) {
+                // always auto send for realism
+				if (prompt !== '') { // && $settings?.speechAutoSend === true) {
 					submitPrompt(prompt, user);
 				}
 			}
@@ -252,9 +253,11 @@
 						// Restart recognition after it ends
 						console.log('recognition ended');
 						isRecording = false;
-						if (prompt !== '' && $settings?.speechAutoSend === true) {
-							submitPrompt(prompt, user);
-						}
+
+                        // always auto send for realism
+                        if (prompt !== '') { // && $settings?.speechAutoSend === true) {
+                            submitPrompt(prompt, user);
+                        }
 					};
 
 					// Event triggered when an error occurs
