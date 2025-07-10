@@ -355,6 +355,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     # Try to decode the body of the request from bytes to a UTF-8 string (Require add max_token to fix gpt-4-vision)
 
     payload = None
+    model_str = ""
 
     try:
         if "chat/completions" in path:
@@ -363,6 +364,9 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
             payload = {**body}
             model_id: str
+
+            if "model" in payload:
+                model_str = payload["model"]
 
             # Replace prompt command with prompt content so end users cannot see prompt
             if "profile_id" in payload:
@@ -402,6 +406,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 print(model_info)
                 if model_info.base_model_id:
                     payload["model"] = model_info.base_model_id
+                    model_str = model_info.base_model_id
 
                 model_info.params = model_info.params.model_dump()
 
@@ -453,6 +458,8 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                     payload["max_tokens"] = 4000
                 log.debug("Modified payload:", payload)
 
+            payload["stream_options"] = {"include_usage": True}
+
             # Convert the modified body back to JSON
             payload = json.dumps(payload)
 
@@ -487,7 +494,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
         if "text/event-stream" in r.headers.get("Content-Type", ""):
             streaming = True
             return StreamingResponse(
-                stream_token_counter(r.content, user.id),
+                stream_token_counter(r.content, user.id, model_str),
                 status_code=r.status,
                 headers=dict(r.headers),
                 background=BackgroundTask(
@@ -498,8 +505,12 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             response_data = await r.json()
 
             if response_data is not None and response_data.get("usage"):
-                count = response_data["usage"].get("total_tokens", 0)
-                Users.increment_user_token_count_by_id(user.id, count)
+                input_tokens = response_data["usage"]["prompt_tokens"]
+                print("input_tokens", input_tokens)
+                output_tokens = response_data["usage"]["completion_tokens"]
+                print("output_tokens", output_tokens)
+                print("openai model", model_str)
+                #Users.increment_user_token_count_by_id(user.id, count)
 
             return response_data
     except Exception as e:
@@ -521,17 +532,21 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             await session.close()
 
 
-async def stream_token_counter(stream, user_id):
+async def stream_token_counter(stream, user_id, model):
     # reads stream and increments token count if usage found in stream
     async for line in stream:
         try:
             result = None
             if line.startswith(b"data: "):
-                result = json.loads(line.split(b" ")[1])  # strip "data: " at the front of response
+                result = json.loads(line[6:])  # strip "data: " at the front of response
 
             if result is not None and result.get("usage"):
-                count = result["usage"].get("total_tokens", 0)
-                Users.increment_user_token_count_by_id(user_id, count)
+                input_tokens = result["usage"]["prompt_tokens"]
+                print("input_tokens", input_tokens)
+                output_tokens = result["usage"]["completion_tokens"]
+                print("output_tokens", output_tokens)
+                print("openai model", model)
+                #Users.increment_user_token_count_by_id(user_id, count)
 
         except json.decoder.JSONDecodeError:
             pass

@@ -362,7 +362,6 @@ async def get_models(url_idx: Optional[int] = None, user=Depends(get_current_use
             )
 
 
-# TODO: implement
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     idx = 0
@@ -370,6 +369,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     body = await request.body()
 
     payload = None
+    model_str = ""
 
     try:
         if "chat/completions" in path:
@@ -379,18 +379,15 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             payload = {**body}
             model_id: str
 
+            if "model" in payload:
+                model_str = payload["model"]
+
             # Replace prompt command with prompt content so end users cannot see prompt
             if "profile_id" in payload:
                 profile_id = payload["profile_id"]
                 content = Prompts.get_prompt_content_by_id(profile_id)
                 model_id = Prompts.get_prompt_selected_model_by_id(profile_id)
-                payload["messages"].insert(
-                    0,
-                    {
-                        "role": "system",
-                        "content": content,
-                    },
-                )
+                payload["system"] = content
 
                 del payload["profile_id"]
 
@@ -401,13 +398,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 content = evaluation.content
                 model_id = evaluation.selected_model_id
                 payload["model"] = evaluation.selected_model_id
-                payload["messages"].insert(
-                    0,
-                    {
-                        "role": "system",
-                        "content": content,
-                    },
-                )
+                payload["system"] = content
 
                 del payload["evaluation_id"]
 
@@ -417,6 +408,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 print(model_info)
                 if model_info.base_model_id:
                     payload["model"] = model_info.base_model_id
+                    model_str = model_info.base_model_id
 
                 model_info.params = model_info.params.model_dump()
 
@@ -452,9 +444,6 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                             else None
                         )
 
-                # claude requires a max_token field
-                if payload.get("max_tokens", None) is None:
-                    payload["max_tokens"] = 1024
             else:
                 pass
 
@@ -465,6 +454,10 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             if "pipeline" in model and model.get("pipeline"):
                 payload["user"] = {"name": user.name, "id": user.id}
 
+            # claude requires a max_token field
+            if payload.get("max_tokens", None) is None:
+                payload["max_tokens"] = 1024
+
             # Convert the modified body back to JSON
             payload = json.dumps(payload)
 
@@ -474,7 +467,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     url = app.state.config.CLAUDE_API_BASE_URLS[idx]
     key = app.state.config.CLAUDE_API_KEYS[idx]
 
-    target_url = f"{url}/{path}"
+    target_url = f"{url}/messages"
 
     headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
     headers["Content-Type"] = "application/json"
@@ -498,7 +491,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
         if "text/event-stream" in r.headers.get("Content-Type", ""):
             streaming = True
             return StreamingResponse(
-                stream_token_counter(r.content, user.id),
+                stream_token_counter(r.content, user.id, model_str),
                 status_code=r.status,
                 headers=dict(r.headers),
                 background=BackgroundTask(
@@ -509,8 +502,12 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             response_data = await r.json()
 
             if response_data is not None and response_data.get("usage"):
-                count = response_data["usage"].get("total_tokens", 0)
-                Users.increment_user_token_count_by_id(user.id, count)
+                input_tokens = response_data["usage"]["input_tokens"]
+                print("input_tokens", input_tokens)
+                output_tokens = response_data["usage"]["output_tokens"]
+                print("output_tokens", output_tokens)
+                print("claude model", model_str)
+                #Users.increment_user_token_count_by_id(user.id, count)
 
             return response_data
     except Exception as e:
@@ -532,18 +529,23 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             await session.close()
 
 
-async def stream_token_counter(stream, user_id):
+async def stream_token_counter(stream, user_id, model):
     # reads stream and increments token count if usage found in stream
     async for line in stream:
         try:
             result = None
             if line.startswith(b"data: "):
-                result = json.loads(line.split(b" ")[1])  # strip "data: " at the front of response
+                result = json.loads(line[6:])  # strip "data: " at the front of response
 
-            if result is not None and result.get("usage"):
-                count = result["usage"].get("input_tokens", 0)
-                count += result["usage"].get("output_tokens", 0)
-                Users.increment_user_token_count_by_id(user_id, count)
+            if result is not None:
+                if result.get("message") is not None:
+                    input_tokens = result["message"]["usage"]["input_tokens"]
+                    print("input_tokens", input_tokens)
+                elif result.get("usage") is not None:
+                    output_tokens = result["usage"]["output_tokens"]
+                    print("output_tokens", output_tokens)
+                    print("claude model", model)
+                #Users.increment_user_token_count_by_id(user_id, count)
 
         except json.decoder.JSONDecodeError:
             pass

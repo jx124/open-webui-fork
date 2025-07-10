@@ -109,38 +109,31 @@ async function* claudeStreamToIterator(
 		if (!value) {
 			continue;
 		}
-		const dataChunk = value.data;
-        for (const data of dataChunk.split('\n')) {
-            if (data.startsWith('[DONE]')) {
+
+        try {
+            const event = value.event ?? "";
+            const parsedData = JSON.parse(value.data);
+
+            if (event === "message_stop") {
                 yield { done: true, value: '' };
                 break;
             }
 
-            try {
-                const parsedData = JSON.parse(data);
-
-                if (parsedData.error) {
-                    yield { done: true, value: '', error: parsedData.error };
-                    break;
-                }
-
-                if (parsedData.citations) {
-                    yield { done: false, value: '', citations: parsedData.citations };
-                    continue;
-                }
-
-                if (parsedData.type === "ping") {
-                    continue;
-                }
-
-                yield {
-                    done: false,
-                    value: parsedData.choices?.[0]?.delta?.content ?? '',
-                    usage: parsedData.usage
-                };
-            } catch (e) {
-                console.error('Error extracting delta from SSE event:', e);
+            if (event === "error") {
+                yield { done: true, value: '', error: parsedData.error};
+                break;
             }
+
+            if (event !== "content_block_delta") {
+                continue;
+            }
+
+            yield {
+                done: false,
+                value: parsedData?.delta?.text ?? ""
+            };
+        } catch (e) {
+            console.error('Error extracting delta from SSE event:', e);
         }
 	}
 }
