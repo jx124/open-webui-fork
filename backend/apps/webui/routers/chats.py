@@ -199,6 +199,26 @@ async def get_all_user_chats_in_db(user: UserModel = Depends(get_admin_or_instru
             for chat in Classes.get_chats_by_instructor(user.id)
         ]
 
+
+############################
+# GetAllChatsAbridgedInDB
+############################
+
+
+@router.get("/all/db/abridged", response_model=List[ChatTitleIdResponse])
+async def get_all_user_chats_in_db_abridged(user: UserModel = Depends(get_admin_or_instructor)) -> List[ChatTitleIdResponse]:
+    if user.role == "admin":
+        return [
+            ChatTitleIdResponse(**{**chat.model_dump()})
+            for chat in Chats.get_chats()
+        ]
+    else:
+        return [
+            ChatTitleIdResponse(**{**chat.model_dump()})
+            for chat in Classes.get_chats_by_instructor(user.id)
+        ]
+
+
 ############################
 # GetArchivedChats
 ############################

@@ -385,11 +385,6 @@ export const generateTitle = async (
 
 	return {
 		title: res?.choices[0]?.message?.content.replace(/["']/g, '') ?? 'New Chat',
-		usage: res?.usage ?? {
-			prompt_tokens: 0,
-			completion_tokens: 0,
-			total_tokens: 0,
-		}
 	};
 };
 

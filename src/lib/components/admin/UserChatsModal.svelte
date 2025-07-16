@@ -10,28 +10,18 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { approximateToHumanReadable } from '$lib/utils';
 	import SortableHeader from './SortableHeader.svelte';
+    import { type ChatMetrics } from '$lib/apis/metrics'
+    import { sortFactory } from '$lib/utils/index'
 
 	const i18n = getContext('i18n');
 
 	export let show = false;
 	export let user;
+    export let metrics: {
+        [key: string]: ChatMetrics
+    } = {};
 	
-	let chatTokenUsages = {};
 	let chats = [];
-
-	const sortFactory = (attribute, ascending = true) => {
-		return (a, b) => {
-			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
-			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
-			if (aValue < bValue) {
-				return ascending ? -1 : 1;
-			}
-			if (aValue > bValue) {
-				return ascending ? 1 : -1;
-			}
-			return 0;
-		}
-	}
 
 	let sortAttribute = "created_at";
 	let ascending = false;
@@ -52,12 +42,6 @@
 		})();
 	}
 
-	$: if (chats) {
-		chatTokenUsages = {};
-		for (const chat of chats) {
-			chatTokenUsages[chat.id] = chat.token_count;
-		}
-	}
 </script>
 
 <Modal size="lg" bind:show>
@@ -141,7 +125,7 @@
 
 											<td class=" px-3 py-1 hidden md:table-cell h-[2.5rem]">
 												<div class="my-auto">
-													{chat.token_count}
+													{metrics[chat.id] ? metrics[chat.id]?.input_tokens + metrics[chat.id]?.output_tokens : "No record"}
 												</div>
 											</td>
 

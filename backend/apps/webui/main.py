@@ -13,6 +13,7 @@ from apps.webui.routers import (
     roles,
     configs,
     memories,
+    metrics,
     utils,
 )
 from config import (
@@ -74,6 +75,7 @@ app.include_router(evaluations.router, prefix="/evaluations", tags=["evaluations
 app.include_router(models.router, prefix="/models", tags=["models"])
 app.include_router(prompts.router, prefix="/prompts", tags=["prompts"])
 app.include_router(memories.router, prefix="/memories", tags=["memories"])
+app.include_router(metrics.router, prefix="/metrics", tags=["metrics"])
 app.include_router(classes.router, prefix="/classes", tags=["classes"])
 
 app.include_router(configs.router, prefix="/configs", tags=["configs"])

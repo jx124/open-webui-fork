@@ -96,6 +96,15 @@
 			>
 
 			{#if $user?.role === "admin"}
+                <a
+                    class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/metrics')
+                        ? 'bg-gray-50 dark:bg-gray-850'
+                        : ''} transition"
+                    href="/admin/metrics">{$i18n.t('Metrics')}</a
+                >
+            {/if}
+
+			{#if false}
 				<a
 					class="min-w-fit rounded-lg p-1.5 px-3 {$page.url.pathname.includes('/admin/documents')
 						? 'bg-gray-50 dark:bg-gray-850'

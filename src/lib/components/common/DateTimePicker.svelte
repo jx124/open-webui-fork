@@ -4,20 +4,32 @@
 	import ChevronLeft from '../icons/ChevronLeft.svelte';
 	import ChevronRight from '../icons/ChevronRight.svelte';
 	import CalendarBlank from '../icons/CalendarBlank.svelte';
-	import { parseDate } from '@internationalized/date';
+	import { CalendarDateTime, parseDate } from '@internationalized/date';
 	import { mobile } from '$lib/stores';
 
-    export let label = "";
-	export let selectedDate: Date;
-	export let placeholder: Date;
+	let selectedDate = null;
+	
+	export let selectedDateTime;
+	export let placeholder: string | null;
+	let parsedPlaceholder = placeholder ? parseDate(placeholder.split('T')[0]) : undefined;
+	let selectedTime = placeholder ? placeholder.split('T')[1].slice(0, 5) : "23:59";
 
-	let parsedPlaceholder = placeholder ? parseDate(placeholder.toISOString().split('T')[0]) : undefined;
+	$: if ((selectedDate || parsedPlaceholder) && selectedTime) {
+		selectedDateTime = new CalendarDateTime(
+			selectedDate?.year ?? parsedPlaceholder?.year,
+			selectedDate?.month ?? parsedPlaceholder?.month,
+			selectedDate?.day ?? parsedPlaceholder?.day,
+			parseInt(selectedTime.split(":")[0]),
+			parseInt(selectedTime.split(":")[1]),
+			59
+		).toString();
+	}
 </script>
 
 <DatePicker.Root weekdayFormat="short" fixedWeeks={true} value={parsedPlaceholder}>
 	<div class="flex flex-row gap-1.5 mt-2">
 		<div class="flex w-full max-w-[180px] flex-col gap-1.5">
-			<DatePicker.Label class="block select-none text-xs font-medium">{label}</DatePicker.Label>
+			<DatePicker.Label class="block select-none text-xs font-medium">Select Date:</DatePicker.Label>
 			<DatePicker.Input
 				let:segments
 				class="flex h-input w-full max-w-[180px] bg-transparent border dark:border-gray-600 outline-none rounded-lg 
@@ -91,9 +103,7 @@
 											{#each weekDates as date}
 												<DatePicker.Cell {date} class="relative size-10 !p-0 text-center text-sm">
 													<DatePicker.Day
-														on:click={() => {
-                                                            selectedDate = new Date(date.year, date.month - 1, date.day);
-                                                        }}
+														on:click={() => (selectedDate = date)}
 														{date}
 														month={month.value}
 														class="group relative inline-flex size-10 items-center justify-center whitespace-nowrap rounded-lg 
@@ -119,6 +129,15 @@
 				</DatePicker.Calendar>
 			</DatePicker.Content>
 		</div>
+		<div class="flex w-full h-full max-w-[100px] min-h-[75px] flex-col gap-1.5 ml-12">
+			<div class="block select-none text-xs font-medium">Select Time:</div>
+			<input
+				class="flex h-full min-h-[50px] w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg
+                select-none items-center px-2 py-2 text-sm tracking-[0.01em] text-gray-700 dark:text-gray-100 focus-visible:ring-0 focus-visible:ring-offset-0"
+				type="time"
+				bind:value={selectedTime}
+			/>
+
+		</div>
 	</div></DatePicker.Root
 >
-

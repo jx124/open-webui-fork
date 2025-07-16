@@ -29,7 +29,6 @@
 		convertMessagesToHistory,
 		copyToClipboard,
 		splitStream,
-		sumTokenUsage
 	} from '$lib/utils';
 
 	import { generateChatCompletion } from '$lib/apis/ollama';
@@ -56,7 +55,6 @@
 	import Navbar from '$lib/components/layout/Navbar.svelte';
 	import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL, CLAUDE_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 	import { createOpenAITextStream, createClaudeTextStream } from '$lib/apis/streaming';
-	import type { ResponseUsage } from '$lib/apis/streaming';
 	import { queryMemory } from '$lib/apis/memories';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
@@ -99,12 +97,6 @@
 	let showEvaluationModal = false;
 
 	let showFeedbackModal = false;
-
-	let tokenUsage: ResponseUsage = {
-		prompt_tokens: 0,
-		completion_tokens: 0,
-		total_tokens: 0,
-	};
 
 	let selectedProfile: Prompt | undefined;
 	let showClientInfo = true;
@@ -202,11 +194,6 @@
 			messages: {},
 			currentId: null
 		};
-		tokenUsage = {
-			prompt_tokens: 0,
-			completion_tokens: 0,
-			total_tokens: 0,
-		};
 
 		if ($page.url.searchParams.get('model')) {
 			selectedModels = [$page.url.searchParams.get('model')?.split(',')[0] ?? ""];
@@ -284,7 +271,6 @@
 						: convertMessagesToHistory(chatContent.messages);
 				title = chatContent.title;
 				$selectedPromptCommand = chatContent.systemCommand;
-				tokenUsage = chatContent?.usage ?? sumTokenUsage(history);
 
 				const userSettings = await getUserSettings(localStorage.token);
 
@@ -454,11 +440,6 @@
 						history: history,
 						tags: [],
 						timestamp: Date.now(),
-						usage: {
-							prompt_tokens: 0,
-							completion_tokens: 0,
-							total_tokens: 0,
-						},
 						class_id: $classId,
 						prompt_id: selectedProfile?.id,
 					});
@@ -969,10 +950,9 @@
 
 			if (res && res.ok && res.body) {
 				const textStream = await createOpenAITextStream(res.body, $settings.splitLargeChunks);
-				let lastUsage = null;
 
 				for await (const update of textStream) {
-					const { value, done, citations, error, usage } = update;
+					const { value, done, citations, error } = update;
 					if (error) {
 						await handleOpenAIError(error, null, model, responseMessage);
 						break;
@@ -990,10 +970,6 @@
 						}
 
 						break;
-					}
-
-					if (usage) {
-						lastUsage = usage;
 					}
 
 					if (citations) {
@@ -1029,13 +1005,6 @@
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
 
-				if (lastUsage) {
-					responseMessage.info = { ...lastUsage, openai: true };
-					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
-					tokenUsage.completion_tokens += lastUsage.completion_tokens;
-					tokenUsage.total_tokens += lastUsage.total_tokens;
-				}
-
 				// save response message back into history
 				history.messages[responseMessageId] = responseMessage;
 
@@ -1045,7 +1014,6 @@
 							models: selectedModels,
 							messages: messages,
 							history: history,
-							usage: tokenUsage
 						});
 						chats.set(await getChatList(localStorage.token));
 					}
@@ -1189,10 +1157,9 @@
 
 			if (res && res.ok && res.body) {
 				const textStream = await createClaudeTextStream(res.body, $settings.splitLargeChunks);
-				let lastUsage = null;
 
 				for await (const update of textStream) {
-					const { value, done, citations, error, usage } = update;
+					const { value, done, citations, error } = update;
 					if (error) {
 						await handleOpenAIError(error, null, model, responseMessage);
 						break;
@@ -1210,10 +1177,6 @@
 						}
 
 						break;
-					}
-
-					if (usage) {
-						lastUsage = usage;
 					}
 
 					if (citations) {
@@ -1249,13 +1212,6 @@
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
 
-				if (lastUsage) {
-					responseMessage.info = { ...lastUsage, openai: true };
-					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
-					tokenUsage.completion_tokens += lastUsage.completion_tokens;
-					tokenUsage.total_tokens += lastUsage.total_tokens;
-				}
-
 				// save response message back into history
 				history.messages[responseMessageId] = responseMessage;
 
@@ -1265,7 +1221,6 @@
 							models: selectedModels,
 							messages: messages,
 							history: history,
-							usage: tokenUsage
 						});
 						chats.set(await getChatList(localStorage.token));
 					}
@@ -1374,7 +1329,7 @@
 		}
 
 		if ($settings.saveChatHistory ?? true) {
-			chat = await updateChatById(localStorage.token, _chatId, { title: _title, usage: tokenUsage });
+			chat = await updateChatById(localStorage.token, _chatId, { title: _title });
 			chats.set(await getChatList(localStorage.token));
 		}
 	};
@@ -1566,10 +1521,9 @@
 
 			if (res && res.ok && res.body) {
 				const textStream = await createOpenAITextStream(res.body, $settings.splitLargeChunks);
-				let lastUsage = null;
 
 				for await (const update of textStream) {
-					const { value, done, citations, error, usage } = update;
+					const { value, done, citations, error } = update;
 					if (error) {
 						await handleOpenAIError(error, null, model, responseMessage);
 						break;
@@ -1587,10 +1541,6 @@
 						}
 
 						break;
-					}
-
-					if (usage) {
-						lastUsage = usage;
 					}
 
 					if (citations) {
@@ -1626,13 +1576,6 @@
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
 
-				if (lastUsage) {
-					responseMessage.info = { ...lastUsage, openai: true };
-					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
-					tokenUsage.completion_tokens += lastUsage.completion_tokens;
-					tokenUsage.total_tokens += lastUsage.total_tokens;
-				}
-
 				// save response message back into history
 				history.messages[responseMessageId] = responseMessage;
 
@@ -1642,7 +1585,6 @@
 							models: selectedModels,
 							messages: messages,
 							history: history,
-							usage: tokenUsage
 						});
 						chats.set(await getChatList(localStorage.token));
 					}
@@ -1748,10 +1690,9 @@
 
 			if (res && res.ok && res.body) {
 				const textStream = await createClaudeTextStream(res.body, $settings.splitLargeChunks);
-				let lastUsage = null;
 
 				for await (const update of textStream) {
-					const { value, done, citations, error, usage } = update;
+					const { value, done, citations, error } = update;
 					if (error) {
 						await handleOpenAIError(error, null, model, responseMessage);
 						break;
@@ -1769,10 +1710,6 @@
 						}
 
 						break;
-					}
-
-					if (usage) {
-						lastUsage = usage;
 					}
 
 					if (citations) {
@@ -1808,13 +1745,6 @@
 					document.getElementById(`speak-button-${responseMessage.id}`)?.click();
 				}
 
-				if (lastUsage) {
-					responseMessage.info = { ...lastUsage, openai: true };
-					tokenUsage.prompt_tokens += lastUsage.prompt_tokens;
-					tokenUsage.completion_tokens += lastUsage.completion_tokens;
-					tokenUsage.total_tokens += lastUsage.total_tokens;
-				}
-
 				// save response message back into history
 				history.messages[responseMessageId] = responseMessage;
 
@@ -1824,7 +1754,6 @@
 							models: selectedModels,
 							messages: messages,
 							history: history,
-							usage: tokenUsage
 						});
 						chats.set(await getChatList(localStorage.token));
 					}

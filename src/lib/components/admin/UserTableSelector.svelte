@@ -13,8 +13,8 @@
 	import { mobile } from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import Search from '../icons/Search.svelte';
-	import ImportStudentModal from './ImportStudentModal.svelte';
 	import NewAddUserModal from './NewAddUserModal.svelte';
+    import { sortFactory } from '$lib/utils/index'
 
 	const i18n = getContext('i18n');
 
@@ -36,20 +36,6 @@
     // TODO: change to set if number of students increases
     let _selectedUsers = [];
     let _unselectedUsers = [];
-
-	const sortFactory = (attribute, ascending = true) => {
-		return (a, b) => {
-			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
-			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
-			if (aValue < bValue) {
-				return ascending ? -1 : 1;
-			}
-			if (aValue > bValue) {
-				return ascending ? 1 : -1;
-			}
-			return 0;
-		}
-	}
 
 	let sortAttribute = "name";
 	let ascending = true;

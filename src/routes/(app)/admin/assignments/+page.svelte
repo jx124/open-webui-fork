@@ -2,6 +2,7 @@
 	import { getAllChatListsByUserId } from "$lib/apis/chats";
 	import { getPromptTitles } from "$lib/apis/prompts";
 	import { getUserProfiles } from "$lib/apis/users";
+    import { getMetricsByChats, type ChatMetrics } from '$lib/apis/metrics';
 	import ClassSearchbar from "$lib/components/admin/ClassSearchbar.svelte";
 	import ProfileSearchbar from "$lib/components/admin/ProfileSearchbar.svelte";
 	import SortableHeader from "$lib/components/admin/SortableHeader.svelte";
@@ -12,6 +13,7 @@
 	import { WEBUI_BASE_URL } from "$lib/constants";
 	import { classes, prompts, WEBUI_NAME } from "$lib/stores";
 	import { getContext, onMount } from "svelte";
+    import { sortFactory } from '$lib/utils/index'
     
 	const i18n = getContext('i18n');
     
@@ -66,19 +68,9 @@
 
 	let classAssignmentMap = new Map<number, Set<number>>();
 
-    const sortFactory = (attribute, ascending = true) => {
-		return (a, b) => {
-			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
-			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
-			if (aValue < bValue) {
-				return ascending ? -1 : 1;
-			}
-			if (aValue > bValue) {
-				return ascending ? 1 : -1;
-			}
-			return 0;
-		}
-	}
+    let metrics: {
+        [key: string]: ChatMetrics
+    } = {};
 
     onMount(async () => {
 		userProfiles = await getUserProfiles(localStorage.token);
@@ -123,6 +115,8 @@
 			}
 		})];
 
+        metrics = await getMetricsByChats(localStorage.token);
+
         loaded = true;
     })
 </script>
@@ -138,7 +132,9 @@
 	bind:chats={selectedChats}
 	bind:user_name={selectedUserName}
 	bind:class_name={selectedClassName}
-	bind:profile_name={selectedProfileName} />
+	bind:profile_name={selectedProfileName}
+    {metrics}
+/>
 
 {#if loaded}
 	<div class="flex flex-col">
@@ -301,7 +297,6 @@
 
 	<div class="text-gray-600 dark:text-gray-500 text-xs mt-2 text-left">
 		ⓘ Statistics are estimates and do not include usage before tracking was enabled.  <br />
-		ⓘ To enable tracking, go to Admin Panel > Models, select the model, check "Usage" under "Capabilities", and save the configuration.
 	</div>
 
 	<Pagination bind:page count={entries.length} />

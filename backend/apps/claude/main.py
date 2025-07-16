@@ -13,6 +13,7 @@ from starlette.background import BackgroundTask
 
 from apps.webui.models.models import Models
 from apps.webui.models.users import Users
+from apps.webui.models.metrics import Metrics, MetricForm
 from apps.webui.models.prompts_classes import Prompts
 from apps.webui.models.evaluations import Evaluations
 from constants import ERROR_MESSAGES
@@ -370,6 +371,8 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
     payload = None
     model_str = ""
+    chat_id = ""
+    is_eval = False
 
     try:
         if "chat/completions" in path:
@@ -381,6 +384,9 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
             if "model" in payload:
                 model_str = payload["model"]
+            if "chat_id" in payload:
+                chat_id = payload["chat_id"]
+                del payload["chat_id"]
 
             # Replace prompt command with prompt content so end users cannot see prompt
             if "profile_id" in payload:
@@ -400,6 +406,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 payload["model"] = evaluation.selected_model_id
                 payload["system"] = content
 
+                is_eval = True
                 del payload["evaluation_id"]
 
             model_info = Models.get_model_by_id(model_id)
@@ -491,7 +498,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
         if "text/event-stream" in r.headers.get("Content-Type", ""):
             streaming = True
             return StreamingResponse(
-                stream_token_counter(r.content, user.id, model_str),
+                stream_token_counter(r.content, user.id, chat_id, model_str, is_eval),
                 status_code=r.status,
                 headers=dict(r.headers),
                 background=BackgroundTask(
@@ -503,11 +510,15 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
 
             if response_data is not None and response_data.get("usage"):
                 input_tokens = response_data["usage"]["input_tokens"]
-                print("input_tokens", input_tokens)
                 output_tokens = response_data["usage"]["output_tokens"]
-                print("output_tokens", output_tokens)
-                print("claude model", model_str)
-                #Users.increment_user_token_count_by_id(user.id, count)
+                Metrics.update_metric_entry(
+                        MetricForm(user_id=user.id,
+                                   chat_id=chat_id,
+                                   selected_model_id=model_str,
+                                   input_tokens=input_tokens,
+                                   output_tokens=output_tokens,
+                                   message_count=1 if not is_eval else 0))
+                Users.increment_user_token_count_by_id(user.id, input_tokens + output_tokens)
 
             return response_data
     except Exception as e:
@@ -516,7 +527,6 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
         if r is not None:
             try:
                 res = await r.json()
-                print(res)
                 if "error" in res:
                     error_detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
             except:
@@ -529,7 +539,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             await session.close()
 
 
-async def stream_token_counter(stream, user_id, model):
+async def stream_token_counter(stream, user_id, chat_id, model_id, is_eval):
     # reads stream and increments token count if usage found in stream
     async for line in stream:
         try:
@@ -540,12 +550,24 @@ async def stream_token_counter(stream, user_id, model):
             if result is not None:
                 if result.get("message") is not None:
                     input_tokens = result["message"]["usage"]["input_tokens"]
-                    print("input_tokens", input_tokens)
+                    Metrics.update_metric_entry(
+                            MetricForm(user_id=user_id,
+                                       chat_id=chat_id,
+                                       selected_model_id=model_id,
+                                       input_tokens=input_tokens,
+                                       output_tokens=0,
+                                       message_count=1 if not is_eval else 0))
+                    Users.increment_user_token_count_by_id(user_id, input_tokens)
                 elif result.get("usage") is not None:
                     output_tokens = result["usage"]["output_tokens"]
-                    print("output_tokens", output_tokens)
-                    print("claude model", model)
-                #Users.increment_user_token_count_by_id(user_id, count)
+                    Metrics.update_metric_entry(
+                            MetricForm(user_id=user_id,
+                                       chat_id=chat_id,
+                                       selected_model_id=model_id,
+                                       input_tokens=0,
+                                       output_tokens=output_tokens,
+                                       message_count=0))
+                    Users.increment_user_token_count_by_id(user_id, output_tokens)
 
         except json.decoder.JSONDecodeError:
             pass

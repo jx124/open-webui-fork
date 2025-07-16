@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
 	import Pagination from '$lib/components/common/Pagination.svelte';
+    import { sortFactory } from '$lib/utils/index'
 
 	let currentClassId: number = parseInt($page.params.id);
 	let currentClass: Class;
@@ -25,20 +26,6 @@
     let search = '';
 
 	let pageNumber = 1;
-
-	const sortFactory = (attribute: string, ascending = true) => {
-		return (a, b) => {
-			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
-			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
-			if (aValue < bValue) {
-				return ascending ? -1 : 1;
-			}
-			if (aValue > bValue) {
-				return ascending ? 1 : -1;
-			}
-			return 0;
-		}
-	}
 
 	let sortAttribute = "status";
 	let ascending = true;

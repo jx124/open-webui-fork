@@ -5,7 +5,6 @@ from typing import List, Optional, Dict
 import time
 
 from apps.webui.internal.db import DB, JSONField
-from apps.webui.models.chats import Chats
 from apps.webui.models.roles import Role, RoleModel
 
 import logging

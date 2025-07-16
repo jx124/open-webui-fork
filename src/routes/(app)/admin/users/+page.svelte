@@ -20,10 +20,12 @@
 	import DeleteModal from '$lib/components/DeleteModal.svelte';
 	import RoleSelector from '$lib/components/admin/RoleSelector.svelte';
 	import { getRoles } from '$lib/apis/roles';
+	import { getMetricsByChats, type ChatMetrics } from '$lib/apis/metrics';
 	import { approximateToHumanReadable } from '$lib/utils';
 	import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
 	import ClassSearchbar from '$lib/components/admin/ClassSearchbar.svelte';
 	import NewAddUserModal from '$lib/components/admin/NewAddUserModal.svelte';
+    import { sortFactory } from '$lib/utils/index'
 
 	const i18n = getContext('i18n');
 
@@ -85,24 +87,13 @@
 		}
 	};
 
-	const sortFactory = (attribute, ascending = true) => {
-		return (a, b) => {
-			const aValue = a[attribute].toLowerCase?.() ?? a[attribute];
-			const bValue = b[attribute].toLowerCase?.() ?? b[attribute];
-			if (aValue < bValue) {
-				return ascending ? -1 : 1;
-			}
-			if (aValue > bValue) {
-				return ascending ? 1 : -1;
-			}
-			return 0;
-		}
-	}
-
 	let sortAttribute = "role";
 	let ascending = true;
 
 	let classStudentHashSet = new Map<number, Set<string>>();
+    let metrics: {
+        [key: string]: ChatMetrics
+    } = {};
 
 	onMount(async () => {
 		users = await getUsers(localStorage.token);
@@ -124,6 +115,8 @@
 		for (const class_ of $classes) {
 			classStudentHashSet.set(class_.id, new Set(class_.assigned_students));
 		}
+
+        metrics = await getMetricsByChats(localStorage.token);
 		
 		loaded = true;
 	});
@@ -168,7 +161,11 @@
 		});
 	}}
 />
-<UserChatsModal bind:show={showUserChatsModal} user={selectedUser} />
+<UserChatsModal
+    bind:show={showUserChatsModal}
+    user={selectedUser}
+    {metrics}
+/>
 <SettingsModal bind:show={showSettingsModal} />
 <DeleteModal bind:show={showDeleteModal}
 	deleteMessage={selectedUser?.name}

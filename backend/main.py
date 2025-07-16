@@ -326,9 +326,6 @@ class PipelineMiddleware(BaseHTTPMiddleware):
                         pass
 
             if "pipeline" not in app.state.MODELS[model_id]:
-                if "chat_id" in data:
-                    del data["chat_id"]
-
                 if "title" in data:
                     del data["title"]
 

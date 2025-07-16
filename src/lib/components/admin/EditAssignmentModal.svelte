@@ -3,7 +3,7 @@
 
 	import Modal from '../common/Modal.svelte';
 	import XMark from '../icons/XMark.svelte';
-	import DatePicker from '../common/DatePicker.svelte';
+	import DateTimePicker from '../common/DateTimePicker.svelte';
 	import NUSModerator from 'nusmoderator';
 	import { type Assignment } from '$lib/apis/classes';
 	import { prompts } from '$lib/stores';
@@ -114,7 +114,7 @@
                             />
                             Allow submission after deadline.
                         </label>
-                        <DatePicker bind:selectedDateTime={assignments[index].deadline} placeholder={selectedDateTime} />
+                        <DateTimePicker bind:selectedDateTime={assignments[index].deadline} placeholder={selectedDateTime} />
                         {#if assignments[index].deadline}
                             <div class="text-xs pl-1 pt-1">
                                 {assignments[index].deadline ? getNUSWeekName(assignments[index].deadline) : ''}
