@@ -171,7 +171,7 @@
 				lastSoundTime = Date.now();
 			}
 
-			if (isRecording && Date.now() - lastSoundTime > 3000) {
+			if (isRecording && Date.now() - lastSoundTime > 60000) {
 				mediaRecorder.stop();
 				audioContext.close();
 				return;
