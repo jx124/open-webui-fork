@@ -197,17 +197,26 @@
 				</div>
 			{:else}
 				<div class="w-full">
-					<div class="flex {$settings?.chatBubble ?? true ? 'justify-end' : ''} mb-2">
+					<div class="flex {$settings?.chatBubble ?? true ? 'justify-end' : ''} mb-1">
 						<div
 							class="rounded-3xl {$settings?.chatBubble ?? true
-								? `max-w-[90%] px-5 py-2  bg-gray-50 dark:bg-gray-850 ${
+								? `max-w-[90%] px-4 py-2  bg-blue-500 text-white dark:text-gray-100 dark:bg-gray-850 ${
 										message.files ? 'rounded-tr-lg' : ''
 								  }`
 								: ''}  "
 						>
 							<pre id="user-message">{message.content}</pre>
+
 						</div>
 					</div>
+
+                    {#if ($settings?.chatBubble ?? true) && message.timestamp}
+                        <div
+                            class="flex justify-end text-gray-400 text-xs font-medium"
+                        >
+                            {dayjs(message.timestamp * 1000).format($i18n.t('MMM DD, h:mm A'))}
+                        </div>
+                    {/if}
 
 					<div
 						class=" flex {$settings?.chatBubble ?? true
@@ -322,6 +331,8 @@
 							{/if}
 						{/if}
 					</div>
+
+
 				</div>
 			{/if}
 		</div>

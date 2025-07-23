@@ -327,15 +327,15 @@
             />
         {/if}
 
-		<div class="w-full overflow-hidden pl-1">
+		<div class="w-full overflow-hidden pl-1 text-gray-800 dark:text-gray-100">
 			<Name>
 				{message.role === "assistant" ? (clientName ?? "Client") : "Evaluation"}
 
 				{#if message.timestamp}
 					<span
-						class=" self-center invisible group-hover:visible text-gray-400 text-xs font-medium uppercase"
+						class=" self-center text-gray-400 text-xs font-medium"
 					>
-						{dayjs(message.timestamp * 1000).format($i18n.t('h:mm a'))}
+						{dayjs(message.timestamp * 1000).format($i18n.t('MMM DD, h:mm A'))}
 					</span>
 				{/if}
 			</Name>
