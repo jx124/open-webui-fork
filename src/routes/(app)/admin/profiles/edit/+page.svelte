@@ -459,7 +459,7 @@
 		</div>
 
 		<div class="my-2">
-			<div class=" text-sm font-semibold mb-1">Model*</div>
+			<div class=" text-sm font-semibold mb-1">Model for Role-playing LLM*</div>
 			<ModelSelector
 				items={modelItems}
 				bind:value={form_data.selected_model_id}
