@@ -27,6 +27,12 @@
 
 	const submitHandler = async () => {
 		loading = true;
+        if (form_data.selected_model_id === "") {
+			toast.error('Please select a model.');
+			loading = false;
+			return null;
+        }
+
         const evaluation = await createNewEvaluation(localStorage.token, form_data).catch((error) => {
             toast.error(error);
 			loading = false;
