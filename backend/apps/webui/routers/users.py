@@ -359,7 +359,7 @@ async def email_user_account_details(users: List[UserImportForm]) -> None:
             f"role-playing scenarios. Your login details are:\n\n"
             f"Email: {user.email}\n"
             f"Password: {user.password}\n\n"
-            f"The site can be accessed from {SITE_LINK} > Login Here."
+            f"The site can be accessed at {SITE_LINK}."
         )
 
         msg = MIMEText(text)

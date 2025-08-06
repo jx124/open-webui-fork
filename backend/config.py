@@ -981,4 +981,4 @@ DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DATA_DIR}/webui.db")
 
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
-SITE_LINK = os.environ.get("SITE_LINK", "https://swatroleplaynus.wixsite.com/swat")
+SITE_LINK = os.environ.get("SITE_LINK", "https://swatroleplay-j2joe.ondigitalocean.app/")
