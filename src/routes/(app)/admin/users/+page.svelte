@@ -26,6 +26,7 @@
 	import ClassSearchbar from '$lib/components/admin/ClassSearchbar.svelte';
 	import NewAddUserModal from '$lib/components/admin/NewAddUserModal.svelte';
     import { sortFactory } from '$lib/utils/index'
+	import DeleteSelectionModal from '$lib/components/admin/DeleteSelectionModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -52,6 +53,7 @@
 	let showEditUserModal = false;
 
 	let showDeleteModal = false;
+	let showDeleteSelectionModal = false;
 
 	let classItems: {
 		label: string;
@@ -129,6 +131,64 @@
 			});
 		});
 	}
+
+    let selectUsersCheckbox = false;
+    let selectedUsersSet = new Set<string>();
+    $: console.log(selectedUsersSet);
+
+    function toggleUser(userId: string) {
+        if (selectedUsersSet.has(userId)) {
+            selectedUsersSet.delete(userId);
+        } else {
+            selectedUsersSet.add(userId);
+        }
+        selectedUsersSet = selectedUsersSet;
+    }
+
+    function toggleAllInClass() {
+        const classUsers = users.filter((user) => {
+            if (user.role === "admin") {
+                return false;
+            }
+
+            if (selectedClass === 0) {
+                return true;
+            } else if (selectedClass !== 0) {
+                return classStudentHashSet.get(selectedClass)?.has(user.id);
+            }
+        }).map((user) => user.id);
+
+        const classUsersSet = new Set(classUsers);
+        
+        if (classUsersSet.union(selectedUsersSet).size == selectedUsersSet.size) {
+            // class completely selected => deselect all
+            for (const user of classUsers) {
+                selectedUsersSet.delete(user);
+            }
+        } else {
+            for (const user of classUsers) {
+                selectedUsersSet.add(user);
+            }
+        }
+
+        selectedUsersSet = selectedUsersSet;
+    }
+
+	const deleteSelectedUsersHandler = async (userIds: Set<string>) => {
+		showDeleteSelectionModal = false;
+        selectUsersCheckbox = false;
+        selectedUsersSet = new Set<string>();
+
+        for (const id of userIds) {
+            await deleteUserById(localStorage.token, id).catch((error) => {
+                toast.error(error);
+            });
+        }
+        users = await getUsers(localStorage.token);
+        users = users.map((user) => {
+            return { ...user, ...userStatistics[user?.id] };
+        });
+	};
 </script>
 
 <svelte:head>
@@ -151,7 +211,7 @@
 <NewAddUserModal 
 	bind:show={showAddUserModal}
     bind:users={users}
-    selectedUsers={[]}
+    selectedUsersSet={[]}
 	on:save={async () => {
 		const temp_users = await getUsers(localStorage.token);
 		userStatistics = await getUserStatistics(localStorage.token);
@@ -171,6 +231,12 @@
 	deleteMessage={selectedUser?.name}
 	deleteHandler={deleteUserHandler}
 	deleteArgs={selectedUser?.id}/>
+
+<DeleteSelectionModal bind:show={showDeleteSelectionModal}
+	deleteIds={selectedUsersSet}
+    users={users}
+	deleteHandler={deleteSelectedUsersHandler}
+/>
 
 {#if loaded}
 	<div class="flex flex-col">
@@ -255,6 +321,35 @@
 								clip-rule="evenodd"
 							/>
 						</svg>
+					</button>
+				</Tooltip>
+
+				<Tooltip content="Delete Users">
+					<button
+						class={(selectUsersCheckbox ? "bg-gray-100 dark:bg-gray-800 " : "hover:bg-gray-100 dark:bg-gray-850 dark:hover:bg-gray-800 ") +
+                            "px-2 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:border-0 transition font-medium text-sm flex items-center space-x-1"}
+						on:click={() => {
+                            selectUsersCheckbox = !selectUsersCheckbox;
+                            if (!selectUsersCheckbox) {
+                                selectedUsersSet.clear();
+                                selectedUsersSet = selectedUsersSet;
+                            }
+						}}
+					>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                            />
+                        </svg>
 					</button>
 				</Tooltip>
 			</div>
@@ -371,7 +466,7 @@
 						</td>
 
 						<td class="px-3 py-2 text-right w-32">
-							<div class="flex justify-end w-full">
+							<div class="flex justify-start w-full">
 								<div class="flex justify-start min-w-24">
 									<Tooltip content={$i18n.t('Chats')}>
 										<button
@@ -435,6 +530,15 @@
 												</svg>
 											</button>
 										</Tooltip>
+
+                                        <div class="flex p-2 w-6">
+                                            {#if selectUsersCheckbox}
+                                                <input type="checkbox"
+                                                    checked={selectedUsersSet.has(user.id)}
+                                                    on:change={() => toggleUser(user.id)}
+                                                />
+                                            {/if}
+                                        </div>
 									{/if}
 								</div>
 							</div>
@@ -445,11 +549,25 @@
 		</table>
 	</div>
 
-	<div class=" text-gray-600 dark:text-gray-500 text-xs mt-2 text-left">
-		ⓘ Click on the user role button to change a user's role. <br />
-		ⓘ Statistics are estimates and do not include usage before tracking was enabled.  <br />
-		ⓘ To enable tracking, go to Admin Panel > Models, select the model, check "Usage" under "Capabilities", and save the configuration.
-	</div>
+    <div class="flex justify-between">
+        <div class=" text-gray-600 dark:text-gray-500 text-xs mt-2 text-left">
+            ⓘ Click on the user role button to change a user's role. <br />
+            ⓘ Statistics are estimates and do not include usage before tracking was enabled.  <br />
+            ⓘ To enable tracking, go to Admin Panel > Models, select the model, check "Usage" under "Capabilities", and save the configuration.
+        </div>
+        {#if selectUsersCheckbox}
+            <div class="mt-2 mx-2 flex items-center space-x-2">
+                <button class=" text-sm px-3 py-2 transition rounded-xl bg-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-gray-100 text-gray-900 flex"
+                    on:click={toggleAllInClass}>
+                    Select/Deselect All In Class
+                </button>
+                <button class="text-sm px-3 py-2 transition rounded-xl bg-red-200 hover:bg-red-300 dark:hover:bg-red-700 dark:bg-red-800 dark:text-gray-100 text-gray-900"
+                    on:click={() => { showDeleteSelectionModal = !showDeleteSelectionModal; }}>
+                    Delete Selection
+                </button>
+            </div>
+        {/if}
+    </div>
 
 	<Pagination bind:page count={users.length} />
 {/if}
