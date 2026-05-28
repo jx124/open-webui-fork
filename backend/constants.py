@@ -109,4 +109,4 @@ class ERROR_MESSAGES(str, Enum):
     EVAL_TITLE_TAKEN = lambda name="": f"The evaluation title {name} is already taken."
     INVALID_EVAL_DELETION = lambda profiles=[]: f"This evaluation cannot be deleted as the profile{'s' if len(profiles) > 1 else ''} {', '.join(profiles)} {'are' if len(profiles) > 1 else 'is'} assigned to it."
 
-    USER_IS_INSTRUCTOR = "User is an instructor of a class and cannot be deleted. Reassign the instructor and retry."
+    USER_IS_INSTRUCTOR = lambda name:f"User '{name}' is an instructor of a class and cannot be deleted. Reassign the instructor and retry."

@@ -259,9 +259,12 @@ async def update_user_by_id(
 async def delete_user_by_id(user_id: str, user: UserModel = Depends(get_admin_user)) -> bool:
     if user.id != user_id:
         if Classes.get_class_count_by_instructor_id(user_id) != 0:
+            instructor = Users.get_user_by_id(user_id)
+            instructor_name = instructor.name if instructor else "Unknown Instructor"
+
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=ERROR_MESSAGES.USER_IS_INSTRUCTOR,
+                detail=ERROR_MESSAGES.USER_IS_INSTRUCTOR(instructor_name),
             )
 
         StudentClasses.delete_student_classes_by_student(user_id)
