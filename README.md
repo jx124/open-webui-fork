@@ -69,7 +69,8 @@ Don't forget to explore our sibling project, [Open WebUI Community](https://open
 ### Installation of Forked Version for Social Work
 - Copy the `.env.example` file in the root directory to create a `.env` file.
 - Fill in the `OPENAI_API_KEY`, `CLAUDE_API_KEY`, `ELEVENLABS_API_KEY`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` fields. The gmail credentials are for sending user invites.
-    - Note: The fields should not be surrounded by quotes as docker does not parse and remove them.
+- Create a postgresql database and fill in the `DATABASE_URL` field with the database connection string. It should look like `postgresql://<username>:<password>@localhost:5432/<db_name>`.
+    - Note: The fields in the env file should not be surrounded by quotes as docker does not parse and remove them.
 - To build and run the backend:
     - Create a python 3.10 virtual environment and source it.
     - Update pip (important).
