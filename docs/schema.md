@@ -25,17 +25,20 @@ Table chat {
   title text
   chat text
 
-  created_at timestamp
-  updated_at timestamp
-
   share_id varchar [null, unique]
   archived bool [default: false]
+
+  created_at timestamp
+  updated_at timestamp
 
   session_time bigint [default: 0]
   visits bigint [default: 0]
 
   class_id integer [ref: > class.id]
   prompt_id integer [ref: > prompt.id]
+
+  is_submitted bool
+  is_disabled bool
 }
 
 Table document {
@@ -81,6 +84,7 @@ Table prompt {
   image_url text [default: ""]
   evaluation_id integer [null, ref: > evaluation.id]
   model_id text [null, ref: > model.id]
+  audio text
 }
 
 Table promptrole {
@@ -94,7 +98,7 @@ Table role {
   name varchar [not null, default: "pending", unique]
 }
 
-Table tags {
+Table tag {
   id varchar [primary key]
   name varchar
   user_id varchar [ref: > user.id]
@@ -131,6 +135,7 @@ Table studentclass {
   id integer [primary key]
   user_id varchar [ref: > user.id]
   class_id integer [ref: > class.id]
+  image_url text
 }
 
 Table class {

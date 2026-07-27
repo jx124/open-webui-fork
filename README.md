@@ -67,21 +67,28 @@ Don't forget to explore our sibling project, [Open WebUI Community](https://open
 > If you wish to utilize Open WebUI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
 
 ### Installation of Forked Version for Social Work
-- Copy the `.env.example` file in the root directory to create a `.env` file. Fill in the API key. Note: The API key should not be surrounded by quotes, docker does not 
-parse and remove them.
-- Build the docker image:
-  ```bash
-  docker build -t open-webui-fork .
-  ```
-- Create a volume for persistent data storage:
-  ```bash
-  docker volume create open-webui-fork
-  ```
-- Run the container:
-  ```bash
-  docker run --env-file ./.env -d -p 3000:8080 -v open-webui-fork:/app/backend/data --name open-webui-fork open-webui-fork
-  ```
-- Head to localhost:3000 to access the app.
+- Copy the `.env.example` file in the root directory to create a `.env` file.
+- Fill in the `OPENAI_API_KEY`, `CLAUDE_API_KEY`, `ELEVENLABS_API_KEY`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` fields. The gmail credentials are for sending user invites.
+    - Note: The fields should not be surrounded by quotes as docker does not parse and remove them.
+- To build and run the backend:
+    - Create a python 3.10 virtual environment and source it.
+    - Update pip (important).
+    - Install the required packages in `backend/requirements.txt`.
+    - Start the backend with `./backend/start.sh`.
+- To build and run the frontend:
+    - Install the npm packages (currently using node version 22.22.3 and npm version 10.9.8).
+    - Start the frontend with `npm run dev` (for development) or `npm run build` (for deployment).
+- For deployment on DigitalOcean's App Platform using docker:
+    - Create a new App Platform.
+    - Select the correct branch from github repo (main).
+    - Remove redundant app created, only leave behind the one that says "Dockerfile".
+    - Choose appropriate resource limits, it needs at least 1GB RAM since the idle app uses ~500MB of RAM.
+    - Add a database (dev database is fine for now).
+    - Set the environment variables for the web app component:
+        - Leave `DATABASE_URL` as `${db.DATABASE_URL}`.
+        - Set `OPENAI_API_KEY`, `CLAUDE_API_KEY`, `ELEVENLABS_API_KEY` to their corresponding secret API keys. If the key is not set, then the app will not get models from the API. Set this to encrypted for security. Remember to store the keys somewhere safe.
+        - Set `GMAIL_ADDRESS` and `GMAIL_APP_PASSWORD` to the gmail address and app password (not regular password) used to send invitations and passwords.
+    - Leave the rest of the settings as default and create the app under the project you want.
 
 > [!NOTE]  
 > The first account to be created will be the admin account. Subsequent accounts will be user accounts. The admin account should fill in the available prompts.
